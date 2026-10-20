@@ -9,6 +9,8 @@ export const SESSION_STORAGE_KEY = 'gym-tracker:session:v1'
 const userSchema = z.object({
   id: z.number().int(),
   email: z.string(),
+  // Users cached before goals existed have none: they read as not chosen yet.
+  goal: z.enum(['lose_fat', 'build_muscle', 'recomposition']).nullable().catch(null),
   created_at: z.string(),
 })
 

@@ -1,7 +1,12 @@
 import { beforeEach, expect, test } from 'vitest'
 import { loadCachedUser, saveCachedUser, SESSION_STORAGE_KEY } from '@/lib/session'
 
-const user = { id: 1, email: 'dani@example.com', created_at: '2026-09-01T10:00:00+00:00' }
+const user = {
+  id: 1,
+  email: 'dani@example.com',
+  goal: 'build_muscle',
+  created_at: '2026-09-01T10:00:00+00:00',
+} as const
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -18,6 +23,13 @@ test('forgets the user when the session ends', () => {
   saveCachedUser(null)
 
   expect(loadCachedUser()).toBeNull()
+})
+
+test('reads a user cached before goals existed as having none yet', () => {
+  const { goal: _, ...withoutGoal } = user
+  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(withoutGoal))
+
+  expect(loadCachedUser()).toEqual({ ...withoutGoal, goal: null })
 })
 
 test('ignores anything that is not a user', () => {

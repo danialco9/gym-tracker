@@ -37,7 +37,7 @@ test('goes away with a routine and a workout, even without a weight', () => {
 })
 
 test('shows on the home screen of an empty account', async () => {
-  const user: User = { id: 1, email: 'nuevo@gymtracker.dev', created_at: '2026-09-24T10:00:00Z' }
+  const user: User = { id: 1, email: 'nuevo@gymtracker.dev', goal: null, created_at: '2026-09-24T10:00:00Z' }
   mockApi({
     'GET /auth/me': { body: user },
     'GET /routines': { body: [] },

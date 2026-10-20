@@ -6,6 +6,7 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
 import { RequireAuth } from '@/features/auth/RequireAuth'
+import { GoalPage } from '@/features/goal/GoalPage'
 import { HomePage } from '@/features/home/HomePage'
 import { MeasurementsPage } from '@/features/measurements/MeasurementsPage'
 import { ProgressPage } from '@/features/progress/ProgressPage'
@@ -32,6 +33,7 @@ export const routes: RouteObject[] = [
           { path: 'medidas', element: <MeasurementsPage /> },
           { path: 'progreso', element: <ProgressPage /> },
           { path: 'cuenta', element: <AccountPage /> },
+          { path: 'objetivo', element: <GoalPage /> },
         ],
       },
     ],

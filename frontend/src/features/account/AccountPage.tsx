@@ -1,6 +1,6 @@
-import { ChevronRightIcon, LogOutIcon, MessageSquareIcon } from 'lucide-react'
+import { ChevronRightIcon, LogOutIcon, MessageSquareIcon, TargetIcon } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/PageHeader'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -15,6 +15,7 @@ import { useCurrentUser, useDeleteAccount } from '@/features/auth/queries'
 import { saveDraft } from '@/features/workout/draft'
 import { clearOutbox } from '@/features/workout/outbox'
 import { ApiError } from '@/lib/api'
+import { TRAINING_GOAL_LABELS } from '@/lib/labels'
 
 const MAX_FEEDBACK_LENGTH = 2000
 
@@ -162,6 +163,21 @@ export function AccountPage() {
       <PageHeader eyebrow="Cuenta" title="Tu cuenta" description={user?.email ?? ''} />
 
       <section className="bg-card ring-foreground/10 rounded-xl p-2 ring-1">
+        <Link
+          to="/objetivo"
+          className="hover:bg-accent flex w-full items-center justify-between gap-3 rounded-lg p-3 transition-colors"
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            <TargetIcon className="text-primary size-5 shrink-0" aria-hidden />
+            <span className="min-w-0">
+              <span className="block font-medium">Objetivo</span>
+              <span className="text-muted-foreground block text-sm">
+                {user?.goal == null ? 'Sin elegir' : TRAINING_GOAL_LABELS[user.goal].title}
+              </span>
+            </span>
+          </span>
+          <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+        </Link>
         {open === 'feedback' ? (
           <>
             <h2 className="flex items-center gap-3 p-3 font-medium">

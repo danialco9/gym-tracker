@@ -5,7 +5,7 @@ import type { User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
 
-const USER: User = { id: 1, email: 'nuevo@gymtracker.dev', created_at: '2026-09-24T10:00:00Z' }
+const USER: User = { id: 1, email: 'nuevo@gymtracker.dev', goal: null, created_at: '2026-09-24T10:00:00Z' }
 
 describe('Account', () => {
   it('sends feedback about the screen it was opened from', async () => {

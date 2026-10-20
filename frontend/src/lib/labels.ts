@@ -1,4 +1,10 @@
-import type { Equipment, MuscleGroup } from './types'
+import type { Equipment, MuscleGroup, TrainingGoal } from './types'
+
+export const TRAINING_GOAL_LABELS: Record<TrainingGoal, { title: string; hint: string }> = {
+  lose_fat: { title: 'Bajar grasa', hint: 'Perder peso sin perder músculo' },
+  build_muscle: { title: 'Ganar músculo', hint: 'Subir peso y volumen' },
+  recomposition: { title: 'Recomposición', hint: 'Menos grasa y más músculo a la vez' },
+}
 
 export const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {
   chest: 'Pecho',

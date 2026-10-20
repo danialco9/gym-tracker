@@ -6,7 +6,7 @@ import { renderRoute } from '@/test/render'
 import { DRAFT_STORAGE_KEY, type WorkoutDraft } from './draft'
 import { OUTBOX_STORAGE_KEY, type QueuedWorkout } from './outbox'
 
-const USER: User = { id: 1, email: 'dani@example.com', created_at: '2026-09-15T10:00:00Z' }
+const USER: User = { id: 1, email: 'dani@example.com', goal: null, created_at: '2026-09-15T10:00:00Z' }
 const CLIENT_ID = '8f14e45f-ceea-467a-9575-0e1f3c9b7a01'
 
 const DRAFT: WorkoutDraft = {

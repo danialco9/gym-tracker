@@ -11,7 +11,7 @@ vi.mock('./ProgressCharts', () => ({
   BodyWeightChart: ({ entries }: { entries: unknown[] }) => <p>Gráfica de {entries.length} pesajes</p>,
 }))
 
-const USER: User = { id: 1, email: 'dani@example.com', created_at: '2026-09-15T10:00:00Z' }
+const USER: User = { id: 1, email: 'dani@example.com', goal: null, created_at: '2026-09-15T10:00:00Z' }
 
 const EMPTY_WEEKS = ['2026-08-31', '2026-09-07'].map((weekStart) => ({ week_start: weekStart, muscles: [] }))
 
