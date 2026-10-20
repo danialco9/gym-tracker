@@ -11,10 +11,23 @@ from gym_tracker.api import (
     history,
     measurements,
     progress,
+    ranking,
     routines,
     workouts,
 )
 
 api_router = APIRouter(prefix="/api")
-for module in (health, auth, exercises, history, routines, workouts, measurements, progress, dictation, feedback):
+for module in (
+    health,
+    auth,
+    exercises,
+    history,
+    routines,
+    workouts,
+    measurements,
+    progress,
+    ranking,
+    dictation,
+    feedback,
+):
     api_router.include_router(module.router)
