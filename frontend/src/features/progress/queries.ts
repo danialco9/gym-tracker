@@ -6,6 +6,7 @@ import type { ExerciseProgress, ProgressOverview } from '@/lib/types'
 export const progressKeys = {
   all: ['progress'] as const,
   overview: ['progress', 'overview'] as const,
+  goals: ['progress', 'goals'] as const,
   exercise: (exerciseId: number) => ['progress', 'exercises', exerciseId] as const,
 }
 

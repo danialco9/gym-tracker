@@ -4,6 +4,7 @@ import {
   DumbbellIcon,
   FlameIcon,
   ScaleIcon,
+  TargetIcon,
   TrendingUpIcon,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -11,6 +12,7 @@ import { Link } from 'react-router'
 import heroImage from '@/assets/hero-squat.webp'
 import { QueryStatus } from '@/components/QueryStatus'
 import { buttonVariants } from '@/components/ui/button'
+import { useCurrentUser } from '@/features/auth/queries'
 import { GettingStarted } from '@/features/home/GettingStarted'
 import { useProgressOverview } from '@/features/progress/queries'
 import { loadDraft } from '@/features/workout/draft'
@@ -97,6 +99,27 @@ function Stats({ overview }: { overview: ProgressOverview }) {
   )
 }
 
+/** Until a goal is chosen the advice is the general one; this says it can be tailored. */
+function GoalPrompt() {
+  return (
+    <Link
+      to="/objetivo"
+      className="bg-primary/10 ring-primary/40 hover:bg-primary/15 flex items-center justify-between gap-3 rounded-xl p-4 ring-1 transition-colors"
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <TargetIcon className="text-primary size-5 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          <span className="block font-medium">Elige tu objetivo</span>
+          <span className="text-muted-foreground block text-sm">
+            Bajar grasa, ganar músculo o recomposición
+          </span>
+        </span>
+      </span>
+      <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+    </Link>
+  )
+}
+
 function NextSession({ overview }: { overview: ProgressOverview }) {
   const recommendations = overview.recommendations
   if (recommendations.length === 0) {
@@ -131,6 +154,7 @@ function NextSession({ overview }: { overview: ProgressOverview }) {
 
 export function HomePage() {
   const [hasDraft] = useState(() => loadDraft() !== null)
+  const currentUser = useCurrentUser().data
   const workouts = useRecentWorkouts(5)
   const routines = useRoutines()
   const overview = useProgressOverview()
@@ -171,6 +195,8 @@ export function HomePage() {
       </section>
 
       <PendingWorkouts />
+
+      {currentUser != null && currentUser.goal === null && <GoalPrompt />}
 
       {routines.data !== undefined && workouts.data !== undefined && (
         <GettingStarted

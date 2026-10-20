@@ -10,7 +10,7 @@ vi.mock('./WeightChart', () => ({
   WeightChart: ({ points }: { points: unknown[] }) => <p>Gráfica con {points.length} pesos</p>,
 }))
 
-const USER: User = { id: 1, email: 'dani@example.com', created_at: '2026-09-15T10:00:00Z' }
+const USER: User = { id: 1, email: 'dani@example.com', goal: null, created_at: '2026-09-15T10:00:00Z' }
 
 function measurement(overrides: Partial<BodyMeasurement> = {}): BodyMeasurement {
   return {

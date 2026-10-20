@@ -28,10 +28,29 @@ export type Equipment =
   | 'bodyweight'
   | 'band'
 
+export type TrainingGoal = 'lose_fat' | 'build_muscle' | 'recomposition'
+
 export interface User {
   id: number
   email: string
+  /** Null until the user picks one; meanwhile the general advice applies. */
+  goal: TrainingGoal | null
   created_at: string
+}
+
+interface Range {
+  min: number
+  max: number
+}
+
+/** What a training goal asks for; isolation reps are for single-joint exercises. */
+export interface GoalPlan {
+  goal: TrainingGoal
+  compound_reps: Range
+  isolation_reps: Range
+  rpe: Range
+  rest_seconds: Range
+  weekly_hard_sets: Range
 }
 
 export type ExerciseIn = Pick<Exercise, 'name' | 'muscle_group' | 'equipment'>
