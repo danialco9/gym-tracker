@@ -197,6 +197,26 @@ export interface WeeklyVolume {
   muscles: { muscle_group: MuscleGroup; hard_sets: number; volume_kg: number }[]
 }
 
+export type MissionKind = 'training_days' | 'hard_sets' | 'records'
+
+export type BadgeKind =
+  | 'first_workout'
+  | 'workouts_10'
+  | 'workouts_50'
+  | 'workouts_100'
+  | 'first_record'
+  | 'records_10'
+  | 'streak_7'
+  | 'streak_30'
+
+/** Experience, streak, missions and badges, all derived from the workout history by the API. */
+export interface Achievements {
+  level: { number: number; xp: number; level_xp: number; level_size_xp: number }
+  streak: { current_days: number; best_days: number; last_workout_on: string | null; at_risk: boolean }
+  missions: { kind: MissionKind; progress: number; target: number; done: boolean }[]
+  badges: { kind: BadgeKind; earned_on: string | null }[]
+}
+
 export interface ProgressOverview {
   activity: {
     workouts_total: number

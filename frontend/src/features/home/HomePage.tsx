@@ -13,8 +13,9 @@ import heroImage from '@/assets/hero-squat.webp'
 import { QueryStatus } from '@/components/QueryStatus'
 import { buttonVariants } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
+import { Achievements } from '@/features/home/Achievements'
 import { GettingStarted } from '@/features/home/GettingStarted'
-import { useProgressOverview } from '@/features/progress/queries'
+import { useAchievements, useProgressOverview } from '@/features/progress/queries'
 import { loadDraft } from '@/features/workout/draft'
 import { PendingWorkouts } from '@/features/workout/PendingWorkouts'
 import { useRecentWorkouts, useRoutines } from '@/features/workout/queries'
@@ -158,6 +159,7 @@ export function HomePage() {
   const workouts = useRecentWorkouts(5)
   const routines = useRoutines()
   const overview = useProgressOverview()
+  const achievements = useAchievements()
   const routineNames = new Map(routines.data?.map((routine) => [routine.id, routine.name]))
 
   return (
@@ -204,6 +206,10 @@ export function HomePage() {
           hasWorkout={workouts.data.length > 0}
           hasWeight={(overview.data?.body_weight.entries.length ?? 0) > 0}
         />
+      )}
+
+      {currentUser != null && achievements.data !== undefined && (
+        <Achievements userId={currentUser.id} achievements={achievements.data} />
       )}
 
       {overview.data !== undefined && (
