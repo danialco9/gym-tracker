@@ -10,6 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, fiel
 
 from gym_tracker.analysis.achievements import BadgeKind, MissionKind
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
+from gym_tracker.analysis.strength import StrengthTier
 from gym_tracker.enums import Equipment, MuscleGroup, TrainingGoal
 from gym_tracker.slugs import SLUG_PATTERN
 from gym_tracker.users import MIN_PASSWORD_LENGTH
@@ -462,3 +463,43 @@ class ExerciseProgressRead(BaseModel):
     exercise_id: int
     exercise_name: str
     sessions: list[ExerciseSessionRead]
+
+
+# Ranking
+
+
+class RankingEntryRead(BaseModel):
+    position: int
+    # The nickname, or "Atleta <id>" until the user picks one; never the email.
+    name: str
+    tier: StrengthTier
+    is_me: bool
+
+
+class RankingMeRead(BaseModel):
+    # Null while the user has no body weight logged or no ranked lift.
+    tier: StrengthTier | None
+    # Progress towards the next tier, from 0 to 1.
+    progress: float | None
+    # Null when the user is not on the list: hidden from it, no body weight or no ranked lift.
+    position: int | None
+    needs_body_weight: bool
+    show_in_ranking: bool
+
+
+class RankedExerciseRead(BaseModel):
+    id: int
+    name: str
+
+
+class RankingRead(BaseModel):
+    me: RankingMeRead
+    entries: list[RankingEntryRead]
+    # Ranked exercises that someone on the list or the user has lifted, by name.
+    exercises: list[RankedExerciseRead]
+
+
+class ExerciseRankingRead(BaseModel):
+    exercise: RankedExerciseRead
+    me: RankingMeRead
+    entries: list[RankingEntryRead]
