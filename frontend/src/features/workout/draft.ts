@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { randomId } from '@/lib/id'
-import type { Exercise, Routine, RoutineExercise, WorkoutIn } from '@/lib/types'
+import type { Exercise, PlannedSet, Routine, RoutineExercise, WorkoutIn } from '@/lib/types'
 
 export const WEIGHT_STEP_KG = 2.5
 export const DRAFT_STORAGE_KEY = 'gym-tracker:workout-draft:v1'
@@ -57,7 +57,13 @@ export interface DictatedEntry {
 }
 
 export type DraftAction =
-  | { type: 'start'; startedAt: string; routine?: Routine }
+  | {
+      type: 'start'
+      startedAt: string
+      routine?: Routine
+      /** Suggested sets per exercise id, prefilled instead of the routine's plan. */
+      suggestions?: ReadonlyMap<number, PlannedSet[]>
+    }
   | { type: 'startDictated'; startedAt: string; entries: DictatedEntry[] }
   | { type: 'addExercise'; exercise: Pick<Exercise, 'id' | 'name'> }
   | { type: 'removeExercise'; entryId: string }
@@ -98,11 +104,14 @@ function newSet(template?: Pick<DraftSet, 'reps' | 'weightKg' | 'rpe'>): DraftSe
   }
 }
 
-function entryFromRoutine(item: RoutineExercise): DraftExercise {
+function entryFromRoutine(item: RoutineExercise, suggested: PlannedSet[] = []): DraftExercise {
   const targets = item.sets.map((planned) => ({
     reps: planned.target_reps,
     weightKg: planned.target_weight_kg,
   }))
+  // A suggestion for today wins over the routine's plan, which stays shown as the target.
+  const prefill =
+    suggested.length > 0 ? suggested.map((set) => ({ reps: set.reps, weightKg: set.weight_kg })) : targets
   return {
     id: newId(),
     exerciseId: item.exercise.id,
@@ -110,10 +119,10 @@ function entryFromRoutine(item: RoutineExercise): DraftExercise {
     targets,
     // Each planned set is prefilled with its own reps and weight.
     sets:
-      targets.length === 0
+      prefill.length === 0
         ? [newSet()]
-        : targets.map((target) =>
-            newSet({ reps: target.reps ?? DEFAULT_REPS, weightKg: target.weightKg ?? 0, rpe: null }),
+        : prefill.map((set) =>
+            newSet({ reps: set.reps ?? DEFAULT_REPS, weightKg: set.weightKg ?? 0, rpe: null }),
           ),
   }
 }
@@ -149,7 +158,10 @@ export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): W
       routineName: action.routine?.name ?? null,
       startedAt: action.startedAt,
       notes: '',
-      exercises: action.routine?.exercises.map(entryFromRoutine) ?? [],
+      exercises:
+        action.routine?.exercises.map((item) =>
+          entryFromRoutine(item, action.suggestions?.get(item.exercise.id)),
+        ) ?? [],
     }
   }
   if (action.type === 'startDictated') {

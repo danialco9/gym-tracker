@@ -7,10 +7,10 @@ import { QueryStatus } from '@/components/QueryStatus'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
-import { formatDecimal } from '@/lib/format'
 import { TRAINING_GOAL_LABELS } from '@/lib/labels'
 import type { GoalPlan, TrainingGoal } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { formatRange, formatRest } from './goal-format'
 import { useGoalPlans, useUpdateGoal } from './queries'
 
 const GOALS: { goal: TrainingGoal; icon: LucideIcon; tip: string }[] = [
@@ -31,32 +31,15 @@ const GOALS: { goal: TrainingGoal; icon: LucideIcon; tip: string }[] = [
   },
 ]
 
-const range = (min: string, max: string) => (min === max ? min : `${min}–${max}`)
-
-function formatRest({ min, max }: GoalPlan['rest_seconds']): string {
-  if (min % 60 === 0 && max % 60 === 0) {
-    return `${range(String(min / 60), String(max / 60))} min`
-  }
-  return `${range(String(min), String(max))} s`
-}
-
 function PlanSummary({ plan, tip }: { plan: GoalPlan; tip: string }) {
   const items = [
     {
       label: 'Repeticiones',
-      value: range(String(plan.compound_reps.min), String(plan.compound_reps.max)),
-      hint: `${range(String(plan.isolation_reps.min), String(plan.isolation_reps.max))} en aislamiento`,
+      value: formatRange(plan.compound_reps),
+      hint: `${formatRange(plan.isolation_reps)} en aislamiento`,
     },
-    {
-      label: 'Series por músculo',
-      value: range(String(plan.weekly_hard_sets.min), String(plan.weekly_hard_sets.max)),
-      hint: 'a la semana',
-    },
-    {
-      label: 'Intensidad',
-      value: `RPE ${range(formatDecimal(plan.rpe.min), formatDecimal(plan.rpe.max))}`,
-      hint: 'esfuerzo de 1 a 10',
-    },
+    { label: 'Series por músculo', value: formatRange(plan.weekly_hard_sets), hint: 'a la semana' },
+    { label: 'Intensidad', value: `RPE ${formatRange(plan.rpe)}`, hint: 'esfuerzo de 1 a 10' },
     { label: 'Descanso', value: formatRest(plan.rest_seconds), hint: 'entre series' },
   ]
   return (

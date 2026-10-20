@@ -1,24 +1,16 @@
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  GaugeIcon,
-  RepeatIcon,
-  TrendingUpIcon,
-  type LucideIcon,
-} from 'lucide-react'
+import { GaugeIcon } from 'lucide-react'
 import { formatDay } from '@/lib/format'
 import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
 import { formatSetPlan } from '@/lib/set-plan'
-import type { ProgressionAction, Recommendation, VolumeAdvice } from '@/lib/types'
+import type { Recommendation, VolumeAdvice } from '@/lib/types'
 import { EmptyState } from './ProgressParts'
-import { ACTION_TITLES, explainRecommendation, explainVolume, groupRecommendations } from './progress-data'
-
-const ACTION_ICONS: Record<ProgressionAction, LucideIcon> = {
-  increase_load: ArrowUpIcon,
-  increase_reps: TrendingUpIcon,
-  hold: RepeatIcon,
-  deload: ArrowDownIcon,
-}
+import {
+  ACTION_ICONS,
+  ACTION_TITLES,
+  explainRecommendation,
+  explainVolume,
+  groupRecommendations,
+} from './progress-data'
 
 const toPlan = (sets: { reps: number | null; weight_kg: number | null }[]) =>
   sets.map((set) => ({ reps: set.reps, weightKg: set.weight_kg }))

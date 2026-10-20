@@ -1,3 +1,4 @@
+import { ArrowDownIcon, ArrowUpIcon, RepeatIcon, TrendingUpIcon, type LucideIcon } from 'lucide-react'
 import { formatDecimal, formatKg, plural } from '@/lib/format'
 import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
 import type { MuscleGroup, ProgressionAction, Recommendation, VolumeAdvice, WeeklyVolume } from '@/lib/types'
@@ -9,6 +10,13 @@ export const ACTION_TITLES: Record<ProgressionAction, string> = {
   increase_reps: 'Busca más repeticiones',
   hold: 'Repite la sesión',
   deload: 'Descarga',
+}
+
+export const ACTION_ICONS: Record<ProgressionAction, LucideIcon> = {
+  increase_load: ArrowUpIcon,
+  increase_reps: TrendingUpIcon,
+  hold: RepeatIcon,
+  deload: ArrowDownIcon,
 }
 
 const hardestRpe = (item: Recommendation) => {
