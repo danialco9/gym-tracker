@@ -14,7 +14,7 @@ FastAPI service and analytics engine for the gym tracker.
   | Routines | `GET /routines`, `GET /routines/{id}`, `POST /routines`, `PUT /routines/{id}`, `DELETE /routines/{id}` |
   | Workouts | `GET /workouts?limit=&offset=`, `GET /workouts/{id}`, `POST /workouts`, `PUT /workouts/{id}`, `DELETE /workouts/{id}`, `POST /workouts/{id}/sets`, `DELETE /workouts/{id}/sets/{set_id}` |
   | Measurements | `GET /measurements?date_from=&date_to=`, `POST /measurements`, `PUT /measurements/{id}`, `DELETE /measurements/{id}` |
-  | Progress | `GET /progress/overview`, `GET /progress/goals`, `GET /progress/exercises/{id}` |
+  | Progress | `GET /progress/overview`, `GET /progress/goals`, `GET /progress/achievements`, `GET /progress/exercises/{id}` |
   | Feedback | `POST /feedback` (read them with `gym-admin feedback`) |
 
 - **Exercise catalog**: 74 built-in exercises with Spanish names and English slugs, shared by all

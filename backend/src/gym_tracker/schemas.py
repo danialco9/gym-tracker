@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
+from gym_tracker.analysis.achievements import BadgeKind, MissionKind
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
 from gym_tracker.enums import Equipment, MuscleGroup, TrainingGoal
 from gym_tracker.slugs import SLUG_PATTERN
@@ -403,6 +404,39 @@ class ProgressOverviewRead(BaseModel):
     weekly_volume: list[WeeklyVolumeRead]
     volume_advice: list[VolumeAdviceRead]
     body_weight: BodyWeightRead
+
+
+class LevelRead(BaseModel):
+    number: int
+    xp: int
+    level_xp: int
+    level_size_xp: int
+
+
+class StreakRead(BaseModel):
+    current_days: int
+    best_days: int
+    last_workout_on: date | None
+    at_risk: bool
+
+
+class MissionRead(BaseModel):
+    kind: MissionKind
+    progress: int
+    target: int
+    done: bool
+
+
+class BadgeRead(BaseModel):
+    kind: BadgeKind
+    earned_on: date | None
+
+
+class AchievementsRead(BaseModel):
+    level: LevelRead
+    streak: StreakRead
+    missions: list[MissionRead]
+    badges: list[BadgeRead]
 
 
 class ExerciseSessionRead(BaseModel):

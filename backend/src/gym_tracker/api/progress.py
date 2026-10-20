@@ -12,6 +12,7 @@ from sqlalchemy import select
 from gym_tracker.analysis import (
     GOAL_PLANS,
     TrainingLog,
+    achievements,
     personal_records,
     recommend,
     session_bests,
@@ -27,13 +28,17 @@ from gym_tracker.api.common import not_found, visible_to
 from gym_tracker.api.deps import CurrentUser, SessionDep, SettingsDep, get_current_user
 from gym_tracker.models import Exercise
 from gym_tracker.schemas import (
+    AchievementsRead,
     ActivityRead,
+    BadgeRead,
     BodyWeightPointRead,
     BodyWeightRead,
     ExerciseProgressRead,
     ExerciseSessionRead,
     GoalPlanRead,
     IntRangeRead,
+    LevelRead,
+    MissionRead,
     MuscleVolumeRead,
     PerformedSetRead,
     PersonalRecordRead,
@@ -41,6 +46,7 @@ from gym_tracker.schemas import (
     ProgressOverviewRead,
     RangeRead,
     RecommendationRead,
+    StreakRead,
     VolumeAdviceRead,
     WeeklyVolumeRead,
 )
@@ -186,6 +192,33 @@ def read_goal_plans() -> list[GoalPlanRead]:
         )
         for goal, plan in GOAL_PLANS.items()
     ]
+
+
+@router.get("/achievements")
+def read_achievements(
+    session: SessionDep, user: CurrentUser, settings: SettingsDep, today: TodayDep
+) -> AchievementsRead:
+    """Level and XP, the training streak, this week's missions and every badge, from the history."""
+    result = achievements(load_user_log(session, user.id, settings.zone), today)
+    return AchievementsRead(
+        level=LevelRead(
+            number=result.level.number,
+            xp=result.level.xp,
+            level_xp=result.level.level_xp,
+            level_size_xp=result.level.level_size_xp,
+        ),
+        streak=StreakRead(
+            current_days=result.streak.current_days,
+            best_days=result.streak.best_days,
+            last_workout_on=result.streak.last_workout_on,
+            at_risk=result.streak.at_risk,
+        ),
+        missions=[
+            MissionRead(kind=mission.kind, progress=mission.progress, target=mission.target, done=mission.done)
+            for mission in result.missions
+        ],
+        badges=[BadgeRead(kind=badge.kind, earned_on=badge.earned_on) for badge in result.badges],
+    )
 
 
 @router.get("/exercises/{exercise_id}")

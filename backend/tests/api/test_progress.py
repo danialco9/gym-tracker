@@ -228,6 +228,36 @@ def test_goal_plans_cover_every_goal(progress_client: TestClient) -> None:
     }
 
 
+def test_achievements_score_the_training_log(progress_client: TestClient, training_log: dict[str, int]) -> None:
+    achievements = progress_client.get("/api/progress/achievements").json()
+
+    # 2 workouts, 8 working sets, the bench press record of the 15th and with it that week's mission.
+    assert achievements["level"] == {"number": 1, "xp": 2 * 10 + 8 + 25 + 30, "level_xp": 83, "level_size_xp": 100}
+    assert achievements["streak"] == {
+        "current_days": 1,
+        "best_days": 1,
+        "last_workout_on": "2026-09-15",
+        "at_risk": False,
+    }
+    assert achievements["missions"] == [
+        {"kind": "training_days", "progress": 1, "target": 3, "done": False},
+        {"kind": "hard_sets", "progress": 5, "target": 30, "done": False},
+        {"kind": "records", "progress": 1, "target": 1, "done": True},
+    ]
+    earned = {badge["kind"]: badge["earned_on"] for badge in achievements["badges"]}
+    assert earned["first_workout"] == "2026-09-08"
+    assert earned["first_record"] == "2026-09-15"
+    assert earned["workouts_10"] is None
+
+
+def test_achievements_without_workouts(progress_client: TestClient) -> None:
+    achievements = progress_client.get("/api/progress/achievements").json()
+
+    assert achievements["level"] == {"number": 1, "xp": 0, "level_xp": 0, "level_size_xp": 100}
+    assert achievements["streak"]["current_days"] == 0
+    assert all(badge["earned_on"] is None for badge in achievements["badges"])
+
+
 def test_exercise_progress_lists_sessions(progress_client: TestClient, training_log: dict[str, int]) -> None:
     response = progress_client.get(f"/api/progress/exercises/{training_log['bench']}")
 
@@ -310,3 +340,4 @@ def test_exercise_progress_of_unknown_exercise_is_not_found(progress_client: Tes
 def test_progress_requires_authentication(client: TestClient) -> None:
     assert client.get("/api/progress/overview").status_code == 401
     assert client.get("/api/progress/goals").status_code == 401
+    assert client.get("/api/progress/achievements").status_code == 401
