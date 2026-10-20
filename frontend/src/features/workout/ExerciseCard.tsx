@@ -6,24 +6,35 @@ import { formatSetPlan } from '@/lib/set-plan'
 import { ActiveSet } from './ActiveSet'
 import type { DraftAction, DraftExercise } from './draft'
 import { LastSessionHint } from './LastSessionHint'
+import { ProgressRing } from './ProgressRing'
+import { beatsRecord } from './records'
 import { CompletedSetRow, PendingSetRow } from './SetSummary'
 
 interface ExerciseCardProps {
   entry: DraftExercise
   dispatch: Dispatch<DraftAction>
-  onSetCompleted: () => void
+  /** The exercise's saved best estimated 1RM; none when it has no history (or it is loading). */
+  bestE1rmKg?: number
+  onSetCompleted: (setId: string) => void
   onExerciseCompleted: () => void
 }
 
-export function ExerciseCard({ entry, dispatch, onSetCompleted, onExerciseCompleted }: ExerciseCardProps) {
+export function ExerciseCard({
+  entry,
+  dispatch,
+  bestE1rmKg,
+  onSetCompleted,
+  onExerciseCompleted,
+}: ExerciseCardProps) {
   const target = formatSetPlan(entry.targets)
   // The set being logged is the first one not ticked off yet; the rest are summary lines.
   const activeIndex = entry.sets.findIndex((set) => !set.done)
+  const doneCount = entry.sets.filter((set) => set.done).length
   const toggleDone = (setId: string) => dispatch({ type: 'toggleDone', entryId: entry.id, setId })
 
   const completeSet = (setId: string, index: number) => {
     toggleDone(setId)
-    onSetCompleted()
+    onSetCompleted(setId)
     // Nothing left to log here: move the workout on to the next exercise.
     if (entry.sets.every((set, position) => set.done || position <= index)) {
       onExerciseCompleted()
@@ -38,7 +49,15 @@ export function ExerciseCard({ entry, dispatch, onSetCompleted, onExerciseComple
           {target && <span className="block">Objetivo: {target}</span>}
           <LastSessionHint exerciseId={entry.exerciseId} />
         </CardDescription>
-        <CardAction>
+        <CardAction className="flex items-center gap-1">
+          {entry.sets.length > 0 && (
+            <ProgressRing value={doneCount / entry.sets.length} size={40} strokeWidth={4}>
+              <span className="text-xs font-semibold tabular-nums">
+                {doneCount}/{entry.sets.length}
+                <span className="sr-only"> series hechas</span>
+              </span>
+            </ProgressRing>
+          )}
           <Button
             variant="ghost"
             size="icon-sm"
@@ -67,6 +86,11 @@ export function ExerciseCard({ entry, dispatch, onSetCompleted, onExerciseComple
               number={number}
               set={set}
               canGoBack={previousDone !== undefined}
+              isRecord={beatsRecord(
+                set,
+                entry.sets.filter((other) => other.done),
+                bestE1rmKg,
+              )}
               onAdjust={(field, delta) =>
                 dispatch({ type: 'adjustSet', entryId: entry.id, setId: set.id, field, delta })
               }

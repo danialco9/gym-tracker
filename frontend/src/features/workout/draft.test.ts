@@ -5,6 +5,7 @@ import {
   DRAFT_STORAGE_KEY,
   draftReducer,
   loadDraft,
+  nextPendingSet,
   saveDraft,
   toWorkoutPayload,
   type DraftAction,
@@ -147,6 +148,26 @@ describe('draftReducer', () => {
     ).toHaveLength(2)
     expect(apply(draft, { type: 'removeExercise', entryId: entry.id }).exercises).toEqual([])
     expect(draftReducer(draft, { type: 'discard' })).toBeNull()
+  })
+})
+
+describe('nextPendingSet', () => {
+  it('is the first set not ticked off, across exercises, until none is left', () => {
+    let draft = apply(start(legDay), { type: 'addExercise', exercise: { id: 12, name: 'Prensa' } })
+    const [squat, press] = draft.exercises
+    draft = apply(
+      draft,
+      { type: 'toggleDone', entryId: squat.id, setId: squat.sets[0].id },
+      { type: 'toggleDone', entryId: squat.id, setId: squat.sets[2].id },
+    )
+
+    expect(nextPendingSet(draft)).toMatchObject({ entry: { name: 'Sentadilla con barra' }, number: 2 })
+
+    draft = apply(draft, { type: 'toggleDone', entryId: squat.id, setId: squat.sets[1].id })
+    expect(nextPendingSet(draft)).toMatchObject({ entry: { name: 'Prensa' }, number: 1 })
+
+    draft = apply(draft, { type: 'toggleDone', entryId: press.id, setId: press.sets[0].id })
+    expect(nextPendingSet(draft)).toBeNull()
   })
 })
 

@@ -238,6 +238,19 @@ export function completedSetCount(draft: WorkoutDraft): number {
   return draft.exercises.reduce((total, entry) => total + entry.sets.filter((set) => set.done).length, 0)
 }
 
+/** The set to do next, in order: the first one not ticked off, with its 1-based number. */
+export function nextPendingSet(
+  draft: WorkoutDraft,
+): { entry: DraftExercise; set: DraftSet; number: number } | null {
+  for (const entry of draft.exercises) {
+    const index = entry.sets.findIndex((set) => !set.done)
+    if (index !== -1) {
+      return { entry, set: entry.sets[index], number: index + 1 }
+    }
+  }
+  return null
+}
+
 /** Builds the API payload with only completed sets, numbering sets per exercise. */
 export function toWorkoutPayload(draft: WorkoutDraft, endedAt: string): WorkoutIn {
   const setNumbers = new Map<number, number>()
