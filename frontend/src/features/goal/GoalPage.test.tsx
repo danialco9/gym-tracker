@@ -4,7 +4,14 @@ import type { GoalPlan, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
 
-const USER: User = { id: 1, email: 'dani@example.com', goal: null, created_at: '2026-09-15T10:00:00Z' }
+const USER: User = {
+  id: 1,
+  email: 'dani@example.com',
+  goal: null,
+  nickname: null,
+  show_in_ranking: true,
+  created_at: '2026-09-15T10:00:00Z',
+}
 
 const PLANS: GoalPlan[] = [
   {

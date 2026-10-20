@@ -5,7 +5,14 @@ import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
 
 const SIGNED_OUT = { status: 401, body: { detail: 'Not authenticated' } }
-const NEW_USER: User = { id: 2, email: 'nuevo@example.com', goal: null, created_at: '2026-09-15T12:00:00Z' }
+const NEW_USER: User = {
+  id: 2,
+  email: 'nuevo@example.com',
+  goal: null,
+  nickname: null,
+  show_in_ranking: true,
+  created_at: '2026-09-15T12:00:00Z',
+}
 
 describe('RegisterPage', () => {
   it('is reachable from the login page and back', async () => {

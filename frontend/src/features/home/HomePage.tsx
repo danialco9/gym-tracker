@@ -15,6 +15,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
 import { Achievements } from '@/features/home/Achievements'
 import { GettingStarted } from '@/features/home/GettingStarted'
+import { RankingCard } from '@/features/home/RankingCard'
 import { useAchievements, useProgressOverview } from '@/features/progress/queries'
 import { loadDraft } from '@/features/workout/draft'
 import { PendingWorkouts } from '@/features/workout/PendingWorkouts'
@@ -211,6 +212,8 @@ export function HomePage() {
       {currentUser != null && achievements.data !== undefined && (
         <Achievements userId={currentUser.id} achievements={achievements.data} />
       )}
+
+      {currentUser != null && <RankingCard user={currentUser} />}
 
       {overview.data !== undefined && (
         <section className="space-y-3">

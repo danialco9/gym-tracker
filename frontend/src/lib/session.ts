@@ -11,6 +11,9 @@ const userSchema = z.object({
   email: z.string(),
   // Users cached before goals existed have none: they read as not chosen yet.
   goal: z.enum(['lose_fat', 'build_muscle', 'recomposition']).nullable().catch(null),
+  // Likewise for users cached before the ranking: no nickname yet, and listed by default.
+  nickname: z.string().nullable().catch(null),
+  show_in_ranking: z.boolean().catch(true),
   created_at: z.string(),
 })
 

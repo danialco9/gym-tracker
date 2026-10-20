@@ -35,6 +35,9 @@ export interface User {
   email: string
   /** Null until the user picks one; meanwhile the general advice applies. */
   goal: TrainingGoal | null
+  /** The public name in the ranking; null until the user picks one, never the email. */
+  nickname: string | null
+  show_in_ranking: boolean
   created_at: string
 }
 
@@ -279,4 +282,43 @@ export interface DictationExercise {
 
 export interface Dictation {
   exercises: DictationExercise[]
+}
+
+export type StrengthTier =
+  'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'emerald' | 'ruby' | 'master'
+
+export interface RankingEntry {
+  position: number
+  /** The nickname, or "Atleta <id>" until the user picks one. */
+  name: string
+  tier: StrengthTier
+  is_me: boolean
+}
+
+export interface RankingMe {
+  /** Null without a body weight logged or a ranked lift. */
+  tier: StrengthTier | null
+  /** Progress towards the next tier, from 0 to 1. */
+  progress: number | null
+  /** Null when the user is not on the list. */
+  position: number | null
+  needs_body_weight: boolean
+  show_in_ranking: boolean
+}
+
+export interface RankedExercise {
+  id: number
+  name: string
+}
+
+export interface Ranking {
+  me: RankingMe
+  entries: RankingEntry[]
+  exercises: RankedExercise[]
+}
+
+export interface ExerciseRanking {
+  exercise: RankedExercise
+  me: RankingMe
+  entries: RankingEntry[]
 }
