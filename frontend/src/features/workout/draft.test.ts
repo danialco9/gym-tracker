@@ -65,6 +65,24 @@ describe('draftReducer', () => {
     ])
   })
 
+  it("prefills today's suggestion over the plan, which stays as the target", () => {
+    const suggestions = new Map([[11, [1, 2, 3].map(() => ({ reps: 8, weight_kg: 65 }))]])
+
+    const [entry] = apply(null, {
+      type: 'start',
+      startedAt: STARTED_AT,
+      routine: legDay,
+      suggestions,
+    }).exercises
+
+    expect(entry.sets.map(({ reps, weightKg }) => [reps, weightKg])).toEqual([
+      [8, 65],
+      [8, 65],
+      [8, 65],
+    ])
+    expect(entry.targets).toEqual([1, 2, 3].map(() => ({ reps: 8, weightKg: 60 })))
+  })
+
   it('prefills each planned set with its own reps and weight', () => {
     const pyramid: Routine = {
       ...legDay,

@@ -1,21 +1,35 @@
 import { ChevronRightIcon, PlusIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
 import { Button } from '@/components/ui/button'
 import { plural } from '@/lib/format'
-import type { Routine } from '@/lib/types'
+import type { PlannedSet, Routine } from '@/lib/types'
+import { DailyPlan } from './DailyPlan'
 import { DictateWorkout } from './DictateWorkout'
 import type { DictatedEntry } from './draft'
 import { useRoutines } from './queries'
 
 interface StartWorkoutProps {
-  onStart: (routine?: Routine) => void
+  onStart: (routine?: Routine, suggestions?: ReadonlyMap<number, PlannedSet[]>) => void
   onStartDictated: (entries: DictatedEntry[]) => void
 }
 
 export function StartWorkout({ onStart, onStartDictated }: StartWorkoutProps) {
   const routines = useRoutines()
+  // A routine opens today's plan first: one decision per screen, then the workout.
+  const [chosen, setChosen] = useState<Routine | null>(null)
+
+  if (chosen !== null) {
+    return (
+      <DailyPlan
+        routine={chosen}
+        onStart={(suggestions) => onStart(chosen, suggestions)}
+        onBack={() => setChosen(null)}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -58,7 +72,7 @@ export function StartWorkout({ onStart, onStartDictated }: StartWorkoutProps) {
             <li key={routine.id} className="min-w-0">
               <button
                 type="button"
-                onClick={() => onStart(routine)}
+                onClick={() => setChosen(routine)}
                 className="bg-card ring-foreground/10 hover:bg-accent hover:ring-primary/40 flex h-full w-full items-center justify-between rounded-xl p-4 text-left ring-1 transition-colors"
               >
                 <span className="min-w-0">
