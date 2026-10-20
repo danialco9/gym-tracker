@@ -3,8 +3,10 @@ import type { Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatSetPlan } from '@/lib/set-plan'
+import type { Exercise } from '@/lib/types'
 import { ActiveSet } from './ActiveSet'
 import type { DraftAction, DraftExercise } from './draft'
+import { ExerciseThumbnail } from './ExerciseThumbnail'
 import { LastSessionHint } from './LastSessionHint'
 import { ProgressRing } from './ProgressRing'
 import { beatsRecord } from './records'
@@ -12,6 +14,8 @@ import { CompletedSetRow, PendingSetRow } from './SetSummary'
 
 interface ExerciseCardProps {
   entry: DraftExercise
+  /** The catalog exercise, for its drawing; none while the catalog loads. */
+  exercise?: Pick<Exercise, 'slug' | 'is_custom'>
   dispatch: Dispatch<DraftAction>
   /** The exercise's saved best estimated 1RM; none when it has no history (or it is loading). */
   bestE1rmKg?: number
@@ -21,6 +25,7 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({
   entry,
+  exercise,
   dispatch,
   bestE1rmKg,
   onSetCompleted,
@@ -44,7 +49,10 @@ export function ExerciseCard({
   return (
     <Card size="sm" className="[--card-spacing:--spacing(2)] sm:[--card-spacing:--spacing(3)]">
       <CardHeader>
-        <CardTitle>{entry.name}</CardTitle>
+        <CardTitle className="flex items-center gap-3">
+          {exercise && <ExerciseThumbnail exercise={exercise} />}
+          {entry.name}
+        </CardTitle>
         <CardDescription className="space-y-0.5">
           {target && <span className="block">Objetivo: {target}</span>}
           <LastSessionHint exerciseId={entry.exerciseId} />

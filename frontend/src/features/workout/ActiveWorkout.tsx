@@ -19,9 +19,10 @@ import {
   type WorkoutDraft,
 } from './draft'
 import { ExerciseCard } from './ExerciseCard'
+import { ExerciseCarousel, type ExerciseCarouselHandle } from './ExerciseCarousel'
 import { ExercisePicker } from './ExercisePicker'
 import { enqueueWorkout, isTransient } from './outbox'
-import { useSaveWorkout } from './queries'
+import { useExercises, useSaveWorkout } from './queries'
 import { RestTimerScreen } from './RestTimerScreen'
 import { DEFAULT_REST_SECONDS, useRestTimer } from './useRestTimer'
 
@@ -32,7 +33,7 @@ interface ActiveWorkoutProps {
 
 export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
-  const cardRefs = useRef(new Map<string, HTMLDivElement>())
+  const carousel = useRef<ExerciseCarouselHandle>(null)
   const timer = useRestTimer()
   const saveWorkout = useSaveWorkout()
   const navigate = useNavigate()
@@ -44,7 +45,9 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const records = new Map(
     useProgressOverview().data?.personal_records.map((record) => [record.exercise_id, record.best_e1rm_kg]),
   )
+  const catalog = new Map(useExercises().data?.map((exercise) => [exercise.id, exercise]))
   const completed = completedSetCount(draft)
+  const total = draft.exercises.reduce((sum, entry) => sum + entry.sets.length, 0)
   const next = nextPendingSet(draft)
 
   // Rest only when another set follows: after the very last one, the next step is saving.
@@ -55,12 +58,11 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
     }
   }
 
-  // Finishing an exercise brings the next one into view with its first set already open.
-  const scrollToNextExercise = (entryId: string) => {
+  // Finishing an exercise slides the next one in with its first set already open.
+  const showNextExercise = (entryId: string) => {
     const index = draft.exercises.findIndex((entry) => entry.id === entryId)
-    const next = draft.exercises[index + 1]
-    if (next !== undefined) {
-      cardRefs.current.get(next.id)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    if (index + 1 < draft.exercises.length) {
+      carousel.current?.show(index + 1)
     }
   }
 
@@ -119,6 +121,21 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
         <Button variant="ghost" size="sm" onClick={discard}>
           Descartar
         </Button>
+        {total > 0 && (
+          <div
+            role="progressbar"
+            aria-label="Progreso del entreno"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={completed}
+            className="bg-muted absolute inset-x-4 bottom-0 h-1 overflow-hidden rounded-full lg:inset-x-2"
+          >
+            <div
+              className="bg-primary h-full rounded-full transition-[width] duration-300"
+              style={{ width: `${(completed / total) * 100}%` }}
+            />
+          </div>
+        )}
       </header>
 
       {draft.exercises.length === 0 && (
@@ -127,28 +144,20 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
         </p>
       )}
 
-      {draft.exercises.map((entry) => (
-        <div
-          key={entry.id}
-          // Clears the sticky session bar when an exercise is scrolled to.
-          className="scroll-mt-24"
-          ref={(node) => {
-            if (node === null) {
-              cardRefs.current.delete(entry.id)
-            } else {
-              cardRefs.current.set(entry.id, node)
-            }
-          }}
-        >
-          <ExerciseCard
-            entry={entry}
-            dispatch={dispatch}
-            bestE1rmKg={records.get(entry.exerciseId)}
-            onSetCompleted={(setId) => startRest(entry.id, setId)}
-            onExerciseCompleted={() => scrollToNextExercise(entry.id)}
-          />
-        </div>
-      ))}
+      {draft.exercises.length > 0 && (
+        <ExerciseCarousel ref={carousel} exercises={draft.exercises}>
+          {(entry) => (
+            <ExerciseCard
+              entry={entry}
+              exercise={catalog.get(entry.exerciseId)}
+              dispatch={dispatch}
+              bestE1rmKg={records.get(entry.exerciseId)}
+              onSetCompleted={(setId) => startRest(entry.id, setId)}
+              onExerciseCompleted={() => showNextExercise(entry.id)}
+            />
+          )}
+        </ExerciseCarousel>
+      )}
 
       <Button
         variant="outline"
@@ -185,6 +194,9 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
         onSelect={(exercise) => {
           dispatch({ type: 'addExercise', exercise })
           setPickerOpen(false)
+          // Once its slide is rendered, bring the new exercise into view.
+          const index = draft.exercises.length
+          requestAnimationFrame(() => carousel.current?.show(index))
         }}
       />
 
