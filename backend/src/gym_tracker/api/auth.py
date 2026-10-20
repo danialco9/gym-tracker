@@ -53,6 +53,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
 
 EMAIL_TAKEN = "An account with this email already exists"
+NICKNAME_TAKEN = "This nickname is already taken"
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -193,7 +194,7 @@ def read_current_user(user: CurrentUser) -> UserRead:
 def update_current_user(payload: UserUpdate, session: SessionDep, user: CurrentUser) -> UserRead:
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(user, field, value)
-    session.commit()
+    commit_or_conflict(session, NICKNAME_TAKEN)
     return UserRead.model_validate(user)
 
 

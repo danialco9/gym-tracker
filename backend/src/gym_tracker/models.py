@@ -11,6 +11,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Numeric,
     String,
     Text,
@@ -28,12 +29,17 @@ from gym_tracker.db import Base
 
 class User(Base):
     __tablename__ = "users"
+    # Nicknames are unique regardless of case, so "Tigre" and "tigre" cannot both exist.
+    __table_args__ = (Index("uq_users_nickname_lower", func.lower(text("nickname")), unique=True),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     # A TrainingGoal; null until the user picks one, and meanwhile the general advice applies.
     goal: Mapped[str | None] = mapped_column(String(20))
+    # The public name in the ranking; null until the user picks one, never the email.
+    nickname: Mapped[str | None] = mapped_column(String(20))
+    show_in_ranking: Mapped[bool] = mapped_column(server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

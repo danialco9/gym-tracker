@@ -69,6 +69,40 @@ def test_an_unknown_training_goal_is_rejected(auth_client: TestClient) -> None:
     assert auth_client.patch("/api/auth/me", json={"goal": "get_huge"}).status_code == 422
 
 
+def test_the_nickname_starts_empty_and_can_be_set_and_cleared(auth_client: TestClient) -> None:
+    me = auth_client.get("/api/auth/me").json()
+    assert me["nickname"] is None
+    assert me["show_in_ranking"] is True
+
+    response = auth_client.patch("/api/auth/me", json={"nickname": " Tigre_82 "})
+    assert response.status_code == 200
+    assert response.json()["nickname"] == "Tigre_82"
+
+    assert auth_client.patch("/api/auth/me", json={"nickname": None}).json()["nickname"] is None
+
+
+@pytest.mark.parametrize("nickname", ["ab", "a" * 21, "Atleta 12", "tigre!", "dani@example.com"])
+def test_an_invalid_nickname_is_rejected(auth_client: TestClient, nickname: str) -> None:
+    assert auth_client.patch("/api/auth/me", json={"nickname": nickname}).status_code == 422
+
+
+def test_a_nickname_taken_in_any_case_is_a_conflict(auth_client: TestClient, session: Session) -> None:
+    other = create_user(session, email="otro@example.com", password=TEST_PASSWORD)
+    other.nickname = "Tigre"
+    session.commit()
+
+    response = auth_client.patch("/api/auth/me", json={"nickname": "tigre", "goal": "lose_fat"})
+
+    assert response.status_code == 409
+    assert auth_client.get("/api/auth/me").json()["goal"] is None
+
+
+def test_the_user_can_leave_and_rejoin_the_ranking(auth_client: TestClient) -> None:
+    assert auth_client.patch("/api/auth/me", json={"show_in_ranking": False}).json()["show_in_ranking"] is False
+    assert auth_client.patch("/api/auth/me", json={"show_in_ranking": True}).json()["show_in_ranking"] is True
+    assert auth_client.patch("/api/auth/me", json={"show_in_ranking": None}).status_code == 422
+
+
 def test_updating_the_account_requires_authentication(client: TestClient) -> None:
     assert client.patch("/api/auth/me", json={"goal": "lose_fat"}).status_code == 401
 
