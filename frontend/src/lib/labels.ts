@@ -1,4 +1,4 @@
-import type { BadgeKind, Equipment, MissionKind, MuscleGroup, TrainingGoal } from './types'
+import type { BadgeKind, Equipment, MissionKind, MuscleGroup, StrengthTier, TrainingGoal } from './types'
 
 export const TRAINING_GOAL_LABELS: Record<TrainingGoal, { title: string; hint: string }> = {
   lose_fat: { title: 'Bajar grasa', hint: 'Perder peso sin perder músculo' },
@@ -22,6 +22,25 @@ export const BADGE_LABELS: Record<BadgeKind, string> = {
   records_10: '10 récords',
   streak_7: 'Racha de 7 días',
   streak_30: 'Racha de 30 días',
+}
+
+/** Strength tiers, lowest first, with the colour of their medal. */
+export const STRENGTH_TIERS: Record<StrengthTier, { label: string; color: string }> = {
+  bronze: { label: 'Bronce', color: '#c4824a' },
+  silver: { label: 'Plata', color: '#b9c2cc' },
+  gold: { label: 'Oro', color: '#f2c230' },
+  platinum: { label: 'Platino', color: '#7fd6d0' },
+  diamond: { label: 'Diamante', color: '#6fb6ff' },
+  emerald: { label: 'Esmeralda', color: '#33c47a' },
+  ruby: { label: 'Rubí', color: '#ef476f' },
+  master: { label: 'Máster', color: '#b57bff' },
+}
+
+const TIER_ORDER = Object.keys(STRENGTH_TIERS) as StrengthTier[]
+
+/** The tier after this one, or null at Master. */
+export function nextTier(tier: StrengthTier): StrengthTier | null {
+  return TIER_ORDER[TIER_ORDER.indexOf(tier) + 1] ?? null
 }
 
 export const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {

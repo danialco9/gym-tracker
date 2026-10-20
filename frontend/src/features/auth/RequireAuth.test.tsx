@@ -3,7 +3,14 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { saveCachedUser } from '@/lib/session'
 import { renderRoute } from '@/test/render'
 
-const user = { id: 1, email: 'dani@example.com', goal: null, created_at: '2026-09-01T10:00:00+00:00' }
+const user = {
+  id: 1,
+  email: 'dani@example.com',
+  goal: null,
+  nickname: null,
+  show_in_ranking: true,
+  created_at: '2026-09-01T10:00:00+00:00',
+}
 
 function goOffline() {
   vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(false)

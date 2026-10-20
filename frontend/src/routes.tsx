@@ -10,6 +10,7 @@ import { GoalPage } from '@/features/goal/GoalPage'
 import { HomePage } from '@/features/home/HomePage'
 import { MeasurementsPage } from '@/features/measurements/MeasurementsPage'
 import { ProgressPage } from '@/features/progress/ProgressPage'
+import { RankingPage } from '@/features/ranking/RankingPage'
 import { RoutineEditorPage } from '@/features/routines/RoutineEditorPage'
 import { RoutinesPage } from '@/features/routines/RoutinesPage'
 import { WorkoutPage } from '@/features/workout/WorkoutPage'
@@ -34,6 +35,7 @@ export const routes: RouteObject[] = [
           { path: 'progreso', element: <ProgressPage /> },
           { path: 'cuenta', element: <AccountPage /> },
           { path: 'objetivo', element: <GoalPage /> },
+          { path: 'ranking', element: <RankingPage /> },
         ],
       },
     ],
