@@ -14,6 +14,8 @@ from gym_tracker.enums import Equipment, MuscleGroup, TrainingGoal
 from gym_tracker.slugs import SLUG_PATTERN
 from gym_tracker.users import MIN_PASSWORD_LENGTH
 
+NICKNAME_PATTERN = r"^[\w.]{3,20}$"
+
 
 class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -84,12 +86,19 @@ class UserRead(ORMModel):
     id: int
     email: EmailStr
     goal: TrainingGoal | None
+    nickname: str | None
+    show_in_ranking: bool
     created_at: datetime
 
 
 class UserUpdate(PartialUpdate):
+    non_nullable_fields: ClassVar[frozenset[str]] = frozenset({"show_in_ranking"})
+
     # Null clears the goal, back to the general advice.
     goal: TrainingGoal | None = None
+    # Letters, digits, "_" and "."; no spaces, so nobody can pose as an unnamed "Atleta 12".
+    nickname: str | None = Field(default=None, pattern=NICKNAME_PATTERN)
+    show_in_ranking: bool | None = None
 
 
 class HealthRead(BaseModel):
