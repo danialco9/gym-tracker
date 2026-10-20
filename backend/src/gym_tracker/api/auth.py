@@ -37,6 +37,7 @@ from gym_tracker.schemas import (
     PasswordResetRequest,
     RegisterRequest,
     UserRead,
+    UserUpdate,
 )
 from gym_tracker.security import verify_password
 from gym_tracker.users import (
@@ -185,6 +186,14 @@ def logout(response: Response, settings: SettingsDep) -> None:
 
 @router.get("/me")
 def read_current_user(user: CurrentUser) -> UserRead:
+    return UserRead.model_validate(user)
+
+
+@router.patch("/me")
+def update_current_user(payload: UserUpdate, session: SessionDep, user: CurrentUser) -> UserRead:
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(user, field, value)
+    session.commit()
     return UserRead.model_validate(user)
 
 

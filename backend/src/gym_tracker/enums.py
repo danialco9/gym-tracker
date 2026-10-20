@@ -31,3 +31,9 @@ class Equipment(StrEnum):
     CABLE = "cable"
     BODYWEIGHT = "bodyweight"
     BAND = "band"
+
+
+class TrainingGoal(StrEnum):
+    LOSE_FAT = "lose_fat"
+    BUILD_MUSCLE = "build_muscle"
+    RECOMPOSITION = "recomposition"

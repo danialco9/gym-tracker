@@ -53,6 +53,26 @@ def test_me_rejects_tampered_token(client: TestClient) -> None:
     assert client.get("/api/auth/me").status_code == 401
 
 
+def test_the_training_goal_starts_empty_and_can_be_set_and_cleared(auth_client: TestClient) -> None:
+    assert auth_client.get("/api/auth/me").json()["goal"] is None
+
+    response = auth_client.patch("/api/auth/me", json={"goal": "recomposition"})
+    assert response.status_code == 200
+    assert response.json()["goal"] == "recomposition"
+    assert auth_client.get("/api/auth/me").json()["goal"] == "recomposition"
+
+    assert auth_client.patch("/api/auth/me", json={}).json()["goal"] == "recomposition"
+    assert auth_client.patch("/api/auth/me", json={"goal": None}).json()["goal"] is None
+
+
+def test_an_unknown_training_goal_is_rejected(auth_client: TestClient) -> None:
+    assert auth_client.patch("/api/auth/me", json={"goal": "get_huge"}).status_code == 422
+
+
+def test_updating_the_account_requires_authentication(client: TestClient) -> None:
+    assert client.patch("/api/auth/me", json={"goal": "lose_fat"}).status_code == 401
+
+
 @pytest.mark.usefixtures("user")
 def test_logout_clears_session(client: TestClient) -> None:
     assert login(client) == 204

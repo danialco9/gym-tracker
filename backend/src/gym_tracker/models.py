@@ -32,6 +32,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    # A TrainingGoal; null until the user picks one, and meanwhile the general advice applies.
+    goal: Mapped[str | None] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
