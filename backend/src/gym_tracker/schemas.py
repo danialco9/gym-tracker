@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
-from gym_tracker.enums import Equipment, MuscleGroup
+from gym_tracker.enums import Equipment, MuscleGroup, TrainingGoal
 from gym_tracker.slugs import SLUG_PATTERN
 from gym_tracker.users import MIN_PASSWORD_LENGTH
 
@@ -82,7 +82,13 @@ class PasswordResetConfirm(BaseModel):
 class UserRead(ORMModel):
     id: int
     email: EmailStr
+    goal: TrainingGoal | None
     created_at: datetime
+
+
+class UserUpdate(PartialUpdate):
+    # Null clears the goal, back to the general advice.
+    goal: TrainingGoal | None = None
 
 
 class HealthRead(BaseModel):
@@ -369,6 +375,25 @@ class BodyWeightPointRead(BaseModel):
 class BodyWeightRead(BaseModel):
     entries: list[BodyWeightPointRead]
     weekly_change_kg: float | None
+
+
+class IntRangeRead(BaseModel):
+    min: int
+    max: int
+
+
+class RangeRead(BaseModel):
+    min: float
+    max: float
+
+
+class GoalPlanRead(BaseModel):
+    goal: TrainingGoal
+    compound_reps: IntRangeRead
+    isolation_reps: IntRangeRead
+    rpe: RangeRead
+    rest_seconds: IntRangeRead
+    weekly_hard_sets: IntRangeRead
 
 
 class ProgressOverviewRead(BaseModel):

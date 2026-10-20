@@ -202,6 +202,32 @@ def test_overview_advises_on_weekly_volume_and_drops_old_exercises(
     }
 
 
+def test_weekly_volume_advice_follows_the_training_goal(
+    progress_client: TestClient, training_log: dict[str, int]
+) -> None:
+    progress_client.app.dependency_overrides[get_today] = lambda: date(2026, 10, 21)  # type: ignore[attr-defined]
+    assert progress_client.patch("/api/auth/me", json={"goal": "lose_fat"}).status_code == 200
+
+    overview = progress_client.get("/api/progress/overview").json()
+
+    advice = {item["muscle_group"]: item for item in overview["volume_advice"]}
+    assert (advice["chest"]["min_hard_sets"], advice["chest"]["max_hard_sets"]) == (10, 14)
+
+
+def test_goal_plans_cover_every_goal(progress_client: TestClient) -> None:
+    plans = {plan["goal"]: plan for plan in progress_client.get("/api/progress/goals").json()}
+
+    assert set(plans) == {"lose_fat", "build_muscle", "recomposition"}
+    assert plans["build_muscle"] == {
+        "goal": "build_muscle",
+        "compound_reps": {"min": 6, "max": 10},
+        "isolation_reps": {"min": 8, "max": 12},
+        "rpe": {"min": 8.0, "max": 9.0},
+        "rest_seconds": {"min": 120, "max": 180},
+        "weekly_hard_sets": {"min": 12, "max": 20},
+    }
+
+
 def test_exercise_progress_lists_sessions(progress_client: TestClient, training_log: dict[str, int]) -> None:
     response = progress_client.get(f"/api/progress/exercises/{training_log['bench']}")
 
@@ -283,3 +309,4 @@ def test_exercise_progress_of_unknown_exercise_is_not_found(progress_client: Tes
 
 def test_progress_requires_authentication(client: TestClient) -> None:
     assert client.get("/api/progress/overview").status_code == 401
+    assert client.get("/api/progress/goals").status_code == 401

@@ -10,12 +10,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 
 from gym_tracker.analysis import (
-    DEFAULT_VOLUME_RULES,
+    GOAL_PLANS,
     TrainingLog,
     personal_records,
     recommend,
     session_bests,
     volume_advice,
+    volume_rules_for,
     weekly_volume_by_muscle,
     weekly_weight_change,
     weight_trend,
@@ -23,7 +24,7 @@ from gym_tracker.analysis import (
 )
 from gym_tracker.analysis.database import load_user_log
 from gym_tracker.api.common import not_found, visible_to
-from gym_tracker.api.deps import CurrentUser, SessionDep, SettingsDep
+from gym_tracker.api.deps import CurrentUser, SessionDep, SettingsDep, get_current_user
 from gym_tracker.models import Exercise
 from gym_tracker.schemas import (
     ActivityRead,
@@ -31,11 +32,14 @@ from gym_tracker.schemas import (
     BodyWeightRead,
     ExerciseProgressRead,
     ExerciseSessionRead,
+    GoalPlanRead,
+    IntRangeRead,
     MuscleVolumeRead,
     PerformedSetRead,
     PersonalRecordRead,
     PlannedSetRead,
     ProgressOverviewRead,
+    RangeRead,
     RecommendationRead,
     VolumeAdviceRead,
     WeeklyVolumeRead,
@@ -81,17 +85,18 @@ def _recommendations(log: TrainingLog, today: date) -> list[RecommendationRead]:
     ]
 
 
-def _volume_advice(log: TrainingLog, today: date) -> list[VolumeAdviceRead]:
+def _volume_advice(log: TrainingLog, today: date, goal: str | None) -> list[VolumeAdviceRead]:
+    rules = volume_rules_for(goal)
     return [
         VolumeAdviceRead(
             muscle_group=item.muscle_group,
             average_hard_sets=item.average_hard_sets,
             status=item.status,
             weeks=item.weeks,
-            min_hard_sets=DEFAULT_VOLUME_RULES.min_hard_sets,
-            max_hard_sets=DEFAULT_VOLUME_RULES.max_hard_sets,
+            min_hard_sets=rules.min_hard_sets,
+            max_hard_sets=rules.max_hard_sets,
         )
-        for item in volume_advice(log, today)
+        for item in volume_advice(log, today, rules)
     ]
 
 
@@ -162,9 +167,25 @@ def read_overview(
         recommendations=_recommendations(log, today),
         personal_records=_personal_records(log, work, bests) if not work.empty else [],
         weekly_volume=_weekly_volume(log, work, today),
-        volume_advice=_volume_advice(log, today),
+        volume_advice=_volume_advice(log, today, user.goal),
         body_weight=_body_weight(log),
     )
+
+
+@router.get("/goals", dependencies=[Depends(get_current_user)])
+def read_goal_plans() -> list[GoalPlanRead]:
+    """The reps, effort, rest and weekly sets each training goal asks for."""
+    return [
+        GoalPlanRead(
+            goal=goal,
+            compound_reps=IntRangeRead(min=plan.compound_reps[0], max=plan.compound_reps[1]),
+            isolation_reps=IntRangeRead(min=plan.isolation_reps[0], max=plan.isolation_reps[1]),
+            rpe=RangeRead(min=plan.rpe[0], max=plan.rpe[1]),
+            rest_seconds=IntRangeRead(min=plan.rest_seconds[0], max=plan.rest_seconds[1]),
+            weekly_hard_sets=IntRangeRead(min=plan.volume.min_hard_sets, max=plan.volume.max_hard_sets),
+        )
+        for goal, plan in GOAL_PLANS.items()
+    ]
 
 
 @router.get("/exercises/{exercise_id}")
