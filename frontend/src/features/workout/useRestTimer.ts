@@ -6,6 +6,8 @@ export const DEFAULT_REST_SECONDS = 90
 export function useRestTimer() {
   const [endsAt, setEndsAt] = useState<number | null>(null)
   const [remaining, setRemaining] = useState(0)
+  // The whole rest including time added or taken off, so a ring can show the share left.
+  const [duration, setDuration] = useState(0)
 
   useEffect(() => {
     if (endsAt === null) {
@@ -26,10 +28,13 @@ export function useRestTimer() {
 
   const start = useCallback((seconds: number = DEFAULT_REST_SECONDS) => {
     setEndsAt(Date.now() + seconds * 1000)
+    setDuration(seconds)
   }, [])
 
+  /** Negative to take time off; taking off more than is left ends the rest. */
   const addSeconds = useCallback((seconds: number) => {
     setEndsAt((current) => (current === null ? null : current + seconds * 1000))
+    setDuration((current) => Math.max(0, current + seconds))
   }, [])
 
   const stop = useCallback(() => {
@@ -37,5 +42,5 @@ export function useRestTimer() {
     setRemaining(0)
   }, [])
 
-  return { remaining, isRunning: endsAt !== null, start, addSeconds, stop }
+  return { remaining, duration, isRunning: endsAt !== null, start, addSeconds, stop }
 }

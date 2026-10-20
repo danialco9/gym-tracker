@@ -8,15 +8,22 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCurrentUser } from '@/features/auth/queries'
 import { ApiError } from '@/lib/api'
 import { formatTime, plural } from '@/lib/format'
-import { completedSetCount, toWorkoutPayload, type DraftAction, type WorkoutDraft } from './draft'
+import { useGoalPlans } from '@/features/goal/queries'
+import { useProgressOverview } from '@/features/progress/queries'
+import {
+  completedSetCount,
+  draftReducer,
+  nextPendingSet,
+  toWorkoutPayload,
+  type DraftAction,
+  type WorkoutDraft,
+} from './draft'
 import { ExerciseCard } from './ExerciseCard'
 import { ExercisePicker } from './ExercisePicker'
 import { enqueueWorkout, isTransient } from './outbox'
 import { useSaveWorkout } from './queries'
-import { RestTimerBar } from './RestTimerBar'
-import { useRestTimer } from './useRestTimer'
-
-const EXTRA_REST_SECONDS = 15
+import { RestTimerScreen } from './RestTimerScreen'
+import { DEFAULT_REST_SECONDS, useRestTimer } from './useRestTimer'
 
 interface ActiveWorkoutProps {
   draft: WorkoutDraft
@@ -29,8 +36,24 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const timer = useRestTimer()
   const saveWorkout = useSaveWorkout()
   const navigate = useNavigate()
-  const userId = useCurrentUser().data?.id
+  const currentUser = useCurrentUser().data
+  const userId = currentUser?.id
+  const goalPlan = useGoalPlans().data?.find((plan) => plan.goal === currentUser?.goal)
+  // The goal's shortest rest; "+30 s" is there for the heavy sets that need more.
+  const restSeconds = goalPlan?.rest_seconds.min ?? DEFAULT_REST_SECONDS
+  const records = new Map(
+    useProgressOverview().data?.personal_records.map((record) => [record.exercise_id, record.best_e1rm_kg]),
+  )
   const completed = completedSetCount(draft)
+  const next = nextPendingSet(draft)
+
+  // Rest only when another set follows: after the very last one, the next step is saving.
+  const startRest = (entryId: string, setId: string) => {
+    const after = draftReducer(draft, { type: 'toggleDone', entryId, setId })
+    if (after !== null && nextPendingSet(after) !== null) {
+      timer.start(restSeconds)
+    }
+  }
 
   // Finishing an exercise brings the next one into view with its first set already open.
   const scrollToNextExercise = (entryId: string) => {
@@ -120,7 +143,8 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
           <ExerciseCard
             entry={entry}
             dispatch={dispatch}
-            onSetCompleted={() => timer.start()}
+            bestE1rmKg={records.get(entry.exerciseId)}
+            onSetCompleted={(setId) => startRest(entry.id, setId)}
             onExerciseCompleted={() => scrollToNextExercise(entry.id)}
           />
         </div>
@@ -164,10 +188,17 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
         }}
       />
 
-      {timer.isRunning && (
-        <RestTimerBar
+      {timer.isRunning && next !== null && (
+        <RestTimerScreen
           remaining={timer.remaining}
-          onAddTime={() => timer.addSeconds(EXTRA_REST_SECONDS)}
+          duration={timer.duration}
+          next={{
+            exerciseName: next.entry.name,
+            number: next.number,
+            reps: next.set.reps,
+            weightKg: next.set.weightKg,
+          }}
+          onAdjust={timer.addSeconds}
           onSkip={timer.stop}
         />
       )}

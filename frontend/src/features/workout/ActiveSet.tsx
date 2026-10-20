@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, CheckIcon, Trash2Icon } from 'lucide-react'
+import { ArrowLeftIcon, CheckIcon, Trash2Icon, TrophyIcon } from 'lucide-react'
 import { useId } from 'react'
 import { Button } from '@/components/ui/button'
 import { formatDecimal } from '@/lib/format'
@@ -11,6 +11,8 @@ interface ActiveSetProps {
   number: number
   set: DraftSet
   canGoBack: boolean
+  /** The reps and weight entered would beat the exercise's best estimated 1RM. */
+  isRecord: boolean
   onAdjust: (field: 'reps' | 'weightKg', delta: number) => void
   onChange: (changes: Partial<Pick<DraftSet, 'reps' | 'weightKg' | 'rpe'>>) => void
   onDone: () => void
@@ -26,6 +28,7 @@ export function ActiveSet({
   number,
   set,
   canGoBack,
+  isRecord,
   onAdjust,
   onChange,
   onDone,
@@ -61,6 +64,16 @@ export function ActiveSet({
           onChange={(reps) => onChange({ reps })}
         />
       </div>
+
+      {isRecord && (
+        <p
+          role="status"
+          className="bg-chart-4/15 text-chart-4 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium"
+        >
+          <TrophyIcon className="size-4 shrink-0" aria-hidden />
+          Con {set.reps} reps a {formatDecimal(set.weightKg)} kg haces récord personal
+        </p>
+      )}
 
       <div>
         <p id={rpeLabelId} className="text-muted-foreground mb-1 text-xs">
