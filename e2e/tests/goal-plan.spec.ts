@@ -48,7 +48,7 @@ test("picks a goal, follows today's plan for a routine and earns XP for the work
   await expect(page.getByRole('textbox', { name: 'Peso (kg)', exact: true })).toHaveValue('60')
   await page.getByRole('button', { name: 'Completar serie 1' }).click()
   const rest = page.getByRole('dialog', { name: 'Descanso' })
-  await expect(rest.getByRole('timer')).toHaveText(/^(2:00|1:59|1:58)$/)
+  await expect(rest.getByRole('timer')).toHaveText(/Descanso (2:00|1:59|1:58)$/)
   await rest.getByRole('button', { name: 'Ya estoy listo' }).click()
   await expect(rest).toBeHidden()
 
