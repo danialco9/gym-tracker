@@ -1,7 +1,7 @@
 # Gym Tracker
 
-[![Backend CI](https://github.com/danialco9/Proyecto--rutina-del-gym/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/danialco9/Proyecto--rutina-del-gym/actions/workflows/backend-ci.yml)
-[![Frontend CI](https://github.com/danialco9/Proyecto--rutina-del-gym/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/danialco9/Proyecto--rutina-del-gym/actions/workflows/frontend-ci.yml)
+[![Backend CI](https://github.com/danialco9/gym-tracker/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/danialco9/gym-tracker/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/frontend-ci.yml)
 
 Web app to log gym workouts, track body measurements and use data analysis to decide when to
 change routines, exercises or intensity.
@@ -9,14 +9,41 @@ change routines, exercises or intensity.
 **[Live demo](https://gym-tracker-two-beta.vercel.app)** — press *Probar la demo* to sign in to an
 account with 12 weeks of simulated training. No sign-up needed.
 
+<p align="center">
+  <img src="docs/screenshots/home.png" width="250" alt="Home: level and XP, training streak, weekly missions and badges">
+  <img src="docs/screenshots/plan.png" width="250" alt="Today's plan: what to do with each exercise of the routine and why">
+  <img src="docs/screenshots/workout.png" width="250" alt="Live workout: one exercise per card, big buttons for weight and reps">
+</p>
+<p align="center">
+  <img src="docs/screenshots/ranking.png" width="250" alt="Strength ranking: tiers from Bronze to Master, without showing any weights">
+  <img src="docs/screenshots/progress.png" width="250" alt="Progress: activity and the recommendation for the next session">
+  <img src="docs/screenshots/picker.png" width="250" alt="Exercise picker with drawings, search, filters and recent exercises">
+</p>
+
 > Personal project and portfolio piece. The interface is in Spanish; the code, commits and docs are
-> in English. Single user for now, designed to grow into multi-user.
+> in English. Open to anyone: each account sees only its own data, and the ranking shows a
+> nickname and a tier, never weights.
 
 ## What it does
 
-- **Live workout logging.** Mobile-first screen built for the gym floor: big `±2.5 kg` / `±1 rep`
-  buttons, the previous performance of each exercise in view, a rest timer, and a draft kept in
-  `localStorage` so a lost connection or a locked phone never loses a set.
+- **Live workout logging.** Mobile-first screen built for the gym floor: one exercise per card,
+  swiped sideways (CSS scroll snap) and moving on by itself when its sets are done, big
+  `±2.5 kg` / `±1 rep` buttons, a ring with the sets done, the previous performance of each
+  exercise in view, and a hint when a set would beat your record. A full-screen rest timer
+  follows each set, as long as your goal asks for. The draft is kept in `localStorage`, so a lost
+  connection or a locked phone never loses a set.
+- **Visual exercise picker.** A catalog of 209 exercises with line drawings, search, muscle and
+  equipment filters and your recent exercises first; an info sheet animates the movement, and
+  anything missing can be added as your own exercise.
+- **Training goal and today's plan.** Pick lose fat, build muscle or recomposition, and the app
+  sets the rep ranges, effort (RPE), rest and weekly volume to aim for. Opening a routine shows
+  today's plan first: what to do with each exercise and why, and how the week's volume of its
+  muscles compares with the goal. One tap starts the workout with the suggested weights.
+- **Levels, streak, missions and badges.** XP for each workout, set, record and weekly mission;
+  a daily streak that survives one rest day; three missions every week and eight badges.
+- **Strength ranking.** A tier from Bronze to Master, overall and per exercise, from your best
+  estimated 1RM divided by your body weight, so light and heavy lifters compete on equal terms.
+  The list shows only a nickname and a tier, and anyone can leave it from the account screen.
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
   RPE), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
   with keyboard support.
@@ -88,7 +115,7 @@ backend/    FastAPI service, analytics engine and production Dockerfile
 frontend/   React single-page app, nginx image and Vercel config
 e2e/        Playwright flows against the full stack
 data/       Interim CSV training log
-docs/       Deployment guide
+docs/       Deployment guide, image credits and README screenshots
 docker-compose.yml   Full local stack (PostgreSQL, API, web)
 render.yaml          Render Blueprint for the API
 ```
@@ -162,6 +189,16 @@ A few decisions worth calling out:
 - **Analytics.** Estimated 1RM (Epley), weekly hard sets per muscle group and plateau detection live
   in a pure module fed either from the CSV log or from PostgreSQL, which keeps it testable without a
   web request.
+- **Gamification without new tables.** XP, levels, the streak, missions and badges are recomputed
+  from the workout history on every request (+10 per workout, +1 per set, +25 per record, +30 per
+  mission; level *n* to *n*+1 costs *n* × 100 XP). Editing or deleting a workout can never leave
+  the score out of step with the log it came from.
+- **Fair strength tiers.** Each catalog exercise has its own scale, the body-weight ratio that earns
+  Master, because 1.5× body weight is little on a leg press but out of reach on a curl. Main lifts
+  are set by hand and the rest derived from muscle group and equipment. Sets above 12 reps count as
+  12, since Epley overrates long sets, and the overall tier is the mean of your best five lifts
+  with missing ones scored as zero, so one great lift is not enough. Weights and body weight never
+  leave the server; the demo account is never listed.
 - **Typing and linting everywhere.** `mypy` on the backend and TypeScript `strict` on the frontend,
   both enforced in CI alongside the tests.
 
@@ -181,9 +218,15 @@ A few decisions worth calling out:
 - [x] Deployment setup: Vercel + Render (Docker) + Neon, public demo with nightly reset ([guide](docs/deployment.md))
 - [x] One-command local stack with Docker Compose
 - [x] End-to-end tests (Playwright) on the full stack, in CI
-- [ ] Screenshots in this README
+- [x] Screenshots in this README
 - [x] Workout logging in plain language (rule-based reader, with the seam a language model plugs into)
 - [ ] Language-model reading for the sentences the rules cannot reach
 - [x] Installable PWA: standalone on the home screen, app shell precached, opens offline on the remembered session
 - [x] Offline workout saving: a queue on the phone that syncs when the connection returns, deduplicated by a client id
 - [x] Smarter recommendations: per-equipment load steps, reasons, weekly volume advice
+- [x] Visual exercise picker: 209 exercises with drawings, filters, info sheet and custom exercises
+- [x] "Remember me" session that ends after a week of inactivity
+- [x] Training goal (lose fat, build muscle, recomposition) and today's plan per routine
+- [x] Focus mode and swipeable exercise cards for the live workout
+- [x] XP, levels, daily streak, weekly missions and badges
+- [x] Strength ranking with tiers from Bronze to Master, nicknames and an opt-out
