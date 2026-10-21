@@ -35,6 +35,8 @@ const BENCH_PRESS: Exercise = {
 }
 
 describe('WorkoutPage', () => {
+  // A long flow (typing a search, a set, the rest timer, saving): about 3.5 s in a full run, and past
+  // the default 5 s limit when a slow laptop is busy, so it gets room of its own.
   it('logs a free workout and saves only the completed sets', async () => {
     const calls = mockApi({
       'GET /auth/me': { body: USER },
@@ -76,7 +78,7 @@ describe('WorkoutPage', () => {
       sets: [{ exercise_id: 5, set_number: 1, reps: 10, weight_kg: 5, rpe: null, is_warmup: false }],
     })
     expect(window.localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull()
-  })
+  }, 15_000)
 
   it('starts a workout from a dictation, after the user resolves what was not recognised', async () => {
     const calls = mockApi({
