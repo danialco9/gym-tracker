@@ -1,4 +1,4 @@
-import { ListChecksIcon, TargetIcon } from 'lucide-react'
+import { ChevronLeftIcon, ListChecksIcon, PlayIcon, TargetIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
@@ -89,6 +89,15 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
 
   return (
     <div className="space-y-6">
+      <button
+        type="button"
+        onClick={onBack}
+        className="text-muted-foreground hover:text-foreground -mb-3 inline-flex items-center gap-1 text-sm"
+      >
+        <ChevronLeftIcon className="size-4" aria-hidden />
+        Volver
+      </button>
+
       <PageHeader
         eyebrow="Plan de hoy"
         title={routine.name}
@@ -149,12 +158,16 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
         </section>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button size="lg" className="h-12 flex-1 text-base" onClick={start}>
+      {/* Fixed just above the bottom nav (the layout's bottom padding leaves room for it), so starting
+          is always one tap away; from lg up, with the sidebar, it sticks to the bottom of the content. */}
+      <div className="bg-background/95 fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 border-t px-4 py-3 backdrop-blur lg:sticky lg:bottom-0 lg:-mx-2 lg:px-2">
+        <Button
+          size="lg"
+          className="mx-auto flex h-14 w-full max-w-2xl text-base font-semibold"
+          onClick={start}
+        >
+          <PlayIcon className="fill-current" aria-hidden />
           Empezar con este plan
-        </Button>
-        <Button variant="ghost" size="lg" className="h-12" onClick={onBack}>
-          Volver
         </Button>
       </div>
     </div>
