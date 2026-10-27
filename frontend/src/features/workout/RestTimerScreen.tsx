@@ -1,7 +1,9 @@
+import { BellIcon, BellRingIcon } from 'lucide-react'
 import { useId } from 'react'
 import { Button } from '@/components/ui/button'
 import { formatDecimal, formatSeconds } from '@/lib/format'
 import { ProgressRing } from './ProgressRing'
+import type { RestPushStatus } from './rest-push'
 
 export const SHORTER_REST_SECONDS = 15
 export const LONGER_REST_SECONDS = 30
@@ -19,13 +21,24 @@ interface RestTimerScreenProps {
   next: NextSet
   onAdjust: (seconds: number) => void
   onSkip: () => void
+  /** Whether this phone is told when the rest is over, even locked. */
+  notification: RestPushStatus
+  onEnableNotification: () => void
 }
 
 /**
  * The rest between sets takes the whole screen: the countdown reads from across the gym, and the
  * next set is already announced. It closes by itself when the time is up, or with "Ya estoy listo".
  */
-export function RestTimerScreen({ remaining, duration, next, onAdjust, onSkip }: RestTimerScreenProps) {
+export function RestTimerScreen({
+  remaining,
+  duration,
+  next,
+  onAdjust,
+  onSkip,
+  notification,
+  onEnableNotification,
+}: RestTimerScreenProps) {
   const titleId = useId()
   return (
     <div
@@ -79,6 +92,20 @@ export function RestTimerScreen({ remaining, duration, next, onAdjust, onSkip }:
             {next.reps} × {formatDecimal(next.weightKg)} kg
           </p>
         </div>
+
+        {/* Offered where it matters: the moment the phone is about to go back in the pocket. */}
+        {notification === 'off' && (
+          <Button variant="outline" size="lg" className="h-12 text-base" onClick={onEnableNotification}>
+            <BellIcon />
+            Avisarme al acabar el descanso
+          </Button>
+        )}
+        {notification === 'on' && (
+          <p className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
+            <BellRingIcon className="size-4" aria-hidden />
+            Te avisamos aunque bloquees el móvil
+          </p>
+        )}
 
         <Button size="lg" className="mt-auto h-14 text-lg" onClick={onSkip} autoFocus>
           Ya estoy listo

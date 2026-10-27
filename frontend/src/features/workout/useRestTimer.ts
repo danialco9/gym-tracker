@@ -42,5 +42,5 @@ export function useRestTimer() {
     setRemaining(0)
   }, [])
 
-  return { remaining, duration, isRunning: endsAt !== null, start, addSeconds, stop }
+  return { remaining, duration, endsAt, isRunning: endsAt !== null, start, addSeconds, stop }
 }

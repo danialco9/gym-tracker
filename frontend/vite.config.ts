@@ -38,6 +38,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         // Exercise drawings are not part of the shell: each one is cached the first time it is shown.
         globIgnores: ['exercise-art/**'],
+        // The end-of-rest notification: shown, and opened, by the service worker.
+        importScripts: ['/push-sw.js'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/exercise-art/'),
