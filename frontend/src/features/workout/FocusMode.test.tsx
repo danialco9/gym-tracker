@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { User } from '@/lib/types'
+import type { Exercise, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
 import { DRAFT_STORAGE_KEY, type WorkoutDraft } from './draft'
@@ -53,6 +53,17 @@ const DRAFT: WorkoutDraft = {
   ],
 }
 
+// Only the bench press is in the catalog, so only it has a drawing.
+const BENCH_PRESS: Exercise = {
+  id: 6,
+  slug: 'bench-press',
+  name: 'Press banca con barra',
+  muscle_group: 'chest',
+  secondary_muscles: ['triceps'],
+  equipment: 'barbell',
+  is_custom: false,
+}
+
 // Only the records matter here: the best squat so far is 77.5 kg x 8 (98.2 kg estimated).
 const OVERVIEW = {
   personal_records: [{ exercise_id: 11, best_e1rm_kg: 98.2 }],
@@ -64,6 +75,7 @@ function startWith(user: User) {
     'GET /auth/me': { body: user },
     'GET /progress/goals': { body: GOAL_PLANS },
     'GET /progress/overview': { body: OVERVIEW },
+    'GET /exercises': { body: [BENCH_PRESS] },
   })
   return renderRoute('/entrenar')
 }
@@ -96,6 +108,25 @@ describe('Exercise progress', () => {
     await user.type(squatWeight, '70')
 
     expect(screen.queryByText(/haces récord personal/)).not.toBeInTheDocument()
+  })
+})
+
+describe('Exercise drawing', () => {
+  it('shows how the exercise is done, big, until the drawing is tapped again', async () => {
+    const { user } = startWith(USER)
+
+    const toggle = await screen.findByRole('button', { name: 'Ver cómo se hace' })
+    expect(screen.getAllByRole('button', { name: 'Ver cómo se hace' })).toHaveLength(1)
+    expect(screen.getAllByRole('img', { name: 'Dibujo del movimiento' })).toHaveLength(1)
+
+    await user.click(toggle)
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getAllByRole('img', { name: 'Dibujo del movimiento' })).toHaveLength(2)
+
+    await user.click(screen.getByRole('button', { name: 'Ocultar cómo se hace' }))
+
+    expect(screen.getAllByRole('img', { name: 'Dibujo del movimiento' })).toHaveLength(1)
   })
 })
 

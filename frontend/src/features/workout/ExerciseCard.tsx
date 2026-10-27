@@ -1,13 +1,15 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
-import type { Dispatch } from 'react'
+import { useState, type Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatSetPlan } from '@/lib/set-plan'
 import type { Exercise } from '@/lib/types'
 import { ActiveSet } from './ActiveSet'
 import type { DraftAction, DraftExercise } from './draft'
+import { exerciseFrameUrls } from './exercise-art'
 import { ExerciseThumbnail } from './ExerciseThumbnail'
 import { LastSessionHint } from './LastSessionHint'
+import { MovementAnimation } from './MovementAnimation'
 import { ProgressRing } from './ProgressRing'
 import { beatsRecord } from './records'
 import { CompletedSetRow, PendingSetRow } from './SetSummary'
@@ -35,6 +37,8 @@ export function ExerciseCard({
   // The set being logged is the first one not ticked off yet; the rest are summary lines.
   const activeIndex = entry.sets.findIndex((set) => !set.done)
   const doneCount = entry.sets.filter((set) => set.done).length
+  const frames = exercise ? exerciseFrameUrls(exercise) : []
+  const [showMovement, setShowMovement] = useState(false)
   const toggleDone = (setId: string) => dispatch({ type: 'toggleDone', entryId: entry.id, setId })
 
   const completeSet = (setId: string, index: number) => {
@@ -50,7 +54,20 @@ export function ExerciseCard({
     <Card size="sm" className="[--card-spacing:--spacing(2)] sm:[--card-spacing:--spacing(3)]">
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
-          {exercise && <ExerciseThumbnail exercise={exercise} />}
+          {/* The small drawing moves all the time; a tap shows it big, to check the technique mid-workout. */}
+          {frames.length > 0 ? (
+            <button
+              type="button"
+              aria-expanded={showMovement}
+              aria-label={showMovement ? 'Ocultar cómo se hace' : 'Ver cómo se hace'}
+              className="shrink-0 rounded-full"
+              onClick={() => setShowMovement((shown) => !shown)}
+            >
+              <MovementAnimation frames={frames} className="size-12 rounded-full" />
+            </button>
+          ) : (
+            exercise && <ExerciseThumbnail exercise={exercise} />
+          )}
           {entry.name}
         </CardTitle>
         <CardDescription className="space-y-0.5">
@@ -77,6 +94,12 @@ export function ExerciseCard({
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-1">
+        {showMovement && (
+          <MovementAnimation
+            frames={frames}
+            className="motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-90 mx-auto mb-2 aspect-square w-full max-w-56 rounded-2xl"
+          />
+        )}
         {entry.sets.map((set, index) => {
           const number = index + 1
           if (set.done) {

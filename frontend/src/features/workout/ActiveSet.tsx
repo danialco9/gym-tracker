@@ -68,9 +68,9 @@ export function ActiveSet({
       {isRecord && (
         <p
           role="status"
-          className="bg-chart-4/15 text-chart-4 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium"
+          className="bg-chart-4/15 text-chart-4 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-90 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium"
         >
-          <TrophyIcon className="size-4 shrink-0" aria-hidden />
+          <TrophyIcon className="motion-safe:animate-in motion-safe:spin-in-12 size-4 shrink-0" aria-hidden />
           Con {set.reps} reps a {formatDecimal(set.weightKg)} kg haces récord personal
         </p>
       )}
