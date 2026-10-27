@@ -11,6 +11,7 @@ from gym_tracker.api import (
     history,
     measurements,
     progress,
+    push,
     ranking,
     routines,
     workouts,
@@ -29,5 +30,6 @@ for module in (
     ranking,
     dictation,
     feedback,
+    push,
 ):
     api_router.include_router(module.router)

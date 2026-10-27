@@ -12,6 +12,7 @@ from gym_tracker.analysis.achievements import BadgeKind, MissionKind
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
 from gym_tracker.analysis.strength import StrengthTier
 from gym_tracker.enums import Equipment, MuscleGroup, TrainingGoal
+from gym_tracker.push import MAX_REST_SECONDS, is_push_service
 from gym_tracker.slugs import SLUG_PATTERN
 from gym_tracker.users import MIN_PASSWORD_LENGTH
 
@@ -55,6 +56,36 @@ class LoginRequest(BaseModel):
 
 class DeleteAccountRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
+
+
+class PushKeysIn(BaseModel):
+    p256dh: str = Field(min_length=1, max_length=200)
+    auth: str = Field(min_length=1, max_length=100)
+
+
+class PushSubscriptionIn(BaseModel):
+    """What ``PushManager.subscribe()`` hands the browser, as ``subscription.toJSON()`` serialises it."""
+
+    endpoint: str = Field(max_length=1000)
+    keys: PushKeysIn
+
+    @field_validator("endpoint")
+    @classmethod
+    def known_push_service(cls, value: str) -> str:
+        if not is_push_service(value):
+            raise ValueError("Not a push service endpoint")
+        return value
+
+
+class RestPushIn(BaseModel):
+    endpoint: str = Field(max_length=1000)
+    seconds: int = Field(ge=1, le=MAX_REST_SECONDS)
+    # What comes next, e.g. "Press banca · serie 2 · 8 x 80 kg".
+    body: str = Field(min_length=1, max_length=200)
+
+
+class PushKeyRead(BaseModel):
+    public_key: str
 
 
 class FeedbackIn(BaseModel):

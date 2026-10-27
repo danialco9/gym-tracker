@@ -23,6 +23,8 @@ DEMO_PER_CLIENT = parse("20/hour")
 # Reading a dictation is local and cheap today, but a language model behind it would not be.
 DICTATION_PER_CLIENT = parse("60/hour")
 FEEDBACK_PER_USER = parse("20/hour")
+# A rest every minute or so for two hours is far more than a real workout asks for.
+REST_PUSH_PER_USER = parse("120/hour")
 # Each request sends an email: few per address, fewer per inbox, so nobody gets flooded.
 PASSWORD_RESET_PER_CLIENT = parse("10/hour")
 PASSWORD_RESET_PER_EMAIL = parse("3/hour")

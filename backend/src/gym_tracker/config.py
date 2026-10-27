@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     mail_from: str | None = None
     mail_from_name: str = "Gym Tracker"
     password_reset_ttl_minutes: int = 30
+    # Web Push ("Descanso terminado" on the lock screen): a VAPID key pair, made with `gym-admin vapid-keys`.
+    # Without them the app offers no notifications.
+    vapid_public_key: str | None = None
+    vapid_private_key: SecretStr | None = None
 
     @field_validator("database_url")
     @classmethod
