@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useCurrentUser } from '@/features/auth/queries'
 import { ApiError } from '@/lib/api'
-import { formatTime, plural } from '@/lib/format'
+import { formatDecimal, formatTime, plural } from '@/lib/format'
 import { useGoalPlans } from '@/features/goal/queries'
 import { useProgressOverview } from '@/features/progress/queries'
 import {
@@ -23,6 +23,7 @@ import { ExerciseCarousel, type ExerciseCarouselHandle } from './ExerciseCarouse
 import { ExercisePicker } from './ExercisePicker'
 import { enqueueWorkout, isTransient } from './outbox'
 import { useExercises, useSaveWorkout } from './queries'
+import { useRestNotification, useRestPushSetting } from './rest-push'
 import { RestTimerScreen } from './RestTimerScreen'
 import { DEFAULT_REST_SECONDS, useRestTimer } from './useRestTimer'
 
@@ -49,6 +50,13 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const completed = completedSetCount(draft)
   const total = draft.exercises.reduce((sum, entry) => sum + entry.sets.length, 0)
   const next = nextPendingSet(draft)
+  const restPush = useRestPushSetting()
+  useRestNotification(
+    timer.endsAt,
+    next &&
+      `${next.entry.name} · serie ${next.number} · ${next.set.reps} × ${formatDecimal(next.set.weightKg)} kg`,
+    restPush.status,
+  )
 
   // Rest only when another set follows: after the very last one, the next step is saving.
   const startRest = (entryId: string, setId: string) => {
@@ -212,6 +220,10 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
           }}
           onAdjust={timer.addSeconds}
           onSkip={timer.stop}
+          notification={restPush.status}
+          onEnableNotification={() => {
+            restPush.enable().catch(() => toast.error('No se pudieron activar los avisos. Prueba otra vez.'))
+          }}
         />
       )}
     </div>
