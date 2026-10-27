@@ -1,0 +1,46 @@
+name: Migrate production database
+
+# On Vercel the API has no start-up script, so the work docker-entrypoint.sh does on every Render boot
+# happens here instead: bring the schema up to date and load the exercise catalog after each push to main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - backend/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate
+
+jobs:
+  migrate:
+    name: Upgrade schema and seed catalog
+    runs-on: ubuntu-latest
+    # Skipped while Render still serves the API, since its entrypoint migrates on its own.
+    if: ${{ vars.PRODUCTION_MIGRATIONS_ENABLED == 'true' }}
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      GYM_DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      # Required by the settings but unused: migrating issues no tokens.
+      GYM_JWT_SECRET: migrating-does-not-sign-tokens
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked --no-dev
+
+      - name: Upgrade schema
+        run: uv run alembic upgrade head
+
+      - name: Seed exercise catalog
+        run: uv run gym-admin seed-catalog
