@@ -1,5 +1,5 @@
-# CLI deployments only need the frontend (the project root directory is frontend/).
-backend/
+# Two Vercel projects deploy from this repository: the web app (root directory frontend/) and the API
+# (root directory backend/), so neither folder is ignored here.
 data/
 docs/
 .github/

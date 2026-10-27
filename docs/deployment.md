@@ -44,6 +44,20 @@ A [cron-job.org](https://cron-job.org) job calls `/api/health` every 10 minutes 
 (about 720 of the 750 free instance hours a month), and the app says "Arrancando el servidor…" if a
 request still takes longer than 5 seconds.
 
+### Moving the API to Vercel (in progress)
+
+Vercel's free plan has no minute-long wake-up, so the API is moving there as a second project:
+
+1. New Project → import this repository → **Root Directory** `backend`. Vercel detects FastAPI and
+   serves `app` from `backend/index.py`; `backend/vercel.json` pins it to `fra1`, next to Neon.
+2. Set the same variables as on Render (see [Environment variables](#environment-variables-api)),
+   copying `GYM_JWT_SECRET` from Render so nobody is signed out by the move.
+3. Check `https://<project>.vercel.app/api/health`, then point the `/api/:path*` rewrite in
+   `frontend/vercel.json` at it.
+4. Set the repository variable `PRODUCTION_MIGRATIONS_ENABLED=true`: with no start-up script on
+   Vercel, `.github/workflows/migrate.yml` upgrades the schema and seeds the catalog after each push
+   to `main`.
+
 ## 3. Demo account
 
 Seed it once (and whenever you want to reset it) from **Actions → Reset demo data → Run workflow**,
