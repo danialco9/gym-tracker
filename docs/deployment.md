@@ -113,6 +113,8 @@ Neon connection string is under **Connect** in the Neon console (the same value 
 | `GYM_APP_URL` | `https://gym-tracker-two-beta.vercel.app` | Links in emails |
 | `GYM_BREVO_API_KEY` | set in the dashboard, never in the repo | Sends password reset emails ([Brevo](https://www.brevo.com), free plan) |
 | `GYM_MAIL_FROM` | a sender verified in Brevo | From address of those emails |
+| `GYM_VAPID_PUBLIC_KEY` | from `gym-admin vapid-keys` | Lets phones subscribe to the end-of-rest notification |
+| `GYM_VAPID_PRIVATE_KEY` | from the same command, never in the repo | Signs those notifications ([Web Push](https://developer.mozilla.org/docs/Web/API/Push_API)) |
 
 ## Running the production image locally
 

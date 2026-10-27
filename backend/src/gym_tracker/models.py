@@ -1,4 +1,4 @@
-"""Database models for users, exercises, routines, workouts, body measurements and feedback."""
+"""Database models for users, exercises, routines, workouts, body measurements, feedback and push."""
 
 from __future__ import annotations
 
@@ -209,4 +209,20 @@ class Feedback(Base):
     message: Mapped[str] = mapped_column(Text)
     # The screen it was sent from, e.g. "/entrenar", to know what the comment is about.
     page: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PushSubscription(Base):
+    """A device that accepted notifications: where its push service listens and the keys to encrypt for it."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    endpoint: Mapped[str] = mapped_column(Text, unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    # The rest being timed for this device. A newer rest, or "Ya estoy listo", replaces or clears it,
+    # so the request still waiting on the old one wakes up to find it gone and sends nothing.
+    rest_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

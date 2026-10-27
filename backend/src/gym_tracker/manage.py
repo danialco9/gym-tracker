@@ -5,6 +5,7 @@
 - ``uv run gym-admin seed-catalog``
 - ``uv run gym-admin seed-demo``
 - ``uv run gym-admin feedback``
+- ``uv run gym-admin vapid-keys``
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from gym_tracker.config import get_settings
 from gym_tracker.db import get_sessionmaker
 from gym_tracker.demo import DEMO_EMAIL, DEMO_PASSWORD, seed_demo
 from gym_tracker.models import Feedback, User
+from gym_tracker.push import generate_vapid_keys
 from gym_tracker.users import (
     MIN_PASSWORD_LENGTH,
     UserAlreadyExistsError,
@@ -99,6 +101,13 @@ def _seed_demo(email: str, password: str, weeks: int) -> None:
     )
 
 
+def _vapid_keys() -> None:
+    """A new key pair for Web Push, to paste into the API's environment once."""
+    public_key, private_key = generate_vapid_keys()
+    print(f"GYM_VAPID_PUBLIC_KEY={public_key}")
+    print(f"GYM_VAPID_PRIVATE_KEY={private_key}")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="gym-admin", description="Tareas de administración")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -113,6 +122,7 @@ def main(argv: list[str] | None = None) -> None:
     demo.add_argument("--email", default=DEMO_EMAIL)
     demo.add_argument("--password", default=DEMO_PASSWORD)
     demo.add_argument("--weeks", type=int, default=12)
+    commands.add_parser("vapid-keys", help="Genera las claves para los avisos del descanso")
     args = parser.parse_args(argv)
 
     if isinstance(sys.stdout, io.TextIOWrapper):  # Windows consoles default to a legacy code page
@@ -123,6 +133,8 @@ def main(argv: list[str] | None = None) -> None:
         _reset_password(parser, args.email)
     elif args.command == "feedback":
         _show_feedback(args.limit)
+    elif args.command == "vapid-keys":
+        _vapid_keys()
     elif args.command == "seed-demo":
         _seed_demo(args.email, args.password, args.weeks)
     else:
