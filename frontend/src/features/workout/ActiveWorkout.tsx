@@ -49,7 +49,9 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const catalog = new Map(useExercises().data?.map((exercise) => [exercise.id, exercise]))
   const completed = completedSetCount(draft)
   const total = draft.exercises.reduce((sum, entry) => sum + entry.sets.length, 0)
-  const next = nextPendingSet(draft)
+  // The exercise of the last set ticked off: the rest announces what follows it, not the routine's first.
+  const [currentEntryId, setCurrentEntryId] = useState<string>()
+  const next = nextPendingSet(draft, currentEntryId)
   const restPush = useRestPushSetting()
   useRestNotification(
     timer.endsAt,
@@ -60,6 +62,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
 
   // Rest only when another set follows: after the very last one, the next step is saving.
   const startRest = (entryId: string, setId: string) => {
+    setCurrentEntryId(entryId)
     const after = draftReducer(draft, { type: 'toggleDone', entryId, setId })
     if (after !== null && nextPendingSet(after) !== null) {
       timer.start(restSeconds)
