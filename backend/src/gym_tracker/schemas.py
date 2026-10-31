@@ -10,7 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, fiel
 
 from gym_tracker.analysis.achievements import BadgeKind, MissionKind
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
-from gym_tracker.analysis.strength import StrengthTier
+from gym_tracker.analysis.strength import PercentileSource, StrengthTier, Zone
 from gym_tracker.enums import Equipment, MuscleGroup, Sex, TrainingGoal
 from gym_tracker.push import MAX_REST_SECONDS, is_push_service
 from gym_tracker.slugs import SLUG_PATTERN
@@ -515,6 +515,10 @@ class RankingMeRead(BaseModel):
     tier: StrengthTier | None
     # Progress towards the next tier, from 0 to 1.
     progress: float | None
+    # The share of people who lift less, from 0 to 100.
+    percentile: float | None
+    # Where the percentile comes from; only for a single exercise.
+    source: PercentileSource | None = None
     # Null when the user is not on the list: hidden from it, no body weight or no ranked lift.
     position: int | None
     needs_body_weight: bool
@@ -537,3 +541,42 @@ class ExerciseRankingRead(BaseModel):
     exercise: RankedExerciseRead
     me: RankingMeRead
     entries: list[RankingEntryRead]
+
+
+class ZoneStandingRead(BaseModel):
+    zone: Zone
+    # All null while the user has no ranked lift in the zone.
+    tier: StrengthTier | None
+    progress: float | None
+    percentile: float | None
+
+
+class MyLiftRead(BaseModel):
+    """One of the user's ranked exercises, with the set behind it; only ever shown to its owner."""
+
+    exercise: RankedExerciseRead
+    zone: Zone
+    tier: StrengthTier
+    progress: float
+    percentile: float
+    source: PercentileSource
+    # The set with the best estimated max; for pull-ups and dips, the weight added to the body.
+    weight_kg: float
+    reps: int
+
+
+class MyRankingRead(BaseModel):
+    needs_body_weight: bool
+    show_in_ranking: bool
+    # Every zone, in a fixed order.
+    zones: list[ZoneStandingRead]
+    # By zone, best first.
+    lifts: list[MyLiftRead]
+
+
+class ZoneRankingRead(BaseModel):
+    zone: Zone
+    me: RankingMeRead
+    entries: list[RankingEntryRead]
+    # Ranked exercises of the zone that someone on the list or the user has lifted, by name.
+    exercises: list[RankedExerciseRead]

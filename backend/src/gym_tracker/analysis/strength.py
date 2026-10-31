@@ -1,17 +1,25 @@
 """Strength tiers, from Bronze to Master, for the ranking.
 
-A lift is scored relative to body weight: the best estimated one-rep max divided by the lifter's
-body weight, so a light and a heavy lifter compete on equal terms. Each exercise has its own scale,
-the ratio that earns Master in it, because 1.5x body weight is little on a leg press but out of
-reach on a curl. Dumbbell scales are per dumbbell, as the weight is logged.
+A lift is measured relative to body weight: the best estimated one-rep max divided by the lifter's
+body weight, so a light and a heavy lifter compete on equal terms. The tier comes from the lift's
+percentile, the share of people who lift less: among the app's users once enough of them do the
+exercise, and until then from an estimate of how gym-goers lift it.
+
+The estimate takes each exercise's own scale, the ratio a top lifter reaches (about the strongest
+2 % of men), because 1.5x body weight is little on a leg press but out of reach on a curl. Dumbbell
+scales are per dumbbell, as the weight is logged.
 """
 
 from __future__ import annotations
 
+import math
+from bisect import bisect_left, bisect_right
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from statistics import NormalDist
 
-from gym_tracker.enums import Equipment, MuscleGroup
+from gym_tracker.enums import Equipment, MuscleGroup, Sex
 
 # Beyond about 12 reps the Epley estimate overrates the max, so longer sets count as 12.
 MAX_ESTIMATED_REPS = 12
@@ -32,19 +40,49 @@ class StrengthTier(StrEnum):
     MASTER = "master"
 
 
-# The share of the Master ratio each tier starts at, lowest first.
+# The percentile each tier starts at, as a share of people lifting less, lowest first.
 TIER_THRESHOLDS: tuple[tuple[StrengthTier, float], ...] = (
     (StrengthTier.BRONZE, 0.0),
-    (StrengthTier.SILVER, 0.25),
+    (StrengthTier.SILVER, 0.20),
     (StrengthTier.GOLD, 0.40),
-    (StrengthTier.PLATINUM, 0.52),
-    (StrengthTier.DIAMOND, 0.64),
-    (StrengthTier.EMERALD, 0.76),
-    (StrengthTier.RUBY, 0.88),
-    (StrengthTier.MASTER, 1.0),
+    (StrengthTier.PLATINUM, 0.60),
+    (StrengthTier.DIAMOND, 0.75),
+    (StrengthTier.EMERALD, 0.87),
+    (StrengthTier.RUBY, 0.94),
+    (StrengthTier.MASTER, 0.98),
 )
 
-# The ratio of estimated 1RM to body weight that earns Master, per catalog exercise.
+
+class Zone(StrEnum):
+    """The body areas ranked on their own: each muscle group belongs to one."""
+
+    CHEST = "chest"
+    BACK = "back"
+    SHOULDERS = "shoulders"
+    ARMS = "arms"
+    LEGS = "legs"
+    CORE = "core"
+
+
+ZONES: dict[MuscleGroup, Zone] = {
+    MuscleGroup.CHEST: Zone.CHEST,
+    MuscleGroup.BACK: Zone.BACK,
+    MuscleGroup.LOWER_BACK: Zone.BACK,
+    MuscleGroup.TRAPS: Zone.BACK,
+    MuscleGroup.SHOULDERS: Zone.SHOULDERS,
+    MuscleGroup.BICEPS: Zone.ARMS,
+    MuscleGroup.TRICEPS: Zone.ARMS,
+    MuscleGroup.FOREARMS: Zone.ARMS,
+    MuscleGroup.ABS: Zone.CORE,
+    MuscleGroup.QUADS: Zone.LEGS,
+    MuscleGroup.HAMSTRINGS: Zone.LEGS,
+    MuscleGroup.GLUTES: Zone.LEGS,
+    MuscleGroup.ADDUCTORS: Zone.LEGS,
+    MuscleGroup.ABDUCTORS: Zone.LEGS,
+    MuscleGroup.CALVES: Zone.LEGS,
+}
+
+# The ratio of estimated 1RM to body weight that the strongest 2 % of men reach, per catalog exercise.
 MASTER_RATIOS: dict[str, float] = {
     # Chest
     "bench-press": 2.0,
@@ -285,7 +323,7 @@ _EQUIPMENT_FACTORS: dict[Equipment, float] = {
 
 
 def master_ratio(slug: str, muscle_group: MuscleGroup, equipment: Equipment | None) -> float | None:
-    """The ratio that earns Master in an exercise, or None when it is not ranked."""
+    """An exercise's scale for the estimate (see MASTER_RATIOS), or None when it is not ranked."""
     if slug in MASTER_RATIOS:
         return MASTER_RATIOS[slug]
     if slug in UNRANKED or equipment not in _EQUIPMENT_FACTORS:
@@ -300,9 +338,61 @@ def estimated_max(weight_kg: float, reps: int) -> float:
     return weight_kg * (1 + min(reps, MAX_ESTIMATED_REPS) / EPLEY_REPS_DIVISOR)
 
 
-def lift_score(best_max_kg: float, body_weight_kg: float, ratio: float) -> float:
-    """How far a lift goes towards Master: 1.0 is Master, capped there."""
-    return min(best_max_kg / body_weight_kg / ratio, 1.0)
+class PercentileSource(StrEnum):
+    # How gym-goers are estimated to lift, while too few app users do the exercise.
+    ESTIMATE = "estimate"
+    # The app's own users: at least MIN_APP_LIFTERS of them.
+    APP = "app"
+
+
+# From this many other lifters on an exercise (of the same sex, when known), the app's users are
+# compared with each other instead of with the estimate.
+MIN_APP_LIFTERS = 30
+
+# The estimate: lifts relative to body weight spread log-normally, this wide in log terms. With the
+# scale at the 98th percentile of men, the typical man lifts about 0.44 of it.
+LOG_SPREAD = 0.40
+_SCALE_PERCENTILE = 0.98
+_NORMAL = NormalDist()
+# The typical woman's lift as a share of the typical man's, per zone: closer on the legs.
+FEMALE_MEDIAN_FACTORS: dict[Zone, float] = {
+    Zone.CHEST: 0.55,
+    Zone.BACK: 0.60,
+    Zone.SHOULDERS: 0.55,
+    Zone.ARMS: 0.55,
+    Zone.LEGS: 0.70,
+    Zone.CORE: 0.65,
+}
+# With the sex unknown, the lift is compared with men and women together, in this proportion.
+MALE_SHARE = 0.5
+
+
+def estimated_percentile(ratio: float, scale: float, zone: Zone, sex: Sex | None) -> float:
+    """The estimated share of gym-goers (of the same sex, when known) who lift less, from 0 to 1."""
+    male_median = scale * math.exp(-_NORMAL.inv_cdf(_SCALE_PERCENTILE) * LOG_SPREAD)
+
+    def below(median: float) -> float:
+        return _NORMAL.cdf(math.log(ratio / median) / LOG_SPREAD)
+
+    male = below(male_median)
+    female = below(male_median * FEMALE_MEDIAN_FACTORS[zone])
+    if sex is Sex.MALE:
+        return male
+    if sex is Sex.FEMALE:
+        return female
+    return MALE_SHARE * male + (1 - MALE_SHARE) * female
+
+
+def app_percentile(ratio: float, others: Sequence[float]) -> float:
+    """The share of the other lifters (``others``, sorted) who lift less; a tie counts half."""
+    below = bisect_left(others, ratio)
+    tied = bisect_right(others, ratio) - below
+    return (below + tied / 2) / len(others)
+
+
+def zone_score(percentiles: list[float]) -> float:
+    """A zone's percentile: the mean over every exercise of it the lifter has done."""
+    return sum(percentiles) / len(percentiles)
 
 
 def overall_score(scores: list[float]) -> float:

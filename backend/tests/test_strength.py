@@ -4,15 +4,19 @@ from gym_tracker.analysis.strength import (
     BODYWEIGHT_LIFTS,
     MASTER_RATIOS,
     UNRANKED,
+    ZONES,
     StrengthTier,
+    Zone,
+    app_percentile,
     estimated_max,
-    lift_score,
+    estimated_percentile,
     master_ratio,
     overall_score,
     tier_for,
+    zone_score,
 )
 from gym_tracker.catalog import CATALOG
-from gym_tracker.enums import Equipment, MuscleGroup
+from gym_tracker.enums import Equipment, MuscleGroup, Sex
 
 
 def test_every_loaded_catalog_exercise_has_its_own_scale() -> None:
@@ -41,10 +45,45 @@ def test_estimated_max_counts_long_sets_as_twelve_reps() -> None:
     assert estimated_max(50, 40) == estimated_max(50, 12)
 
 
-def test_lift_score_is_relative_to_body_weight_and_capped_at_master() -> None:
-    assert lift_score(160, body_weight_kg=80, ratio=2.0) == 1.0
-    assert lift_score(80, body_weight_kg=80, ratio=2.0) == 0.5
-    assert lift_score(300, body_weight_kg=80, ratio=2.0) == 1.0
+def test_every_muscle_group_belongs_to_a_zone() -> None:
+    assert ZONES.keys() == set(MuscleGroup)
+    assert set(ZONES.values()) == set(Zone)
+
+
+def test_an_exercise_scale_is_the_98th_percentile_of_men() -> None:
+    assert estimated_percentile(2.0, 2.0, Zone.CHEST, Sex.MALE) == pytest.approx(0.98)
+    assert estimated_percentile(0.5, 2.0, Zone.CHEST, Sex.MALE) < 0.1
+    assert estimated_percentile(4.0, 2.0, Zone.CHEST, Sex.MALE) > 0.999
+
+
+def test_the_same_lift_ranks_higher_among_women_and_in_between_with_the_sex_unknown() -> None:
+    men = estimated_percentile(1.0, 2.0, Zone.CHEST, Sex.MALE)
+    women = estimated_percentile(1.0, 2.0, Zone.CHEST, Sex.FEMALE)
+    everyone = estimated_percentile(1.0, 2.0, Zone.CHEST, None)
+
+    assert men < everyone < women
+    assert everyone == pytest.approx((men + women) / 2)
+
+
+def test_women_are_closer_to_men_on_the_legs() -> None:
+    chest_gap = estimated_percentile(1.0, 2.0, Zone.CHEST, Sex.FEMALE) - estimated_percentile(
+        1.0, 2.0, Zone.CHEST, Sex.MALE
+    )
+    legs_gap = estimated_percentile(1.0, 2.0, Zone.LEGS, Sex.FEMALE) - estimated_percentile(
+        1.0, 2.0, Zone.LEGS, Sex.MALE
+    )
+
+    assert legs_gap < chest_gap
+
+
+def test_the_app_percentile_counts_ties_as_half() -> None:
+    assert app_percentile(1.0, [0.5, 0.8, 1.0, 1.2]) == pytest.approx(2.5 / 4)
+    assert app_percentile(2.0, [0.5, 0.8]) == 1.0
+    assert app_percentile(0.1, [0.5, 0.8]) == 0.0
+
+
+def test_a_zone_is_the_mean_of_its_exercises() -> None:
+    assert zone_score([0.9, 0.5, 0.4]) == pytest.approx(0.6)
 
 
 def test_overall_score_needs_five_exercises() -> None:
@@ -56,10 +95,11 @@ def test_overall_score_needs_five_exercises() -> None:
     ("score", "tier", "progress"),
     [
         (0.0, StrengthTier.BRONZE, 0.0),
-        (0.125, StrengthTier.BRONZE, 0.5),
-        (0.25, StrengthTier.SILVER, 0.0),
-        (0.46, StrengthTier.GOLD, 0.5),
-        (0.94, StrengthTier.RUBY, 0.5),
+        (0.10, StrengthTier.BRONZE, 0.5),
+        (0.20, StrengthTier.SILVER, 0.0),
+        (0.50, StrengthTier.GOLD, 0.5),
+        (0.96, StrengthTier.RUBY, 0.5),
+        (0.98, StrengthTier.MASTER, 1.0),
         (1.0, StrengthTier.MASTER, 1.0),
     ],
 )
