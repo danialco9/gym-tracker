@@ -14,6 +14,8 @@ const userSchema = z.object({
   // Likewise for users cached before the ranking: no nickname yet, and listed by default.
   nickname: z.string().nullable().catch(null),
   show_in_ranking: z.boolean().catch(true),
+  // And before the sex: not given, so compared with everyone.
+  sex: z.enum(['male', 'female']).nullable().catch(null),
   created_at: z.string(),
 })
 

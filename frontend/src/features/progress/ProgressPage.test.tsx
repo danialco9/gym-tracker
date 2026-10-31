@@ -16,6 +16,7 @@ const USER: User = {
   email: 'dani@example.com',
   goal: null,
   nickname: null,
+  sex: null,
   show_in_ranking: true,
   created_at: '2026-09-15T10:00:00Z',
 }

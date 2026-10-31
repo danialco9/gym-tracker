@@ -3,7 +3,9 @@ import { expect, test } from './fixtures'
 
 const TIERS = /Bronce|Plata|Oro|Platino|Diamante|Esmeralda|Rubí|Máster/
 
-test('appears in the strength ranking under a nickname, with a tier and no weights', async ({ page }) => {
+test('appears in the strength ranking under a nickname, with a tier per zone and no weights', async ({
+  page,
+}) => {
   // Unique per run, since nicknames are, and within the 3-20 letters, digits, "_" or "." allowed.
   const nickname = `e2e_${randomUUID().slice(0, 8)}`
 
@@ -28,16 +30,25 @@ test('appears in the strength ranking under a nickname, with a tier and no weigh
   await page.getByRole('button', { name: 'Guardar medida' }).click()
   await expect(page.getByText('Medida guardada')).toBeVisible()
 
-  // Until a nickname is chosen the list shows "Atleta N"; pick one in the account screen.
+  // Next it asks who to be compared with, which is set in the account screen.
   await page.goto('/ranking')
-  await page.getByRole('link', { name: /Elige tu apodo/ }).click()
+  await page.getByRole('link', { name: /¿Con quién te comparamos\?/ }).click()
+  await page.getByRole('radio', { name: 'Hombres' }).click()
+  await expect(page.getByRole('radio', { name: 'Hombres' })).toHaveAttribute('aria-checked', 'true')
+
+  // Until a nickname is chosen the list shows "Atleta N"; pick one there too.
   await page.getByRole('button', { name: /Sin elegir · sales como Atleta/ }).click()
   await page.getByRole('textbox', { name: 'Tu apodo' }).fill(nickname)
   await page.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.getByRole('button', { name: new RegExp(nickname) })).toBeVisible()
 
+  // The page opens on the best zone: the legs, the only one with a lift.
   await page.goto('/ranking')
+  await expect(page.getByRole('radio', { name: /Pierna/ })).toHaveAttribute('aria-checked', 'true')
   await expect(page.getByRole('region', { name: 'Tu rango' })).toContainText(TIERS)
+  await expect(page.getByRole('region', { name: 'Tu rango' })).toContainText(/Más fuerte que el \d+ %/)
+  // The set behind it is shown to its owner only.
+  await expect(page.getByText('Tu mejor: 100 kg × 5')).toBeVisible()
   const me = page
     .getByRole('list', { name: 'Clasificación' })
     .getByRole('listitem')

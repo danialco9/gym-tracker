@@ -10,6 +10,7 @@ const USER: User = {
   email: 'nuevo@gymtracker.dev',
   goal: null,
   nickname: null,
+  sex: null,
   show_in_ranking: true,
   created_at: '2026-09-24T10:00:00Z',
 }
@@ -135,5 +136,20 @@ describe('Account', () => {
     expect(await screen.findByText('Oculto: solo tú ves tu rango')).toBeInTheDocument()
     expect(visibility).toHaveAttribute('aria-checked', 'false')
     expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ show_in_ranking: false })
+  })
+
+  it('picks who the user is compared with in the ranking', async () => {
+    const calls = mockApi({
+      'GET /auth/me': { body: USER },
+      'PATCH /auth/me': ({ body }) => ({ body: { ...USER, ...(body as object) } }),
+    })
+    const { user } = renderRoute('/cuenta')
+
+    expect(await screen.findByRole('radio', { name: 'Todos' })).toHaveAttribute('aria-checked', 'true')
+    await user.click(screen.getByRole('radio', { name: 'Mujeres' }))
+
+    expect(await screen.findByRole('radio', { name: 'Mujeres' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('radiogroup', { name: 'Compararte con' })).toBeInTheDocument()
+    expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ sex: 'female' })
   })
 })

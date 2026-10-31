@@ -1,4 +1,12 @@
-import type { BadgeKind, Equipment, MissionKind, MuscleGroup, StrengthTier, TrainingGoal } from './types'
+import type {
+  BadgeKind,
+  Equipment,
+  MissionKind,
+  MuscleGroup,
+  StrengthTier,
+  TrainingGoal,
+  Zone,
+} from './types'
 
 export const TRAINING_GOAL_LABELS: Record<TrainingGoal, { title: string; hint: string }> = {
   lose_fat: { title: 'Bajar grasa', hint: 'Perder peso sin perder músculo' },
@@ -37,6 +45,16 @@ export const STRENGTH_TIERS: Record<StrengthTier, { label: string; color: string
 }
 
 const TIER_ORDER = Object.keys(STRENGTH_TIERS) as StrengthTier[]
+
+/** The body zones ranked on their own, in the order they are shown, with a short form for tight rows. */
+export const ZONE_LABELS: Record<Zone, { label: string; short: string }> = {
+  chest: { label: 'Pecho', short: 'Pecho' },
+  back: { label: 'Espalda', short: 'Espalda' },
+  shoulders: { label: 'Hombros', short: 'Hombro' },
+  arms: { label: 'Brazos', short: 'Brazos' },
+  legs: { label: 'Pierna', short: 'Pierna' },
+  core: { label: 'Core', short: 'Core' },
+}
 
 /** The tier after this one, or null at Master. */
 export function nextTier(tier: StrengthTier): StrengthTier | null {

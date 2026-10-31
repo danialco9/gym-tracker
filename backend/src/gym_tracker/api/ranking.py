@@ -20,7 +20,6 @@ from gym_tracker.analysis.strength import (
     estimated_max,
     estimated_percentile,
     master_ratio,
-    overall_score,
     tier_for,
     zone_score,
 )
@@ -35,7 +34,6 @@ from gym_tracker.schemas import (
     RankedExerciseRead,
     RankingEntryRead,
     RankingMeRead,
-    RankingRead,
     ZoneRankingRead,
     ZoneStandingRead,
 )
@@ -232,20 +230,6 @@ def _lifted(lifters: dict[int, _Lifter], me: User, exercises: dict[int, _RankedE
         (RankedExerciseRead(id=id_, name=exercises[id_].name) for id_ in lifted),
         key=lambda exercise: exercise.name,
     )
-
-
-@router.get("")
-def read_ranking(session: SessionDep, user: CurrentUser, settings: SettingsDep) -> RankingRead:
-    """Everyone's overall tier: the mean percentile of their five best lifts."""
-    exercises = _ranked_exercises(session)
-    lifters = _lifters(session, settings.demo_email, exercises)
-    scores = {
-        lifter.id: overall_score([p.share for p in lifter.percentiles.values()])
-        for lifter in lifters.values()
-        if lifter.percentiles
-    }
-    me, entries = _board(lifters, user, scores)
-    return RankingRead(me=me, entries=entries, exercises=_lifted(lifters, user, exercises))
 
 
 @router.get("/zones")

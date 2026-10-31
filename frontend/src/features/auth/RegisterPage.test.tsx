@@ -10,6 +10,7 @@ const NEW_USER: User = {
   email: 'nuevo@example.com',
   goal: null,
   nickname: null,
+  sex: null,
   show_in_ranking: true,
   created_at: '2026-09-15T12:00:00Z',
 }

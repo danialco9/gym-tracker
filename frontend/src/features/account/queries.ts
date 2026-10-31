@@ -17,8 +17,11 @@ export function useSendFeedback() {
   })
 }
 
-/** How the user shows in the ranking: the nickname (null clears it) and whether they are listed. */
-export type RankingProfile = Partial<Pick<User, 'nickname' | 'show_in_ranking'>>
+/**
+ * The user's ranking settings: the nickname (null clears it), whether they are listed, and the
+ * private sex their lifts are compared with (null compares with everyone).
+ */
+export type RankingProfile = Partial<Pick<User, 'nickname' | 'show_in_ranking' | 'sex'>>
 
 export function useUpdateRankingProfile() {
   const queryClient = useQueryClient()
@@ -27,8 +30,9 @@ export function useUpdateRankingProfile() {
     onSuccess: (user) => {
       saveCachedUser(user)
       queryClient.setQueryData(currentUserQueryKey, user)
-      // Every list shows the new name or the user's absence. Not awaited, like the goal.
-      void queryClient.invalidateQueries({ queryKey: rankingKeys.overall })
+      // Every list shows the new name or the user's absence, and the tiers follow the sex. Not
+      // awaited, like the goal.
+      void queryClient.invalidateQueries({ queryKey: rankingKeys.all })
     },
   })
 }

@@ -41,9 +41,11 @@ account with 12 weeks of simulated training. No sign-up needed.
   muscles compares with the goal. One tap starts the workout with the suggested weights.
 - **Levels, streak, missions and badges.** XP for each workout, set, record and weekly mission;
   a daily streak that survives one rest day; three missions every week and eight badges.
-- **Strength ranking.** A tier from Bronze to Master, overall and per exercise, from your best
-  estimated 1RM divided by your body weight, so light and heavy lifters compete on equal terms.
-  The list shows only a nickname and a tier, and anyone can leave it from the account screen.
+- **Strength ranking.** For every exercise, the share of people you out-lift ("stronger than
+  64 %"), from your best estimated 1RM divided by your body weight, so light and heavy lifters
+  compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
+  body zone (chest, back, shoulders, arms, legs, core). The list shows only a nickname and a tier,
+  and anyone can leave it from the account screen.
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
   RPE), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
   with keyboard support.
@@ -193,12 +195,13 @@ A few decisions worth calling out:
   from the workout history on every request (+10 per workout, +1 per set, +25 per record, +30 per
   mission; level *n* to *n*+1 costs *n* × 100 XP). Editing or deleting a workout can never leave
   the score out of step with the log it came from.
-- **Fair strength tiers.** Each catalog exercise has its own scale, the body-weight ratio that earns
-  Master, because 1.5× body weight is little on a leg press but out of reach on a curl. Main lifts
-  are set by hand and the rest derived from muscle group and equipment. Sets above 12 reps count as
-  12, since Epley overrates long sets, and the overall tier is the mean of your best five lifts
-  with missing ones scored as zero, so one great lift is not enough. Weights and body weight never
-  leave the server; the demo account is never listed.
+- **Fair strength percentiles.** Once 30 other users (of the same sex, if given) have done an
+  exercise, a lift is ranked against them; until then, against an estimate of gym-goers: a
+  log-normal spread per exercise around its own scale, because 1.5× body weight is little on a leg
+  press but out of reach on a curl, with lower medians for women, closer on the legs. Main lifts
+  are scaled by hand and the rest from muscle group and equipment. A zone's tier is the mean
+  percentile of its exercises. Sets above 12 reps count as 12, since Epley overrates long sets.
+  Weights, body weight and sex never leave the server; the demo account is never listed.
 - **Typing and linting everywhere.** `mypy` on the backend and TypeScript `strict` on the frontend,
   both enforced in CI alongside the tests.
 
@@ -229,4 +232,4 @@ A few decisions worth calling out:
 - [x] Training goal (lose fat, build muscle, recomposition) and today's plan per routine
 - [x] Focus mode and swipeable exercise cards for the live workout
 - [x] XP, levels, daily streak, weekly missions and badges
-- [x] Strength ranking with tiers from Bronze to Master, nicknames and an opt-out
+- [x] Strength ranking by percentile, per exercise and per body zone, with nicknames and an opt-out

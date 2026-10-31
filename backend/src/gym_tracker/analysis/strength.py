@@ -24,9 +24,6 @@ from gym_tracker.enums import Equipment, MuscleGroup, Sex
 # Beyond about 12 reps the Epley estimate overrates the max, so longer sets count as 12.
 MAX_ESTIMATED_REPS = 12
 EPLEY_REPS_DIVISOR = 30.0
-# The overall tier is the mean score of this many best exercises; missing ones count as zero, so a
-# single great lift is not enough.
-OVERALL_EXERCISES = 5
 
 
 class StrengthTier(StrEnum):
@@ -393,12 +390,6 @@ def app_percentile(ratio: float, others: Sequence[float]) -> float:
 def zone_score(percentiles: list[float]) -> float:
     """A zone's percentile: the mean over every exercise of it the lifter has done."""
     return sum(percentiles) / len(percentiles)
-
-
-def overall_score(scores: list[float]) -> float:
-    """The mean of the best ``OVERALL_EXERCISES`` scores, counting missing ones as zero."""
-    best = sorted(scores, reverse=True)[:OVERALL_EXERCISES]
-    return sum(best) / OVERALL_EXERCISES
 
 
 @dataclass(frozen=True)

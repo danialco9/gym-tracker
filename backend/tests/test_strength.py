@@ -11,7 +11,6 @@ from gym_tracker.analysis.strength import (
     estimated_max,
     estimated_percentile,
     master_ratio,
-    overall_score,
     tier_for,
     zone_score,
 )
@@ -84,11 +83,6 @@ def test_the_app_percentile_counts_ties_as_half() -> None:
 
 def test_a_zone_is_the_mean_of_its_exercises() -> None:
     assert zone_score([0.9, 0.5, 0.4]) == pytest.approx(0.6)
-
-
-def test_overall_score_needs_five_exercises() -> None:
-    assert overall_score([1.0]) == pytest.approx(0.2)
-    assert overall_score([0.1, 1.0, 0.5, 0.5, 0.5, 0.5]) == pytest.approx(0.6)
 
 
 @pytest.mark.parametrize(
