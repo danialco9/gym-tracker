@@ -37,3 +37,10 @@ class TrainingGoal(StrEnum):
     LOSE_FAT = "lose_fat"
     BUILD_MUSCLE = "build_muscle"
     RECOMPOSITION = "recomposition"
+
+
+class Sex(StrEnum):
+    """Only to compare strength fairly: average strength differs a lot between men and women."""
+
+    MALE = "male"
+    FEMALE = "female"

@@ -37,6 +37,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     # A TrainingGoal; null until the user picks one, and meanwhile the general advice applies.
     goal: Mapped[str | None] = mapped_column(String(20))
+    # A Sex, private: it only picks the population a lift is compared with. Null compares with all.
+    sex: Mapped[str | None] = mapped_column(String(10))
     # The public name in the ranking; null until the user picks one, never the email.
     nickname: Mapped[str | None] = mapped_column(String(20))
     show_in_ranking: Mapped[bool] = mapped_column(server_default=text("true"))
