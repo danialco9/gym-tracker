@@ -169,6 +169,30 @@ describe('nextPendingSet', () => {
     draft = apply(draft, { type: 'toggleDone', entryId: press.id, setId: press.sets[0].id })
     expect(nextPendingSet(draft)).toBeNull()
   })
+
+  it('goes on from the exercise in hand, then wraps round to the ones skipped', () => {
+    let draft = apply(
+      start(legDay),
+      { type: 'addExercise', exercise: { id: 12, name: 'Prensa' } },
+      { type: 'addExercise', exercise: { id: 13, name: 'Curl femoral' } },
+    )
+    const [, press, curl] = draft.exercises
+    draft = apply(draft, { type: 'addSet', entryId: press.id })
+
+    // The squat rack is taken, so the workout starts on the leg press.
+    draft = apply(draft, { type: 'toggleDone', entryId: press.id, setId: press.sets[0].id })
+    expect(nextPendingSet(draft, press.id)).toMatchObject({ entry: { name: 'Prensa' }, number: 2 })
+
+    const pressDone = draft.exercises[1].sets[1]
+    draft = apply(draft, { type: 'toggleDone', entryId: press.id, setId: pressDone.id })
+    expect(nextPendingSet(draft, press.id)).toMatchObject({ entry: { name: 'Curl femoral' }, number: 1 })
+
+    draft = apply(draft, { type: 'toggleDone', entryId: curl.id, setId: curl.sets[0].id })
+    expect(nextPendingSet(draft, curl.id)).toMatchObject({
+      entry: { name: 'Sentadilla con barra' },
+      number: 1,
+    })
+  })
 })
 
 describe('toWorkoutPayload', () => {

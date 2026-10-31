@@ -241,8 +241,16 @@ export function completedSetCount(draft: WorkoutDraft): number {
 /** The set to do next, in order: the first one not ticked off, with its 1-based number. */
 export function nextPendingSet(
   draft: WorkoutDraft,
+  fromEntryId?: string,
 ): { entry: DraftExercise; set: DraftSet; number: number } | null {
-  for (const entry of draft.exercises) {
+  // The routine order is only a suggestion: when a machine is taken, the workout goes on from the
+  // exercise in hand, then the ones after it, and wraps round to those skipped.
+  const start = Math.max(
+    0,
+    draft.exercises.findIndex((entry) => entry.id === fromEntryId),
+  )
+  const ordered = [...draft.exercises.slice(start), ...draft.exercises.slice(0, start)]
+  for (const entry of ordered) {
     const index = entry.sets.findIndex((set) => !set.done)
     if (index !== -1) {
       return { entry, set: entry.sets[index], number: index + 1 }
