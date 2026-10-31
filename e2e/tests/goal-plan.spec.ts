@@ -43,18 +43,18 @@ test("picks a goal, follows today's plan for a routine and earns XP for the work
 
   await page.getByRole('button', { name: 'Empezar con este plan' }).click()
 
-  // The routine's targets prefill the card; after the first set the rest takes the whole screen,
-  // as long as the goal asks for.
+  // The routine's targets prefill the card; after the first set the rest bar counts down as long
+  // as the goal asks for.
   await expect(page.getByRole('textbox', { name: 'Peso (kg)', exact: true })).toHaveValue('60')
   await page.getByRole('button', { name: 'Completar serie 1' }).click()
-  const rest = page.getByRole('dialog', { name: 'Descanso' })
+  const rest = page.getByRole('region', { name: 'Descanso' })
   await expect(rest.getByRole('timer')).toHaveText(/Descanso (2:00|1:59|1:58)$/)
-  await rest.getByRole('button', { name: 'Ya estoy listo' }).click()
+  await rest.getByRole('button', { name: 'Saltar descanso' }).click()
   await expect(rest).toBeHidden()
 
   // No rest after the last set of the workout: it is time to save.
   await page.getByRole('button', { name: 'Completar serie 2' }).click()
-  await expect(page.getByRole('dialog', { name: 'Descanso' })).toBeHidden()
+  await expect(page.getByRole('region', { name: 'Descanso' })).toBeHidden()
   await page.getByRole('button', { name: 'Terminar y guardar' }).click()
 
   // Back home, the workout is celebrated: +10 for the workout and +1 per set.

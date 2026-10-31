@@ -2,13 +2,14 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { RestPushStatus } from './rest-push'
-import { RestTimerScreen } from './RestTimerScreen'
+import { RestBar } from './RestBar'
 
-function renderScreen(notification: RestPushStatus, onEnableNotification = vi.fn()) {
+function renderScreen(notification: RestPushStatus, onEnableNotification = vi.fn(), ready = false) {
   render(
-    <RestTimerScreen
+    <RestBar
       remaining={60}
       duration={90}
+      ready={ready}
       next={{ exerciseName: 'Press banca con barra', number: 2, reps: 8, weightKg: 80 }}
       onAdjust={vi.fn()}
       onSkip={vi.fn()}
@@ -31,7 +32,7 @@ describe('End-of-rest notification', () => {
   it('says so once it is on', () => {
     renderScreen('on')
 
-    expect(screen.getByText('Te avisamos aunque bloquees el móvil')).toBeInTheDocument()
+    expect(screen.getByText('Aviso activado')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Avisarme/ })).not.toBeInTheDocument()
   })
 
@@ -39,6 +40,16 @@ describe('End-of-rest notification', () => {
     renderScreen(status)
 
     expect(screen.queryByRole('button', { name: /Avisarme/ })).not.toBeInTheDocument()
-    expect(screen.queryByText(/Te avisamos/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Aviso activado')).not.toBeInTheDocument()
+  })
+})
+
+describe('Rest bar when the time is up', () => {
+  it('says which set comes next instead of the countdown', () => {
+    renderScreen('off', vi.fn(), true)
+
+    expect(screen.getByRole('status')).toHaveTextContent('¡A por la serie 2!Press banca con barra')
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /segundos/ })).not.toBeInTheDocument()
   })
 })

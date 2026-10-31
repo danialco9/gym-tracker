@@ -24,7 +24,7 @@ import { ExercisePicker } from './ExercisePicker'
 import { enqueueWorkout, isTransient } from './outbox'
 import { useExercises, useSaveWorkout } from './queries'
 import { useRestNotification, useRestPushSetting } from './rest-push'
-import { RestTimerScreen } from './RestTimerScreen'
+import { RestBar } from './RestBar'
 import { DEFAULT_REST_SECONDS, useRestTimer } from './useRestTimer'
 
 interface ActiveWorkoutProps {
@@ -57,6 +57,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
       `${next.entry.name} · serie ${next.number} · ${next.set.reps} × ${formatDecimal(next.set.weightKg)} kg`,
     restPush.status,
   )
+  const showRest = (timer.isRunning || timer.ready) && next !== null
 
   // Rest only when another set follows: after the very last one, the next step is saving.
   const startRest = (entryId: string, setId: string) => {
@@ -112,8 +113,9 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   }
 
   return (
-    // A logging flow reads better in one narrow column, whatever the screen.
-    <div className="mx-auto max-w-2xl space-y-4">
+    // A logging flow reads better in one narrow column, whatever the screen. The rest bar must
+    // not cover the last buttons, so the column grows by its height while it shows.
+    <div className={showRest ? 'mx-auto max-w-2xl space-y-4 pb-28' : 'mx-auto max-w-2xl space-y-4'}>
       {/* The session bar follows the scroll: the count of completed sets stays in sight. */}
       <header className="bg-background/90 sticky top-0 z-20 -mx-4 flex items-start justify-between gap-2 px-4 py-3 backdrop-blur lg:-mx-2 lg:px-2">
         <div className="min-w-0 space-y-1">
@@ -208,10 +210,11 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
         }}
       />
 
-      {timer.isRunning && next !== null && (
-        <RestTimerScreen
+      {showRest && (
+        <RestBar
           remaining={timer.remaining}
           duration={timer.duration}
+          ready={timer.ready}
           next={{
             exerciseName: next.entry.name,
             number: next.number,
