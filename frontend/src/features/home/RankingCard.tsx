@@ -1,51 +1,57 @@
-import { ChevronRightIcon, TrophyIcon } from 'lucide-react'
+import { ChevronRightIcon } from 'lucide-react'
 import { Link } from 'react-router'
-import { useRanking } from '@/features/ranking/queries'
+import { useMyRanking } from '@/features/ranking/queries'
 import { TierMedal } from '@/features/ranking/TierMedal'
-import { STRENGTH_TIERS } from '@/lib/labels'
-import type { RankingMe, User } from '@/lib/types'
+import { STRENGTH_TIERS, ZONE_LABELS } from '@/lib/labels'
+import type { MyRanking, User } from '@/lib/types'
 
-function summary(me: RankingMe, total: number): string {
-  if (me.needs_body_weight) {
+function summary(ranking: MyRanking): string {
+  if (ranking.needs_body_weight) {
     return 'Apunta tu peso para tener rango'
   }
-  if (me.tier === null) {
+  const ranked = ranking.zones.filter((zone) => zone.tier !== null && zone.percentile !== null)
+  if (ranked.length === 0) {
     return 'Registra entrenos con peso para tener rango'
   }
-  const tier = STRENGTH_TIERS[me.tier].label
-  return me.position === null ? tier : `${tier} · puesto ${me.position} de ${total}`
+  const best = ranked.reduce((top, zone) => ((zone.percentile ?? 0) > (top.percentile ?? 0) ? zone : top))
+  return `Mejor: ${ZONE_LABELS[best.zone].label} · ${STRENGTH_TIERS[best.tier ?? 'bronze'].label}`
 }
 
-/** The user's overall tier, a way into the ranking and, until there is one, a nudge to pick a nickname. */
+/** A medal per body zone, a way into the ranking and, until there is one, a nudge to pick a nickname. */
 export function RankingCard({ user }: { user: User }) {
-  const ranking = useRanking().data
+  const ranking = useMyRanking().data
   if (ranking === undefined) {
     return null
   }
-  const { me, entries } = ranking
 
   return (
     <Link
       to="/ranking"
-      className="bg-card ring-foreground/10 hover:bg-accent flex items-center justify-between gap-3 rounded-xl p-4 ring-1 transition-colors"
+      className="bg-card ring-foreground/10 hover:bg-accent block space-y-3 rounded-xl p-4 ring-1 transition-colors"
     >
-      <span className="flex min-w-0 items-center gap-3">
-        {me.tier === null ? (
-          <TrophyIcon className="text-primary size-5 shrink-0" aria-hidden />
-        ) : (
-          <TierMedal tier={me.tier} className="size-10" />
-        )}
-        <span className="min-w-0">
-          <span className="block font-medium">Ranking de fuerza</span>
-          <span className="text-muted-foreground block text-sm">{summary(me, entries.length)}</span>
-          {user.nickname === null && (
-            <span className="text-primary block text-sm">
-              Elige tu apodo: ahora sales como Atleta {user.id}
-            </span>
-          )}
-        </span>
+      <span className="flex items-center justify-between gap-3">
+        <span className="font-medium">Ranking de fuerza</span>
+        <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
       </span>
-      <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+      <ul className="grid grid-cols-6 gap-1">
+        {ranking.zones.map(({ zone, tier }) => (
+          <li key={zone} className="flex min-w-0 flex-col items-center gap-1">
+            {tier === null ? (
+              <span className="bg-muted size-8 rounded-full" aria-hidden />
+            ) : (
+              <TierMedal tier={tier} className="size-8" />
+            )}
+            <span className="text-muted-foreground w-full truncate text-center text-[0.7rem]">
+              {ZONE_LABELS[zone].short}
+              <span className="sr-only">: {tier === null ? 'sin rango' : STRENGTH_TIERS[tier].label}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <span className="text-muted-foreground block text-sm">{summary(ranking)}</span>
+      {user.nickname === null && (
+        <span className="text-primary block text-sm">Elige tu apodo: ahora sales como Atleta {user.id}</span>
+      )}
     </Link>
   )
 }

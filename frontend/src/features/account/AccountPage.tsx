@@ -5,6 +5,7 @@ import {
   MessageSquareIcon,
   TargetIcon,
   UserPenIcon,
+  UsersIcon,
 } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
@@ -23,7 +24,7 @@ import { saveDraft } from '@/features/workout/draft'
 import { clearOutbox } from '@/features/workout/outbox'
 import { ApiError } from '@/lib/api'
 import { TRAINING_GOAL_LABELS } from '@/lib/labels'
-import type { User } from '@/lib/types'
+import type { Sex, User } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const MAX_FEEDBACK_LENGTH = 2000
@@ -136,6 +137,59 @@ function RankingVisibility({ user }: { user: User }) {
         />
       </span>
     </button>
+  )
+}
+
+const SEX_OPTIONS: { value: Sex | null; label: string }[] = [
+  { value: null, label: 'Todos' },
+  { value: 'male', label: 'Hombres' },
+  { value: 'female', label: 'Mujeres' },
+]
+
+/** Private: it only picks who the user's lifts are compared with, as strength differs a lot by sex. */
+function SexChoice({ user }: { user: User }) {
+  const update = useUpdateRankingProfile()
+
+  return (
+    <div className="space-y-2 p-3">
+      <div className="flex items-center gap-3">
+        <UsersIcon className="text-primary size-5 shrink-0" aria-hidden />
+        <div className="min-w-0">
+          <p id="sex-label" className="font-medium">
+            Compararte con
+          </p>
+          <p className="text-muted-foreground text-sm">Nadie lo ve: solo hace el ranking más justo</p>
+        </div>
+      </div>
+      <div
+        role="radiogroup"
+        aria-labelledby="sex-label"
+        className="bg-muted grid grid-cols-3 gap-1 rounded-lg p-1"
+      >
+        {SEX_OPTIONS.map(({ value, label }) => (
+          <button
+            key={label}
+            type="button"
+            role="radio"
+            aria-checked={user.sex === value}
+            disabled={update.isPending}
+            onClick={() =>
+              user.sex !== value &&
+              update.mutate(
+                { sex: value },
+                { onError: () => toast.error('No se pudo cambiar. Prueba otra vez en un rato.') },
+              )
+            }
+            className={cn(
+              'h-10 rounded-md text-sm font-medium transition-colors disabled:opacity-50',
+              user.sex === value ? 'bg-background shadow' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -323,6 +377,7 @@ export function AccountPage() {
           </button>
         )}
         {user != null && <RankingVisibility user={user} />}
+        {user != null && <SexChoice user={user} />}
         {open === 'feedback' ? (
           <>
             <h2 className="flex items-center gap-3 p-3 font-medium">

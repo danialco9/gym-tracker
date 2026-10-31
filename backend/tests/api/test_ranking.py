@@ -79,25 +79,24 @@ def lifters(session: Session, user: User, settings: Settings) -> dict[str, User]
     }
 
 
-def test_the_overall_ranking_lists_tiers_without_kilos(auth_client: TestClient, lifters: dict[str, User]) -> None:
-    ranking = auth_client.get("/api/ranking").json()
+def test_a_zone_ranking_lists_tiers_without_kilos(auth_client: TestClient, lifters: dict[str, User]) -> None:
+    ranking = auth_client.get("/api/ranking/zones/chest").json()
 
-    # Overall scores: a fifth of each one's only percentile, as the other four count as zero.
+    # The hidden lifter, the one without a body weight and the demo are left off.
     assert ranking["entries"] == [
-        {"position": 1, "name": "Tigre", "tier": "bronze", "is_me": False},
-        {"position": 2, "name": f"Atleta {lifters['me'].id}", "tier": "bronze", "is_me": True},
-        {"position": 3, "name": f"Atleta {lifters['unnamed'].id}", "tier": "bronze", "is_me": False},
+        {"position": 1, "name": "Tigre", "tier": "master", "is_me": False},
+        {"position": 2, "name": f"Atleta {lifters['me'].id}", "tier": "ruby", "is_me": True},
     ]
+    mine = estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, None)
     assert ranking["me"] == {
-        "tier": "bronze",
-        "progress": pytest.approx(estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, None) / 5 / 0.20),
-        "percentile": pytest.approx(estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, None) * 100 / 5, abs=0.05),
+        "tier": "ruby",
+        "progress": pytest.approx((mine - 0.94) / 0.04),
+        "percentile": pytest.approx(mine * 100, abs=0.05),
         "source": None,
         "position": 2,
         "needs_body_weight": False,
         "show_in_ranking": True,
     }
-    assert [exercise["name"] for exercise in ranking["exercises"]] == ["Dominadas", "Press banca con barra"]
 
 
 def test_an_exercise_ranking_scores_that_lift(
@@ -124,10 +123,10 @@ def test_hidden_users_keep_their_own_tier(auth_client: TestClient, session: Sess
     lifters["me"].show_in_ranking = False
     session.flush()
 
-    ranking = auth_client.get("/api/ranking").json()
+    ranking = auth_client.get("/api/ranking/zones/chest").json()
 
     assert all(not entry["is_me"] for entry in ranking["entries"])
-    assert ranking["me"]["tier"] == "bronze"
+    assert ranking["me"]["tier"] == "ruby"
     assert ranking["me"]["position"] is None
     assert ranking["me"]["show_in_ranking"] is False
 
@@ -135,7 +134,7 @@ def test_hidden_users_keep_their_own_tier(auth_client: TestClient, session: Sess
 def test_without_a_body_weight_there_is_no_tier(auth_client: TestClient, session: Session, user: User) -> None:
     add_lifter(session, user, body_weight=None, lifts=[("bench-press", 5, 100)])
 
-    me = auth_client.get("/api/ranking").json()["me"]
+    me = auth_client.get("/api/ranking/zones/chest").json()["me"]
 
     assert me == {
         "tier": None,
@@ -283,4 +282,5 @@ def test_too_few_app_lifters_keep_the_estimate(auth_client: TestClient, session:
 
 
 def test_the_ranking_requires_authentication(client: TestClient) -> None:
-    assert client.get("/api/ranking").status_code == 401
+    assert client.get("/api/ranking/zones").status_code == 401
+    assert client.get("/api/ranking/zones/chest").status_code == 401

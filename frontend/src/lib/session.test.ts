@@ -6,6 +6,7 @@ const user = {
   email: 'dani@example.com',
   goal: 'build_muscle',
   nickname: 'Tigre',
+  sex: null,
   show_in_ranking: false,
   created_at: '2026-09-01T10:00:00+00:00',
 } as const

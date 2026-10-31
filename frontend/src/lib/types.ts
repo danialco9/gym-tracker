@@ -35,6 +35,8 @@ export interface User {
   email: string
   /** Null until the user picks one; meanwhile the general advice applies. */
   goal: TrainingGoal | null
+  /** Private: only picks who the user's lifts are compared with. Null compares with everyone. */
+  sex: Sex | null
   /** The public name in the ranking; null until the user picks one, never the email. */
   nickname: string | null
   show_in_ranking: boolean
@@ -284,6 +286,8 @@ export interface Dictation {
   exercises: DictationExercise[]
 }
 
+export type Sex = 'male' | 'female'
+
 export type StrengthTier =
   'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'emerald' | 'ruby' | 'master'
 
@@ -300,6 +304,10 @@ export interface RankingMe {
   tier: StrengthTier | null
   /** Progress towards the next tier, from 0 to 1. */
   progress: number | null
+  /** The share of people who lift less, from 0 to 100. */
+  percentile: number | null
+  /** Where the percentile comes from; only for a single exercise. */
+  source: PercentileSource | null
   /** Null when the user is not on the list. */
   position: number | null
   needs_body_weight: boolean
@@ -311,7 +319,43 @@ export interface RankedExercise {
   name: string
 }
 
-export interface Ranking {
+/** The app's own users once enough of them do the exercise; an estimate of gym-goers until then. */
+export type PercentileSource = 'estimate' | 'app'
+
+export type Zone = 'chest' | 'back' | 'shoulders' | 'arms' | 'legs' | 'core'
+
+export interface ZoneStanding {
+  zone: Zone
+  /** All null while the user has no ranked lift in the zone. */
+  tier: StrengthTier | null
+  progress: number | null
+  percentile: number | null
+}
+
+/** One of the user's ranked exercises, with the set behind it; only the user sees it. */
+export interface MyLift {
+  exercise: RankedExercise
+  zone: Zone
+  tier: StrengthTier
+  progress: number
+  percentile: number
+  source: PercentileSource
+  /** For pull-ups and dips, the weight added to the body. */
+  weight_kg: number
+  reps: number
+}
+
+export interface MyRanking {
+  needs_body_weight: boolean
+  show_in_ranking: boolean
+  /** Every zone, in a fixed order. */
+  zones: ZoneStanding[]
+  /** By zone, best first. */
+  lifts: MyLift[]
+}
+
+export interface ZoneRanking {
+  zone: Zone
   me: RankingMe
   entries: RankingEntry[]
   exercises: RankedExercise[]

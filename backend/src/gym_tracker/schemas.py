@@ -530,13 +530,6 @@ class RankedExerciseRead(BaseModel):
     name: str
 
 
-class RankingRead(BaseModel):
-    me: RankingMeRead
-    entries: list[RankingEntryRead]
-    # Ranked exercises that someone on the list or the user has lifted, by name.
-    exercises: list[RankedExerciseRead]
-
-
 class ExerciseRankingRead(BaseModel):
     exercise: RankedExerciseRead
     me: RankingMeRead
