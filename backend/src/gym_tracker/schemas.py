@@ -11,7 +11,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, fiel
 from gym_tracker.analysis.achievements import BadgeKind, MissionKind
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
 from gym_tracker.analysis.strength import StrengthTier
-from gym_tracker.enums import Equipment, MuscleGroup, TrainingGoal
+from gym_tracker.enums import Equipment, MuscleGroup, Sex, TrainingGoal
 from gym_tracker.push import MAX_REST_SECONDS, is_push_service
 from gym_tracker.slugs import SLUG_PATTERN
 from gym_tracker.users import MIN_PASSWORD_LENGTH
@@ -118,6 +118,7 @@ class UserRead(ORMModel):
     id: int
     email: EmailStr
     goal: TrainingGoal | None
+    sex: Sex | None
     nickname: str | None
     show_in_ranking: bool
     created_at: datetime
@@ -128,6 +129,8 @@ class UserUpdate(PartialUpdate):
 
     # Null clears the goal, back to the general advice.
     goal: TrainingGoal | None = None
+    # Null compares the user's lifts with everyone.
+    sex: Sex | None = None
     # Letters, digits, "_" and "."; no spaces, so nobody can pose as an unnamed "Atleta 12".
     nickname: str | None = Field(default=None, pattern=NICKNAME_PATTERN)
     show_in_ranking: bool | None = None

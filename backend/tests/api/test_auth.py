@@ -69,6 +69,18 @@ def test_an_unknown_training_goal_is_rejected(auth_client: TestClient) -> None:
     assert auth_client.patch("/api/auth/me", json={"goal": "get_huge"}).status_code == 422
 
 
+def test_the_sex_starts_empty_and_can_be_set_and_cleared(auth_client: TestClient) -> None:
+    assert auth_client.get("/api/auth/me").json()["sex"] is None
+
+    assert auth_client.patch("/api/auth/me", json={"sex": "female"}).json()["sex"] == "female"
+    assert auth_client.get("/api/auth/me").json()["sex"] == "female"
+    assert auth_client.patch("/api/auth/me", json={"sex": None}).json()["sex"] is None
+
+
+def test_an_unknown_sex_is_rejected(auth_client: TestClient) -> None:
+    assert auth_client.patch("/api/auth/me", json={"sex": "other"}).status_code == 422
+
+
 def test_the_nickname_starts_empty_and_can_be_set_and_cleared(auth_client: TestClient) -> None:
     me = auth_client.get("/api/auth/me").json()
     assert me["nickname"] is None
