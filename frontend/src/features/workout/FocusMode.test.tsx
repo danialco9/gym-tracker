@@ -131,12 +131,15 @@ describe('Exercise drawing', () => {
 })
 
 describe('Rest between sets', () => {
-  it('takes the screen with the countdown and the next set, until the user is ready', async () => {
+  it('shows the countdown and the next set in a bar, leaving the workout usable', async () => {
     const { user } = startWith(USER)
 
     await user.click((await screen.findAllByRole('button', { name: 'Completar serie 1' }))[0])
 
-    const rest = screen.getByRole('dialog', { name: 'Descanso' })
+    // No modal on top: the next set can be logged while the rest runs.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Completar serie 2' })[0]).toBeEnabled()
+    const rest = screen.getByRole('region', { name: 'Descanso' })
     expect(within(rest).getByRole('timer')).toHaveTextContent('1:30')
     expect(within(rest).getByText('Sentadilla con barra · serie 2')).toBeInTheDocument()
     expect(within(rest).getByText('8 × 100 kg')).toBeInTheDocument()
@@ -146,18 +149,18 @@ describe('Rest between sets', () => {
     await user.click(within(rest).getByRole('button', { name: 'Quitar 15 segundos' }))
     expect(within(rest).getByRole('timer')).toHaveTextContent('1:45')
 
-    await user.click(within(rest).getByRole('button', { name: 'Ya estoy listo' }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await user.click(within(rest).getByRole('button', { name: 'Saltar descanso' }))
+    expect(screen.queryByRole('region', { name: 'Descanso' })).not.toBeInTheDocument()
   })
 
   it("lasts the goal's rest and announces the next exercise", async () => {
     const { user } = startWith({ ...USER, goal: 'build_muscle' })
 
     await user.click((await screen.findAllByRole('button', { name: 'Completar serie 1' }))[0])
-    await user.click(screen.getByRole('button', { name: 'Ya estoy listo' }))
+    await user.click(screen.getByRole('button', { name: 'Saltar descanso' }))
     await user.click(screen.getByRole('button', { name: 'Completar serie 2' }))
 
-    const rest = screen.getByRole('dialog', { name: 'Descanso' })
+    const rest = screen.getByRole('region', { name: 'Descanso' })
     expect(within(rest).getByRole('timer')).toHaveTextContent('2:00')
     expect(within(rest).getByText('Press banca con barra · serie 1')).toBeInTheDocument()
   })
@@ -166,12 +169,12 @@ describe('Rest between sets', () => {
     const { user } = startWith(USER)
 
     await user.click((await screen.findAllByRole('button', { name: 'Completar serie 1' }))[0])
-    await user.click(screen.getByRole('button', { name: 'Ya estoy listo' }))
+    await user.click(screen.getByRole('button', { name: 'Saltar descanso' }))
     await user.click(screen.getByRole('button', { name: 'Completar serie 2' }))
-    await user.click(screen.getByRole('button', { name: 'Ya estoy listo' }))
+    await user.click(screen.getByRole('button', { name: 'Saltar descanso' }))
     await user.click(screen.getByRole('button', { name: 'Completar serie 1' }))
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Descanso' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Terminar y guardar' })).toBeEnabled()
   })
 })
