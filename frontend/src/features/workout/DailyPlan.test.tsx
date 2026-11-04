@@ -83,6 +83,7 @@ const OVERVIEW: ProgressOverview = {
   ],
   personal_records: [],
   weekly_volume: [],
+  week_sets: [],
   volume_advice: [
     {
       muscle_group: 'hamstrings',

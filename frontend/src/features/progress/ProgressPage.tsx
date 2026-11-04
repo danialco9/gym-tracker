@@ -97,7 +97,7 @@ export function ProgressPage() {
               <ExercisesTab records={overview.data.personal_records} />
             </TabsContent>
             <TabsContent value="volumen" className="pt-2">
-              <VolumeTab weeks={overview.data.weekly_volume} />
+              <VolumeTab weeks={overview.data.weekly_volume} weekSets={overview.data.week_sets} />
             </TabsContent>
             <TabsContent value="peso" className="pt-2">
               <BodyWeightTab bodyWeight={overview.data.body_weight} />

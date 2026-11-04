@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { ExerciseProgress, ProgressOverview, User } from '@/lib/types'
+import type { ExerciseProgress, MuscleGroup, ProgressOverview, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
 
@@ -22,6 +22,26 @@ const USER: User = {
 }
 
 const EMPTY_WEEKS = ['2026-08-31', '2026-09-07'].map((weekStart) => ({ week_start: weekStart, muscles: [] }))
+
+const MAIN_MUSCLES: MuscleGroup[] = [
+  'chest',
+  'back',
+  'shoulders',
+  'biceps',
+  'triceps',
+  'quads',
+  'hamstrings',
+  'glutes',
+]
+
+/** This week's sets of every main muscle: the ones given, zero for the rest. */
+const weekSets = (done: Partial<Record<MuscleGroup, number>> = {}) =>
+  MAIN_MUSCLES.map((muscle) => ({
+    muscle_group: muscle,
+    hard_sets: done[muscle] ?? 0,
+    min_hard_sets: 10,
+    max_hard_sets: 20,
+  }))
 
 const OVERVIEW: ProgressOverview = {
   activity: {
@@ -119,6 +139,7 @@ const OVERVIEW: ProgressOverview = {
       max_hard_sets: 20,
     },
   ],
+  week_sets: weekSets({ chest: 6, triceps: 3, quads: 7, glutes: 3.5 }),
   body_weight: {
     entries: [
       { measured_on: '2026-09-14', weight_kg: 79.9, trend_kg: 80.1 },
@@ -206,6 +227,15 @@ describe('Progress', () => {
     const table = screen.getByRole('table', { name: /Series por músculo/ })
     expect(within(table).getByRole('row', { name: /Cuádriceps 7 0/ })).toBeInTheDocument()
 
+    // The body: tapping a muscle tells how far it is from the week's minimum.
+    expect(
+      screen.getByRole('img', { name: /^Series de esta semana\. Pecho: 6 series de 10–20/ }),
+    ).toBeInTheDocument()
+    await user.click(document.querySelector('[data-muscle="chest"]')!)
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Pecho: 6 series de 10–20. Te faltan 4 series esta semana.',
+    )
+
     await user.click(screen.getByRole('tab', { name: 'Peso' }))
     expect(await screen.findByText('Gráfica de 2 pesajes')).toBeInTheDocument()
     expect(screen.getByText('79,7 kg')).toBeInTheDocument()
@@ -227,6 +257,7 @@ describe('Progress', () => {
           personal_records: [],
           weekly_volume: EMPTY_WEEKS,
           volume_advice: [],
+          week_sets: weekSets(),
           body_weight: { entries: [], weekly_change_kg: null },
         } satisfies ProgressOverview,
       },
