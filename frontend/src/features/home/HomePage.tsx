@@ -13,10 +13,10 @@ import heroImage from '@/assets/hero-squat.webp'
 import { QueryStatus } from '@/components/QueryStatus'
 import { buttonVariants } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
-import { Achievements } from '@/features/home/Achievements'
 import { GettingStarted } from '@/features/home/GettingStarted'
 import { RankingCard } from '@/features/home/RankingCard'
-import { useAchievements, useProgressOverview } from '@/features/progress/queries'
+import { StreakCard } from '@/features/home/StreakCard'
+import { useProgressOverview, useStreak } from '@/features/progress/queries'
 import { loadDraft } from '@/features/workout/draft'
 import { PendingWorkouts } from '@/features/workout/PendingWorkouts'
 import { useRecentWorkouts, useRoutines } from '@/features/workout/queries'
@@ -160,7 +160,7 @@ export function HomePage() {
   const workouts = useRecentWorkouts(5)
   const routines = useRoutines()
   const overview = useProgressOverview()
-  const achievements = useAchievements()
+  const streak = useStreak()
   const routineNames = new Map(routines.data?.map((routine) => [routine.id, routine.name]))
 
   return (
@@ -209,9 +209,7 @@ export function HomePage() {
         />
       )}
 
-      {currentUser != null && achievements.data !== undefined && (
-        <Achievements userId={currentUser.id} achievements={achievements.data} />
-      )}
+      {streak.data !== undefined && <StreakCard streak={streak.data} />}
 
       {currentUser != null && <RankingCard user={currentUser} />}
 
