@@ -10,12 +10,12 @@ change routines, exercises or intensity.
 account with 12 weeks of simulated training. No sign-up needed.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="250" alt="Home: training streak and strength ranking">
+  <img src="docs/screenshots/home.png" width="250" alt="Home: training streak and the strength ranking painted on the body">
   <img src="docs/screenshots/plan.png" width="250" alt="Today's plan: what to do with each exercise of the routine and why">
-  <img src="docs/screenshots/workout.png" width="250" alt="Live workout: one exercise per card, big buttons for weight and reps">
+  <img src="docs/screenshots/workout.png" width="250" alt="Live workout: big buttons for weight and reps, and whether the set beats last time">
 </p>
 <p align="center">
-  <img src="docs/screenshots/ranking.png" width="250" alt="Strength ranking: tiers from Bronze to Master, without showing any weights">
+  <img src="docs/screenshots/ranking.png" width="250" alt="Strength ranking: the body coloured by tier per zone, from Bronze to Master, without showing any weights">
   <img src="docs/screenshots/progress.png" width="250" alt="Progress: activity and the recommendation for the next session">
   <img src="docs/screenshots/picker.png" width="250" alt="Exercise picker with drawings, search, filters and recent exercises">
 </p>
