@@ -35,6 +35,10 @@ const BENCH_PRESS: Exercise = {
   is_custom: false,
 }
 
+/** Matches the span whose whole text is this, even when part of it sits in a nested element. */
+const fullText = (text: string) => (_: string, element: Element | null) =>
+  element?.tagName === 'SPAN' && element.textContent === text
+
 describe('WorkoutPage', () => {
   // A long flow (typing a search, a set, the rest timer, saving): about 3.5 s in a full run, and past
   // the default 5 s limit when a slow laptop is busy, so it gets room of its own.
@@ -62,7 +66,7 @@ describe('WorkoutPage', () => {
     await user.type(await screen.findByRole('searchbox', { name: 'Buscar ejercicio' }), 'prensa')
     await user.click(screen.getByRole('button', { name: /Prensa de piernas/ }))
 
-    expect(await screen.findByText(/110 kg × 12/)).toBeInTheDocument()
+    expect(await screen.findByText(/Última vez .*110 kg × 12/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Aumentar peso (kg)' }))
     await user.click(screen.getByRole('button', { name: 'Aumentar peso (kg)' }))
@@ -79,6 +83,37 @@ describe('WorkoutPage', () => {
       sets: [{ exercise_id: 5, set_number: 1, reps: 10, weight_kg: 5, rpe: null, is_warmup: false }],
     })
     expect(window.localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull()
+  }, 15_000)
+
+  it('shows the same set last time and fills in one more rep to beat it', async () => {
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /routines': { body: [] },
+      'GET /exercises': { body: [LEG_PRESS] },
+      'GET /exercises/5/last-session': {
+        body: {
+          workout_id: 3,
+          started_at: '2026-09-08T16:00:00Z',
+          sets: [
+            { id: 1, exercise_id: 5, set_number: 1, reps: 12, weight_kg: 110, rpe: null, is_warmup: false },
+          ],
+        },
+      },
+    })
+    const { user } = renderRoute('/entrenar')
+
+    await user.click(await screen.findByRole('button', { name: /Entreno libre/ }))
+    await user.click(screen.getByRole('button', { name: /Añadir ejercicio/ }))
+    await user.type(await screen.findByRole('searchbox', { name: 'Buscar ejercicio' }), 'prensa')
+    await user.click(screen.getByRole('button', { name: /Prensa de piernas/ }))
+    await user.click(screen.getByRole('button', { name: /Añadir serie/ }))
+
+    expect(await screen.findByText(fullText('Última vez: 110 kg × 12'))).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Supéralo con 13 reps a 110 kg' }))
+
+    expect(screen.getByText(fullText('Superas la última vez (110 kg × 12)'))).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Supéralo/ })).not.toBeInTheDocument()
   }, 15_000)
 
   it('starts a workout from a dictation, after the user resolves what was not recognised', async () => {
