@@ -1,8 +1,10 @@
-import { ArrowLeftIcon, CheckIcon, Trash2Icon, TrophyIcon } from 'lucide-react'
+import { ArrowLeftIcon, CheckIcon, Trash2Icon, TrendingUpIcon, TrophyIcon } from 'lucide-react'
 import { useId } from 'react'
 import { Button } from '@/components/ui/button'
 import { formatDecimal } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { WEIGHT_STEP_KG, type DraftSet } from './draft'
+import type { LastTimeComparison } from './last-time'
 import { Stepper } from './Stepper'
 
 const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
@@ -13,6 +15,8 @@ interface ActiveSetProps {
   canGoBack: boolean
   /** The reps and weight entered would beat the exercise's best estimated 1RM. */
   isRecord: boolean
+  /** The same set last session; null for a warm-up or an exercise without history. */
+  lastTime: LastTimeComparison | null
   onAdjust: (field: 'reps' | 'weightKg', delta: number) => void
   onChange: (changes: Partial<Pick<DraftSet, 'reps' | 'weightKg' | 'rpe'>>) => void
   onDone: () => void
@@ -29,6 +33,7 @@ export function ActiveSet({
   set,
   canGoBack,
   isRecord,
+  lastTime,
   onAdjust,
   onChange,
   onDone,
@@ -64,6 +69,8 @@ export function ActiveSet({
           onChange={(reps) => onChange({ reps })}
         />
       </div>
+
+      {lastTime && <LastTimeLine comparison={lastTime} onBeat={(target) => onChange(target)} />}
 
       {isRecord && (
         <p
@@ -121,6 +128,54 @@ export function ActiveSet({
           Hecho
         </Button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Progressive overload made visible: the same set last session, live against what is entered now, and
+ * one tap to aim for one more rep when it is not beaten yet.
+ */
+function LastTimeLine({
+  comparison: { last, verdict },
+  onBeat,
+}: {
+  comparison: LastTimeComparison
+  onBeat: (target: Pick<DraftSet, 'reps' | 'weightKg'>) => void
+}) {
+  const ahead = verdict === 'beaten' || verdict === 'extra'
+  const lastText = last && (
+    <span className="whitespace-nowrap">
+      {formatDecimal(last.weight_kg)} kg × {last.reps}
+    </span>
+  )
+
+  return (
+    <div
+      role="status"
+      className={cn(
+        'flex min-h-9 items-center gap-2 rounded-md px-2 py-1 text-sm',
+        ahead ? 'bg-primary/15 text-foreground font-medium' : 'bg-muted text-muted-foreground',
+      )}
+    >
+      <TrendingUpIcon className={cn('size-4 shrink-0', ahead && 'text-primary')} aria-hidden />
+      <span className="flex-1">
+        {verdict === 'beaten' && <>Superas la última vez ({lastText})</>}
+        {verdict === 'extra' && 'Una serie más que la última vez'}
+        {verdict === 'matched' && <>Igual que la última vez ({lastText})</>}
+        {verdict === 'below' && <>Última vez: {lastText}</>}
+      </span>
+      {last && !ahead && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 shrink-0"
+          aria-label={`Supéralo con ${last.reps + 1} reps a ${formatDecimal(last.weight_kg)} kg`}
+          onClick={() => onBeat({ weightKg: last.weight_kg, reps: last.reps + 1 })}
+        >
+          Supéralo: {last.reps + 1} reps
+        </Button>
+      )}
     </div>
   )
 }

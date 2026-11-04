@@ -8,9 +8,11 @@ import { ActiveSet } from './ActiveSet'
 import type { DraftAction, DraftExercise } from './draft'
 import { exerciseFrameUrls } from './exercise-art'
 import { ExerciseThumbnail } from './ExerciseThumbnail'
+import { compareWithLastTime } from './last-time'
 import { LastSessionHint } from './LastSessionHint'
 import { MovementAnimation } from './MovementAnimation'
 import { ProgressRing } from './ProgressRing'
+import { useLastSession } from './queries'
 import { beatsRecord } from './records'
 import { CompletedSetRow, PendingSetRow } from './SetSummary'
 
@@ -39,6 +41,8 @@ export function ExerciseCard({
   const doneCount = entry.sets.filter((set) => set.done).length
   const frames = exercise ? exerciseFrameUrls(exercise) : []
   const [showMovement, setShowMovement] = useState(false)
+  // The same query as the hint under the title, so it is fetched once.
+  const lastSession = useLastSession(entry.exerciseId)
   const toggleDone = (setId: string) => dispatch({ type: 'toggleDone', entryId: entry.id, setId })
 
   const completeSet = (setId: string, index: number) => {
@@ -122,6 +126,7 @@ export function ExerciseCard({
                 entry.sets.filter((other) => other.done),
                 bestE1rmKg,
               )}
+              lastTime={compareWithLastTime(entry, index, lastSession.data?.sets)}
               onAdjust={(field, delta) =>
                 dispatch({ type: 'adjustSet', entryId: entry.id, setId: set.id, field, delta })
               }
