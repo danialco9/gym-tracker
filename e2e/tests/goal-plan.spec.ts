@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures'
 
-test("picks a goal, follows today's plan for a routine and earns XP for the workout", async ({ page }) => {
+test("picks a goal, follows today's plan for a routine and starts a streak", async ({ page }) => {
   // The routine is the setup, not the flow under test, so it is created through the API.
   const exercises: { id: number; slug: string }[] = await (await page.request.get('/api/exercises')).json()
   const squat = exercises.find((exercise) => exercise.slug === 'back-squat')
@@ -21,9 +21,9 @@ test("picks a goal, follows today's plan for a routine and earns XP for the work
   })
   expect(routine.ok()).toBe(true)
 
-  // The first visit to the home screen is the "before" the XP is counted from.
+  // No workouts yet, so no streak.
   await page.goto('/')
-  await expect(page.getByText('0 / 100 XP para el nivel 2')).toBeVisible()
+  await expect(page.getByText('Entrena hoy para empezar una racha')).toBeVisible()
   await page.getByRole('link', { name: /Elige tu objetivo/ }).click()
 
   await page.getByRole('button', { name: /Ganar músculo/ }).click()
@@ -57,8 +57,7 @@ test("picks a goal, follows today's plan for a routine and earns XP for the work
   await expect(page.getByRole('region', { name: 'Descanso' })).toBeHidden()
   await page.getByRole('button', { name: 'Terminar y guardar' }).click()
 
-  // Back home, the workout is celebrated: +10 for the workout and +1 per set.
+  // Back home, the workout starts the streak.
   await expect(page.getByText('Entreno guardado')).toBeVisible()
-  await expect(page.getByText('+12 XP')).toBeVisible()
-  await expect(page.getByText('12 / 100 XP para el nivel 2')).toBeVisible()
+  await expect(page.getByText('1 día de racha')).toBeVisible()
 })

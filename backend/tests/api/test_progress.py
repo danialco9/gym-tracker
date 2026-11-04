@@ -322,4 +322,4 @@ def test_exercise_progress_of_unknown_exercise_is_not_found(progress_client: Tes
 def test_progress_requires_authentication(client: TestClient) -> None:
     assert client.get("/api/progress/overview").status_code == 401
     assert client.get("/api/progress/goals").status_code == 401
-    assert client.get("/api/progress/achievements").status_code == 401
+    assert client.get("/api/progress/streak").status_code == 401
