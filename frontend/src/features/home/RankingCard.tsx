@@ -1,7 +1,7 @@
 import { ChevronRightIcon } from 'lucide-react'
 import { Link } from 'react-router'
+import { BodyMap } from '@/features/ranking/BodyMap'
 import { useMyRanking } from '@/features/ranking/queries'
-import { TierMedal } from '@/features/ranking/TierMedal'
 import { STRENGTH_TIERS, ZONE_LABELS } from '@/lib/labels'
 import type { MyRanking, User } from '@/lib/types'
 
@@ -17,7 +17,7 @@ function summary(ranking: MyRanking): string {
   return `Mejor: ${ZONE_LABELS[best.zone].label} · ${STRENGTH_TIERS[best.tier ?? 'bronze'].label}`
 }
 
-/** A medal per body zone, a way into the ranking and, until there is one, a nudge to pick a nickname. */
+/** The body coloured by tier, a way into the ranking and, until there is one, a nudge to pick a nickname. */
 export function RankingCard({ user }: { user: User }) {
   const ranking = useMyRanking().data
   if (ranking === undefined) {
@@ -27,31 +27,21 @@ export function RankingCard({ user }: { user: User }) {
   return (
     <Link
       to="/ranking"
-      className="bg-card ring-foreground/10 hover:bg-accent block space-y-3 rounded-xl p-4 ring-1 transition-colors"
+      className="bg-card ring-foreground/10 hover:bg-accent flex items-center gap-4 rounded-xl p-4 ring-1 transition-colors"
     >
-      <span className="flex items-center justify-between gap-3">
-        <span className="font-medium">Ranking de fuerza</span>
-        <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+      <BodyMap zones={ranking.zones} className="w-36 shrink-0 gap-2" />
+      <span className="min-w-0 flex-1 space-y-1">
+        <span className="flex items-center justify-between gap-2">
+          <span className="font-medium">Ranking de fuerza</span>
+          <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+        </span>
+        <span className="text-muted-foreground block text-sm">{summary(ranking)}</span>
+        {user.nickname === null && (
+          <span className="text-primary block text-sm">
+            Elige tu apodo: ahora sales como Atleta {user.id}
+          </span>
+        )}
       </span>
-      <ul className="grid grid-cols-6 gap-1">
-        {ranking.zones.map(({ zone, tier }) => (
-          <li key={zone} className="flex min-w-0 flex-col items-center gap-1">
-            {tier === null ? (
-              <span className="bg-muted size-8 rounded-full" aria-hidden />
-            ) : (
-              <TierMedal tier={tier} className="size-8" />
-            )}
-            <span className="text-muted-foreground w-full truncate text-center text-[0.7rem]">
-              {ZONE_LABELS[zone].short}
-              <span className="sr-only">: {tier === null ? 'sin rango' : STRENGTH_TIERS[tier].label}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <span className="text-muted-foreground block text-sm">{summary(ranking)}</span>
-      {user.nickname === null && (
-        <span className="text-primary block text-sm">Elige tu apodo: ahora sales como Atleta {user.id}</span>
-      )}
     </Link>
   )
 }

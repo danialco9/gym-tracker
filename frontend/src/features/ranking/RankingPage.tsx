@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
 import { useCurrentUser } from '@/features/auth/queries'
+import { BodyMap } from '@/features/ranking/BodyMap'
 import { useExerciseRanking, useMyRanking, useZoneRanking } from '@/features/ranking/queries'
 import { TierMedal } from '@/features/ranking/TierMedal'
 import { formatDecimal } from '@/lib/format'
@@ -343,6 +344,13 @@ export function RankingPage() {
       <QueryStatus query={mine} loading="Cargando…" error="No se pudo cargar el ranking." />
       {mine.data !== undefined && selected !== null && (
         <>
+          {/* All lit until a zone is chosen: the first look is the whole body in its colours. */}
+          <BodyMap
+            zones={mine.data.zones}
+            selected={zone}
+            onSelect={setZone}
+            className="mx-auto w-full max-w-80"
+          />
           <ZonePicker mine={mine.data} selected={selected} onSelect={setZone} />
           <ZoneSection
             key={selected}

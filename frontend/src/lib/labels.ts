@@ -8,26 +8,26 @@ export const TRAINING_GOAL_LABELS: Record<TrainingGoal, { title: string; hint: s
 
 /** Strength tiers, lowest first, with the colour of their medal. */
 export const STRENGTH_TIERS: Record<StrengthTier, { label: string; color: string }> = {
-  bronze: { label: 'Bronce', color: '#c4824a' },
-  silver: { label: 'Plata', color: '#b9c2cc' },
-  gold: { label: 'Oro', color: '#f2c230' },
-  platinum: { label: 'Platino', color: '#7fd6d0' },
-  diamond: { label: 'Diamante', color: '#6fb6ff' },
-  emerald: { label: 'Esmeralda', color: '#33c47a' },
-  ruby: { label: 'Rubí', color: '#ef476f' },
-  master: { label: 'Máster', color: '#b57bff' },
+  bronze: { label: 'Bronce', color: '#e07b28' },
+  silver: { label: 'Plata', color: '#a7b1bf' },
+  gold: { label: 'Oro', color: '#facc15' },
+  platinum: { label: 'Platino', color: '#2dd4bf' },
+  diamond: { label: 'Diamante', color: '#3b82f6' },
+  emerald: { label: 'Esmeralda', color: '#22c55e' },
+  ruby: { label: 'Rubí', color: '#ef233c' },
+  master: { label: 'Máster', color: '#a855f7' },
 }
 
 const TIER_ORDER = Object.keys(STRENGTH_TIERS) as StrengthTier[]
 
-/** The body zones ranked on their own, in the order they are shown, with a short form for tight rows. */
-export const ZONE_LABELS: Record<Zone, { label: string; short: string }> = {
-  chest: { label: 'Pecho', short: 'Pecho' },
-  back: { label: 'Espalda', short: 'Espalda' },
-  shoulders: { label: 'Hombros', short: 'Hombro' },
-  arms: { label: 'Brazos', short: 'Brazos' },
-  legs: { label: 'Pierna', short: 'Pierna' },
-  core: { label: 'Core', short: 'Core' },
+/** The body zones ranked on their own, in the order they are shown. */
+export const ZONE_LABELS: Record<Zone, { label: string }> = {
+  chest: { label: 'Pecho' },
+  back: { label: 'Espalda' },
+  shoulders: { label: 'Hombros' },
+  arms: { label: 'Brazos' },
+  legs: { label: 'Pierna' },
+  core: { label: 'Core' },
 }
 
 /** The tier after this one, or null at Master. */

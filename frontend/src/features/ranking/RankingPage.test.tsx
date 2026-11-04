@@ -138,6 +138,29 @@ describe('Ranking', () => {
     expect(screen.queryByText('Sentadilla trasera', { selector: 'p' })).not.toBeInTheDocument()
   })
 
+  it('switches zone by tapping the body', async () => {
+    mockApi({
+      'GET /auth/me': { body: { ...USER, nickname: 'Tigre' } },
+      'GET /ranking/zones': { body: MINE },
+      'GET /ranking/zones/legs': { body: LEGS },
+      'GET /ranking/zones/chest': { body: CHEST },
+    })
+    const { user } = renderRoute('/ranking')
+
+    const body = await screen.findByRole('img', { name: /Tu rango por zona/ })
+    // The whole body lit at first; a tap picks a zone and dims the others.
+    expect(body.querySelector('[data-zone="legs"]')).not.toHaveClass('opacity-35')
+
+    await user.click(body.querySelector('[data-zone="chest"]')!)
+
+    expect(screen.getByRole('radio', { name: /Pecho/ })).toHaveAttribute('aria-checked', 'true')
+    expect(body.querySelector('[data-zone="chest"]')).not.toHaveClass('opacity-35')
+    expect(body.querySelector('[data-zone="legs"]')).toHaveClass('opacity-35')
+    expect(
+      await screen.findByText('Más fuerte que el 50 %', { selector: 'p.font-medium' }),
+    ).toBeInTheDocument()
+  })
+
   it('asks for the body weight before giving a tier', async () => {
     mockApi({
       'GET /auth/me': { body: { ...USER, nickname: 'Tigre' } },
@@ -206,7 +229,7 @@ describe('Ranking', () => {
 })
 
 describe('Ranking on the home screen', () => {
-  it('shows a medal per zone, my best one, and asks for a nickname until there is one', async () => {
+  it('shows the body coloured by zone, my best one, and asks for a nickname until there is one', async () => {
     mockApi({
       'GET /auth/me': { body: USER },
       'GET /ranking/zones': { body: MINE },
@@ -215,18 +238,10 @@ describe('Ranking on the home screen', () => {
 
     const card = await screen.findByRole('link', { name: /Ranking de fuerza/ })
     expect(card).toHaveAttribute('href', '/ranking')
-    expect(
-      within(card)
-        .getAllByRole('listitem')
-        .map((zone) => zone.textContent),
-    ).toEqual([
-      'Pecho: Oro',
-      'Espalda: sin rango',
-      'Hombro: sin rango',
-      'Brazos: sin rango',
-      'Pierna: Diamante',
-      'Core: sin rango',
-    ])
+    expect(within(card).getByRole('img')).toHaveAccessibleName(
+      'Tu rango por zona. Pecho: Oro, Espalda: sin rango, Hombros: sin rango, Brazos: sin rango, ' +
+        'Pierna: Diamante, Core: sin rango',
+    )
     expect(within(card).getByText('Mejor: Pierna · Diamante')).toBeInTheDocument()
     expect(within(card).getByText('Elige tu apodo: ahora sales como Atleta 7')).toBeInTheDocument()
   })
