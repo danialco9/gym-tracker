@@ -221,10 +221,20 @@ export interface ProgressOverview {
   personal_records: PersonalRecord[]
   weekly_volume: WeeklyVolume[]
   volume_advice: VolumeAdvice[]
+  /** Every main muscle, in a fixed order. */
+  week_sets: MuscleWeek[]
   body_weight: {
     entries: { measured_on: string; weight_kg: number; trend_kg: number }[]
     weekly_change_kg: number | null
   }
+}
+
+/** Hard sets of a main muscle so far this week (secondary muscles count half), against the goal's range. */
+export interface MuscleWeek {
+  muscle_group: MuscleGroup
+  hard_sets: number
+  min_hard_sets: number
+  max_hard_sets: number
 }
 
 /** A main muscle trained outside the recommended weekly hard sets, on average. */

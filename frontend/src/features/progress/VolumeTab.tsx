@@ -1,20 +1,28 @@
 import { lazy, Suspense } from 'react'
 import { formatDecimal } from '@/lib/format'
 import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
-import type { WeeklyVolume } from '@/lib/types'
+import type { MuscleWeek, WeeklyVolume } from '@/lib/types'
 import { ChartFallback, EmptyState } from './ProgressParts'
 import { buildVolume } from './progress-data'
+import { WeekVolumeBody } from './WeekVolumeBody'
 
 const VolumeChart = lazy(() => import('./ProgressCharts').then((module) => ({ default: module.VolumeChart })))
 
-export function VolumeTab({ weeks }: { weeks: WeeklyVolume[] }) {
+export function VolumeTab({ weeks, weekSets }: { weeks: WeeklyVolume[]; weekSets: MuscleWeek[] }) {
   const { series, rows, comparison } = buildVolume(weeks)
 
   if (series.length === 0) {
-    return <EmptyState>Aún no hay series registradas en las últimas 8 semanas.</EmptyState>
+    return (
+      <div className="space-y-5">
+        <WeekVolumeBody muscles={weekSets} />
+        <EmptyState>Aún no hay series registradas en las últimas 8 semanas.</EmptyState>
+      </div>
+    )
   }
   return (
     <div className="space-y-5">
+      <WeekVolumeBody muscles={weekSets} />
+
       <section className="space-y-2">
         <div className="space-y-1">
           <h2 className="font-heading text-lg font-medium">Series efectivas por semana</h2>

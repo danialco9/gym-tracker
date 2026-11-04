@@ -9,6 +9,7 @@ from gym_tracker.analysis import (
     PlannedSet,
     Reason,
     VolumeStatus,
+    current_week_sets,
     decide_progression,
     load_increment,
     load_training_log,
@@ -288,3 +289,24 @@ def test_volume_advice_waits_for_two_complete_weeks(write_log: WriteLog) -> None
 
     # One complete week (from 2026-09-07) and the current, unfinished one.
     assert volume_advice(load_training_log(data_dir), today=date(2026, 9, 16)) == []
+
+
+def test_current_week_sets_count_only_this_week(write_log: WriteLog) -> None:
+    log = load_training_log(_weekly_log(write_log, chest_sets_per_week=12, weeks=5))
+
+    # Wednesday 2026-09-16: only the Monday session of this week counts, triceps at half a set each.
+    week = {item.muscle_group: item.hard_sets for item in current_week_sets(log, today=date(2026, 9, 16))}
+
+    assert week["chest"] == 12.0
+    assert week["triceps"] == 6.0
+    assert week["back"] == 0.0
+    # Every main muscle and nothing else, so the app can paint the whole body.
+    assert set(week) == {"chest", "back", "shoulders", "biceps", "triceps", "quads", "hamstrings", "glutes"}
+
+
+def test_current_week_sets_start_from_zero(write_log: WriteLog) -> None:
+    log = load_training_log(_weekly_log(write_log, chest_sets_per_week=12, weeks=4))
+
+    # The new week has no workouts yet; an empty log reads the same.
+    assert {item.hard_sets for item in current_week_sets(log, today=date(2026, 9, 16))} == {0.0}
+    assert {item.hard_sets for item in current_week_sets(load_training_log(write_log()), date(2026, 9, 16))} == {0.0}
