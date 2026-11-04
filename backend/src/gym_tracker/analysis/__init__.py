@@ -1,17 +1,5 @@
 """Training analytics: load the log, compute metrics and suggest progressions."""
 
-from gym_tracker.analysis.achievements import (
-    Achievements,
-    Badge,
-    BadgeKind,
-    Level,
-    Mission,
-    MissionKind,
-    Streak,
-    achievements,
-    level_for,
-    training_streak,
-)
 from gym_tracker.analysis.goals import GOAL_PLANS, GoalPlan, volume_rules_for
 from gym_tracker.analysis.loader import SCHEMAS, TrainingLog, load_training_log
 from gym_tracker.analysis.metrics import (
@@ -41,19 +29,14 @@ from gym_tracker.analysis.recommendations import (
     recommend,
     volume_advice,
 )
+from gym_tracker.analysis.streak import Streak, log_streak, training_streak
 
 __all__ = [
     "DEFAULT_VOLUME_RULES",
     "GOAL_PLANS",
     "SCHEMAS",
-    "Achievements",
     "Action",
-    "Badge",
-    "BadgeKind",
     "GoalPlan",
-    "Level",
-    "Mission",
-    "MissionKind",
     "PerformedSet",
     "PlannedSet",
     "Progression",
@@ -65,13 +48,12 @@ __all__ = [
     "VolumeAdvice",
     "VolumeRules",
     "VolumeStatus",
-    "achievements",
     "decide_progression",
     "detect_plateaus",
     "estimate_1rm",
-    "level_for",
     "load_increment",
     "load_training_log",
+    "log_streak",
     "personal_records",
     "recommend",
     "session_bests",

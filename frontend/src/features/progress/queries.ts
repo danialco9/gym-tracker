@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
-import type { Achievements, ExerciseProgress, ProgressOverview } from '@/lib/types'
+import type { ExerciseProgress, ProgressOverview, Streak } from '@/lib/types'
 
 // Derived from workouts and measurements, so saving either should refresh it.
 export const progressKeys = {
   all: ['progress'] as const,
   overview: ['progress', 'overview'] as const,
   goals: ['progress', 'goals'] as const,
-  achievements: ['progress', 'achievements'] as const,
+  streak: ['progress', 'streak'] as const,
   exercise: (exerciseId: number) => ['progress', 'exercises', exerciseId] as const,
 }
 
@@ -18,10 +18,10 @@ export function useProgressOverview() {
   })
 }
 
-export function useAchievements() {
+export function useStreak() {
   return useQuery({
-    queryKey: progressKeys.achievements,
-    queryFn: ({ signal }) => apiFetch<Achievements>('/progress/achievements', { signal }),
+    queryKey: progressKeys.streak,
+    queryFn: ({ signal }) => apiFetch<Streak>('/progress/streak', { signal }),
   })
 }
 

@@ -10,7 +10,7 @@ change routines, exercises or intensity.
 account with 12 weeks of simulated training. No sign-up needed.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="250" alt="Home: level and XP, training streak, weekly missions and badges">
+  <img src="docs/screenshots/home.png" width="250" alt="Home: training streak and strength ranking">
   <img src="docs/screenshots/plan.png" width="250" alt="Today's plan: what to do with each exercise of the routine and why">
   <img src="docs/screenshots/workout.png" width="250" alt="Live workout: one exercise per card, big buttons for weight and reps">
 </p>
@@ -39,8 +39,7 @@ account with 12 weeks of simulated training. No sign-up needed.
   sets the rep ranges, effort (RPE), rest and weekly volume to aim for. Opening a routine shows
   today's plan first: what to do with each exercise and why, and how the week's volume of its
   muscles compares with the goal. One tap starts the workout with the suggested weights.
-- **Levels, streak, missions and badges.** XP for each workout, set, record and weekly mission;
-  a daily streak that survives one rest day; three missions every week and eight badges.
+- **Training streak.** Days in a row with workouts, where one rest day does not break it.
 - **Strength ranking.** For every exercise, the share of people you out-lift ("stronger than
   64 %"), from your best estimated 1RM divided by your body weight, so light and heavy lifters
   compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
@@ -191,10 +190,8 @@ A few decisions worth calling out:
 - **Analytics.** Estimated 1RM (Epley), weekly hard sets per muscle group and plateau detection live
   in a pure module fed either from the CSV log or from PostgreSQL, which keeps it testable without a
   web request.
-- **Gamification without new tables.** XP, levels, the streak, missions and badges are recomputed
-  from the workout history on every request (+10 per workout, +1 per set, +25 per record, +30 per
-  mission; level *n* to *n*+1 costs *n* × 100 XP). Editing or deleting a workout can never leave
-  the score out of step with the log it came from.
+- **Derived, never stored.** The streak and the ranking are recomputed from the workout history
+  on every request, so editing or deleting a workout can never leave them out of step with the log.
 - **Fair strength percentiles.** Once 30 other users (of the same sex, if given) have done an
   exercise, a lift is ranked against them; until then, against an estimate of gym-goers: a
   log-normal spread per exercise around its own scale, because 1.5× body weight is little on a leg
@@ -231,5 +228,5 @@ A few decisions worth calling out:
 - [x] "Remember me" session that ends after a week of inactivity
 - [x] Training goal (lose fat, build muscle, recomposition) and today's plan per routine
 - [x] Focus mode and swipeable exercise cards for the live workout
-- [x] XP, levels, daily streak, weekly missions and badges
+- [x] Daily training streak
 - [x] Strength ranking by percentile, per exercise and per body zone, with nicknames and an opt-out
