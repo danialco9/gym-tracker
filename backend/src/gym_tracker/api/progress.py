@@ -12,6 +12,7 @@ from sqlalchemy import select
 from gym_tracker.analysis import (
     GOAL_PLANS,
     TrainingLog,
+    current_week_sets,
     log_streak,
     personal_records,
     recommend,
@@ -36,6 +37,7 @@ from gym_tracker.schemas import (
     GoalPlanRead,
     IntRangeRead,
     MuscleVolumeRead,
+    MuscleWeekRead,
     PerformedSetRead,
     PersonalRecordRead,
     PlannedSetRead,
@@ -99,6 +101,19 @@ def _volume_advice(log: TrainingLog, today: date, goal: str | None) -> list[Volu
             max_hard_sets=rules.max_hard_sets,
         )
         for item in volume_advice(log, today, rules)
+    ]
+
+
+def _week_sets(log: TrainingLog, today: date, goal: str | None) -> list[MuscleWeekRead]:
+    rules = volume_rules_for(goal)
+    return [
+        MuscleWeekRead(
+            muscle_group=item.muscle_group,
+            hard_sets=item.hard_sets,
+            min_hard_sets=rules.min_hard_sets,
+            max_hard_sets=rules.max_hard_sets,
+        )
+        for item in current_week_sets(log, today, rules)
     ]
 
 
@@ -170,6 +185,7 @@ def read_overview(
         personal_records=_personal_records(log, work, bests) if not work.empty else [],
         weekly_volume=_weekly_volume(log, work, today),
         volume_advice=_volume_advice(log, today, user.goal),
+        week_sets=_week_sets(log, today, user.goal),
         body_weight=_body_weight(log),
     )
 

@@ -440,12 +440,22 @@ class GoalPlanRead(BaseModel):
     weekly_hard_sets: IntRangeRead
 
 
+class MuscleWeekRead(BaseModel):
+    """Hard sets of a main muscle so far this week, against the weekly range of the user's goal."""
+
+    muscle_group: str
+    hard_sets: float
+    min_hard_sets: int
+    max_hard_sets: int
+
+
 class ProgressOverviewRead(BaseModel):
     activity: ActivityRead
     recommendations: list[RecommendationRead]
     personal_records: list[PersonalRecordRead]
     weekly_volume: list[WeeklyVolumeRead]
     volume_advice: list[VolumeAdviceRead]
+    week_sets: list[MuscleWeekRead]
     body_weight: BodyWeightRead
 
 

@@ -101,6 +101,14 @@ def test_overview_without_data(progress_client: TestClient) -> None:
     assert all(week["muscles"] == [] for week in overview["weekly_volume"])
     assert overview["body_weight"] == {"entries": [], "weekly_change_kg": None}
     assert overview["volume_advice"] == []
+    # Every main muscle starts the week empty, against the general range while no goal is set.
+    assert len(overview["week_sets"]) == 8
+    assert overview["week_sets"][0] == {
+        "muscle_group": "chest",
+        "hard_sets": 0.0,
+        "min_hard_sets": 10,
+        "max_hard_sets": 20,
+    }
 
 
 def test_overview_summarizes_the_training_log(progress_client: TestClient, training_log: dict[str, int]) -> None:
@@ -171,6 +179,9 @@ def test_overview_summarizes_the_training_log(progress_client: TestClient, train
     ]
     # One complete week of training so far: too early to judge the volume.
     assert overview["volume_advice"] == []
+    # This week (from Monday 2026-09-14): three bench sets and two pulldowns, warm-ups left out.
+    week = {item["muscle_group"]: item["hard_sets"] for item in overview["week_sets"]}
+    assert (week["chest"], week["back"]) == (3.0, 2.0)
     assert overview["body_weight"] == {
         "entries": [
             {"measured_on": "2026-09-10", "weight_kg": 80.0, "trend_kg": 80.0},
@@ -212,6 +223,8 @@ def test_weekly_volume_advice_follows_the_training_goal(
 
     advice = {item["muscle_group"]: item for item in overview["volume_advice"]}
     assert (advice["chest"]["min_hard_sets"], advice["chest"]["max_hard_sets"]) == (10, 14)
+    week = {item["muscle_group"]: item for item in overview["week_sets"]}
+    assert (week["chest"]["min_hard_sets"], week["chest"]["max_hard_sets"]) == (10, 14)
 
 
 def test_goal_plans_cover_every_goal(progress_client: TestClient) -> None:

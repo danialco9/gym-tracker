@@ -346,6 +346,20 @@ def _muscle_shares(exercises: pd.DataFrame, secondary_share: float) -> pd.DataFr
     return pd.DataFrame(rows, columns=["exercise_id", "muscle_group", "share"])
 
 
+def _sets_per_muscle(work: pd.DataFrame, exercises: pd.DataFrame, secondary_share: float) -> pd.Series:
+    """Hard sets per muscle, a set counting in full for its main muscle and ``secondary_share`` for each
+    secondary one."""
+    shares = _muscle_shares(exercises, secondary_share)
+    totals: pd.Series = work[["exercise_id"]].merge(shares, on="exercise_id").groupby("muscle_group")["share"].sum()
+    return totals
+
+
+def _week_starts(work: pd.DataFrame) -> pd.Series:
+    """The Monday of each set's week."""
+    starts: pd.Series = (work["date"] - pd.to_timedelta(work["date"].dt.weekday, unit="D")).dt.date
+    return starts
+
+
 def volume_advice(log: TrainingLog, today: date, rules: VolumeRules = DEFAULT_VOLUME_RULES) -> list[VolumeAdvice]:
     """Main muscles whose average weekly hard sets fall outside the recommended range.
 
@@ -368,10 +382,7 @@ def volume_advice(log: TrainingLog, today: date, rules: VolumeRules = DEFAULT_VO
     if len(weeks) < rules.min_weeks:
         return []
 
-    week_starts = (work["date"] - pd.to_timedelta(work["date"].dt.weekday, unit="D")).dt.date
-    in_window = work.loc[week_starts.isin(weeks), ["exercise_id"]]
-    shares = _muscle_shares(log.exercises, rules.secondary_share)
-    totals = in_window.merge(shares, on="exercise_id").groupby("muscle_group")["share"].sum()
+    totals = _sets_per_muscle(work.loc[_week_starts(work).isin(weeks)], log.exercises, rules.secondary_share)
 
     advice = []
     for muscle in MAIN_MUSCLES:
@@ -384,3 +395,24 @@ def volume_advice(log: TrainingLog, today: date, rules: VolumeRules = DEFAULT_VO
             continue
         advice.append(VolumeAdvice(str(muscle), round(average, 1), status, len(weeks)))
     return advice
+
+
+@dataclass(frozen=True)
+class MuscleWeekSets:
+    muscle_group: str
+    hard_sets: float
+
+
+def current_week_sets(log: TrainingLog, today: date, rules: VolumeRules = DEFAULT_VOLUME_RULES) -> list[MuscleWeekSets]:
+    """Hard sets of each main muscle so far this week (from Monday), counted as ``volume_advice`` does.
+
+    Unlike the advice, it judges nothing: it is the live count the week's target is filled with.
+    """
+    work = working_sets(log)
+    current_week = today - timedelta(days=today.weekday())
+    totals = (
+        _sets_per_muscle(work.loc[_week_starts(work) == current_week], log.exercises, rules.secondary_share)
+        if not work.empty
+        else pd.Series(dtype=float)
+    )
+    return [MuscleWeekSets(str(muscle), round(float(totals.get(muscle, 0)), 1)) for muscle in MAIN_MUSCLES]
