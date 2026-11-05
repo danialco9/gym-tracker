@@ -1,5 +1,5 @@
-import { ArrowLeftIcon, CheckIcon, Trash2Icon, TrendingUpIcon, TrophyIcon } from 'lucide-react'
-import { useId } from 'react'
+import { ArrowLeftIcon, CheckIcon, PlusIcon, Trash2Icon, TrendingUpIcon, TrophyIcon } from 'lucide-react'
+import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { formatDecimal } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -41,6 +41,8 @@ export function ActiveSet({
   onRemove,
 }: ActiveSetProps) {
   const rpeLabelId = useId()
+  // Opened already when the set carries an effort, e.g. coming back to correct it.
+  const [rpeOpen, setRpeOpen] = useState(set.rpe !== null)
 
   return (
     <div className="border-primary/50 bg-primary/5 space-y-3 rounded-lg border p-2">
@@ -82,29 +84,44 @@ export function ActiveSet({
         </p>
       )}
 
-      <div>
-        <p id={rpeLabelId} className="text-muted-foreground mb-1 text-xs">
-          Esfuerzo (RPE), opcional
-        </p>
-        {/* Toggle buttons rather than a select: one tap, and tapping the chosen one clears it. */}
-        <div role="group" aria-labelledby={rpeLabelId} className="grid grid-cols-5 gap-1">
-          {RPE_OPTIONS.map((rpe) => {
-            const selected = set.rpe === rpe
-            return (
-              <Button
-                key={rpe}
-                variant={selected ? 'default' : 'outline'}
-                className="h-9 px-0 text-sm tabular-nums"
-                aria-pressed={selected}
-                aria-label={`RPE ${formatDecimal(rpe)}`}
-                onClick={() => onChange({ rpe: selected ? null : rpe })}
-              >
-                {formatDecimal(rpe)}
-              </Button>
-            )
-          })}
+      {/* Optional and mostly skipped, so it stays folded and leaves "Hecho" within reach. */}
+      {!rpeOpen ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground -ml-1 h-8"
+          aria-expanded={false}
+          aria-label="Anotar esfuerzo (RPE)"
+          onClick={() => setRpeOpen(true)}
+        >
+          <PlusIcon />
+          Esfuerzo (RPE)
+        </Button>
+      ) : (
+        <div>
+          <p id={rpeLabelId} className="text-muted-foreground mb-1 text-xs">
+            Esfuerzo (RPE), opcional
+          </p>
+          {/* Toggle buttons rather than a select: one tap, and tapping the chosen one clears it. */}
+          <div role="group" aria-labelledby={rpeLabelId} className="grid grid-cols-5 gap-1">
+            {RPE_OPTIONS.map((rpe) => {
+              const selected = set.rpe === rpe
+              return (
+                <Button
+                  key={rpe}
+                  variant={selected ? 'default' : 'outline'}
+                  className="h-9 px-0 text-sm tabular-nums"
+                  aria-pressed={selected}
+                  aria-label={`RPE ${formatDecimal(rpe)}`}
+                  onClick={() => onChange({ rpe: selected ? null : rpe })}
+                >
+                  {formatDecimal(rpe)}
+                </Button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="flex gap-2">
         {canGoBack && (

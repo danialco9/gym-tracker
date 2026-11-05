@@ -52,6 +52,8 @@ export function ExerciseCard({
   const [showMovement, setShowMovement] = useState(false)
   // The same query as the hint under the title, so it is fetched once.
   const lastSession = useLastSession(entry.exerciseId)
+  const activeLastTime =
+    activeIndex === -1 ? null : compareWithLastTime(entry, activeIndex, lastSession.data?.sets)
   const toggleDone = (setId: string) => dispatch({ type: 'toggleDone', entryId: entry.id, setId })
 
   const completeSet = (setId: string, index: number) => {
@@ -85,7 +87,8 @@ export function ExerciseCard({
         </CardTitle>
         <CardDescription className="space-y-0.5">
           {target && <span className="block">Objetivo: {target}</span>}
-          <LastSessionHint exerciseId={entry.exerciseId} />
+          {/* The open set already compares itself with last time; the whole session would repeat it. */}
+          {activeLastTime === null && <LastSessionHint exerciseId={entry.exerciseId} />}
         </CardDescription>
         <CardAction className="flex items-center gap-1">
           {entry.sets.length > 0 && (
@@ -130,7 +133,7 @@ export function ExerciseCard({
                 entry.sets.filter((other) => other.done),
                 bestE1rmKg,
               )}
-              lastTime={compareWithLastTime(entry, index, lastSession.data?.sets)}
+              lastTime={activeLastTime}
               onAdjust={(field, delta) =>
                 dispatch({ type: 'adjustSet', entryId: entry.id, setId: set.id, field, delta })
               }
