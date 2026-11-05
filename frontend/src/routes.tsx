@@ -1,30 +1,38 @@
 import { Navigate, type RouteObject } from 'react-router'
 import { AppLayout } from '@/components/AppLayout'
 import { ErrorPage } from '@/components/ErrorPage'
-import { AccountPage } from '@/features/account/AccountPage'
-import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
-import { RegisterPage } from '@/features/auth/RegisterPage'
-import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
 import { RequireAuth } from '@/features/auth/RequireAuth'
-import { GoalPage } from '@/features/goal/GoalPage'
 import { HomePage } from '@/features/home/HomePage'
-import { MeasurementsPage } from '@/features/measurements/MeasurementsPage'
-import { ProgressPage } from '@/features/progress/ProgressPage'
-import { RankingPage } from '@/features/ranking/RankingPage'
-import { RoutineEditorPage } from '@/features/routines/RoutineEditorPage'
-import { RoutinesPage } from '@/features/routines/RoutinesPage'
-import { WorkoutPage } from '@/features/workout/WorkoutPage'
 
+// Sign-in and Inicio, the first screens anyone sees, ship in the main bundle; every other screen
+// is its own chunk, fetched the first time it opens. The service worker precaches all of them,
+// so after the first visit none waits for the network, in the gym or offline.
 export const routes: RouteObject[] = [
   {
     // Last resort for anything outside the app shell (sign-in screens, the shell itself).
     errorElement: <ErrorPage />,
     children: [
       { path: '/login', element: <LoginPage /> },
-      { path: '/registro', element: <RegisterPage /> },
-      { path: '/recuperar', element: <ForgotPasswordPage /> },
-      { path: '/restablecer', element: <ResetPasswordPage /> },
+      {
+        path: '/registro',
+        lazy: () =>
+          import('@/features/auth/RegisterPage').then((module) => ({ Component: module.RegisterPage })),
+      },
+      {
+        path: '/recuperar',
+        lazy: () =>
+          import('@/features/auth/ForgotPasswordPage').then((module) => ({
+            Component: module.ForgotPasswordPage,
+          })),
+      },
+      {
+        path: '/restablecer',
+        lazy: () =>
+          import('@/features/auth/ResetPasswordPage').then((module) => ({
+            Component: module.ResetPasswordPage,
+          })),
+      },
       {
         element: <RequireAuth />,
         children: [
@@ -37,15 +45,67 @@ export const routes: RouteObject[] = [
                 errorElement: <ErrorPage />,
                 children: [
                   { index: true, element: <HomePage /> },
-                  { path: 'entrenar', element: <WorkoutPage /> },
-                  { path: 'rutinas', element: <RoutinesPage /> },
-                  { path: 'rutinas/nueva', element: <RoutineEditorPage /> },
-                  { path: 'rutinas/:routineId', element: <RoutineEditorPage /> },
-                  { path: 'medidas', element: <MeasurementsPage /> },
-                  { path: 'progreso', element: <ProgressPage /> },
-                  { path: 'cuenta', element: <AccountPage /> },
-                  { path: 'objetivo', element: <GoalPage /> },
-                  { path: 'ranking', element: <RankingPage /> },
+                  {
+                    path: 'entrenar',
+                    lazy: () =>
+                      import('@/features/workout/WorkoutPage').then((module) => ({
+                        Component: module.WorkoutPage,
+                      })),
+                  },
+                  {
+                    path: 'rutinas',
+                    lazy: () =>
+                      import('@/features/routines/RoutinesPage').then((module) => ({
+                        Component: module.RoutinesPage,
+                      })),
+                  },
+                  {
+                    path: 'rutinas/nueva',
+                    lazy: () =>
+                      import('@/features/routines/RoutineEditorPage').then((module) => ({
+                        Component: module.RoutineEditorPage,
+                      })),
+                  },
+                  {
+                    path: 'rutinas/:routineId',
+                    lazy: () =>
+                      import('@/features/routines/RoutineEditorPage').then((module) => ({
+                        Component: module.RoutineEditorPage,
+                      })),
+                  },
+                  {
+                    path: 'medidas',
+                    lazy: () =>
+                      import('@/features/measurements/MeasurementsPage').then((module) => ({
+                        Component: module.MeasurementsPage,
+                      })),
+                  },
+                  {
+                    path: 'progreso',
+                    lazy: () =>
+                      import('@/features/progress/ProgressPage').then((module) => ({
+                        Component: module.ProgressPage,
+                      })),
+                  },
+                  {
+                    path: 'cuenta',
+                    lazy: () =>
+                      import('@/features/account/AccountPage').then((module) => ({
+                        Component: module.AccountPage,
+                      })),
+                  },
+                  {
+                    path: 'objetivo',
+                    lazy: () =>
+                      import('@/features/goal/GoalPage').then((module) => ({ Component: module.GoalPage })),
+                  },
+                  {
+                    path: 'ranking',
+                    lazy: () =>
+                      import('@/features/ranking/RankingPage').then((module) => ({
+                        Component: module.RankingPage,
+                      })),
+                  },
                 ],
               },
             ],
