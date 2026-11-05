@@ -12,9 +12,9 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChevronLeftIcon, PlusIcon, Trash2Icon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router'
+import { Link, useBlocker, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -53,6 +53,42 @@ const SCREEN_READER_INSTRUCTIONS = {
     'Para mover un ejercicio, pulsa espacio o intro. Usa las flechas arriba y abajo para cambiar su posición, espacio o intro para soltarlo y escape para cancelar.',
 }
 
+/**
+ * Asks before leaving with unsaved changes: in the app, and when the page itself closes or reloads.
+ * Returns the way out after saving or deleting, which needs no question.
+ */
+function useLeaveGuard(dirty: boolean): () => void {
+  const done = useRef(false)
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      dirty && !done.current && currentLocation.pathname !== nextLocation.pathname,
+  )
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') {
+      return
+    }
+    if (window.confirm('¿Salir sin guardar? Perderás los cambios de esta rutina.')) {
+      blocker.proceed()
+    } else {
+      blocker.reset()
+    }
+  }, [blocker])
+
+  useEffect(() => {
+    if (!dirty) {
+      return
+    }
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty])
+
+  return () => {
+    done.current = true
+  }
+}
+
 interface RoutineEditorProps {
   routine?: Routine
 }
@@ -68,12 +104,13 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
     control,
     getValues,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<RoutineFormValues>({
     resolver: zodResolver(routineFormSchema),
     defaultValues: routine ? routineToForm(routine) : emptyRoutineForm,
   })
   const { fields, append, remove, move } = useFieldArray({ control, name: 'exercises' })
+  const allowLeaving = useLeaveGuard(isDirty)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -109,6 +146,7 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
         await createRoutine.mutateAsync(payload)
       }
       toast.success(routine ? 'Rutina actualizada' : 'Rutina creada')
+      allowLeaving()
       navigate('/rutinas')
     } catch {
       // The error is rendered from the mutation state.
@@ -125,6 +163,7 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
     try {
       await deleteRoutine.mutateAsync(routine.id)
       toast.success('Rutina eliminada')
+      allowLeaving()
       navigate('/rutinas')
     } catch {
       toast.error('No se pudo eliminar la rutina.')
