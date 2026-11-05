@@ -94,16 +94,8 @@ export const muscleLabel = (key: VolumeSeriesKey) =>
 
 export type VolumeRow = { week_start: string } & Partial<Record<VolumeSeriesKey, number>>
 
-export interface MuscleWeekComparison {
-  muscle: MuscleGroup
-  currentWeek: number
-  previousAverage: number
-}
-
-const AVERAGE_WEEKS = 4
-
 /**
- * Prepares the weekly hard-set chart and table. Series are the muscles with the most sets over
+ * Prepares the weekly hard-set chart. Series are the muscles with the most sets over
  * the whole period, in that order, so each keeps its colour while the data stays the same.
  */
 export function buildVolume(weeks: WeeklyVolume[]) {
@@ -129,25 +121,7 @@ export function buildVolume(weeks: WeeklyVolume[]) {
     return row
   })
 
-  const current = weeks.at(-1)
-  const previous = weeks.slice(-1 - AVERAGE_WEEKS, -1)
-  const setsIn = (week: WeeklyVolume | undefined, muscle: MuscleGroup) =>
-    week?.muscles.find((item) => item.muscle_group === muscle)?.hard_sets ?? 0
-  const comparison: MuscleWeekComparison[] = ranked
-    .map((muscle) => ({
-      muscle,
-      currentWeek: setsIn(current, muscle),
-      previousAverage:
-        previous.length === 0
-          ? 0
-          : Math.round(
-              (previous.reduce((sum, week) => sum + setsIn(week, muscle), 0) / previous.length) * 10,
-            ) / 10,
-    }))
-    .filter((row) => row.currentWeek > 0 || row.previousAverage > 0)
-    .toSorted((a, b) => b.currentWeek - a.currentWeek || b.previousAverage - a.previousAverage)
-
-  return { series, rows, comparison }
+  return { series, rows }
 }
 
 /** CSS colour for the n-th categorical series, in the validated slot order. */
