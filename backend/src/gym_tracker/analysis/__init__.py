@@ -12,6 +12,7 @@ from gym_tracker.analysis.metrics import (
     weight_trend,
     working_sets,
 )
+from gym_tracker.analysis.overload import ExerciseOverload, OverloadVerdict, SetLoad, week_overload
 from gym_tracker.analysis.recommendations import (
     DEFAULT_VOLUME_RULES,
     Action,
@@ -38,14 +39,17 @@ __all__ = [
     "GOAL_PLANS",
     "SCHEMAS",
     "Action",
+    "ExerciseOverload",
     "GoalPlan",
     "MuscleWeekSets",
+    "OverloadVerdict",
     "PerformedSet",
     "PlannedSet",
     "Progression",
     "ProgressionRules",
     "Reason",
     "Recommendation",
+    "SetLoad",
     "Streak",
     "TrainingLog",
     "VolumeAdvice",
@@ -64,6 +68,7 @@ __all__ = [
     "training_streak",
     "volume_advice",
     "volume_rules_for",
+    "week_overload",
     "weekly_volume_by_muscle",
     "weekly_weight_change",
     "weight_trend",

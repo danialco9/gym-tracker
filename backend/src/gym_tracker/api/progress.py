@@ -19,6 +19,7 @@ from gym_tracker.analysis import (
     session_bests,
     volume_advice,
     volume_rules_for,
+    week_overload,
     weekly_volume_by_muscle,
     weekly_weight_change,
     weight_trend,
@@ -32,6 +33,7 @@ from gym_tracker.schemas import (
     ActivityRead,
     BodyWeightPointRead,
     BodyWeightRead,
+    ExerciseOverloadRead,
     ExerciseProgressRead,
     ExerciseSessionRead,
     GoalPlanRead,
@@ -44,6 +46,7 @@ from gym_tracker.schemas import (
     ProgressOverviewRead,
     RangeRead,
     RecommendationRead,
+    SetLoadRead,
     StreakRead,
     VolumeAdviceRead,
     WeeklyVolumeRead,
@@ -117,6 +120,19 @@ def _week_sets(log: TrainingLog, today: date, goal: str | None) -> list[MuscleWe
     ]
 
 
+def _week_overload(log: TrainingLog, today: date) -> list[ExerciseOverloadRead]:
+    return [
+        ExerciseOverloadRead(
+            exercise_id=int(item.exercise_id),
+            exercise_name=item.exercise_name,
+            verdict=item.verdict,
+            current=SetLoadRead(weight_kg=item.current.weight_kg, reps=item.current.reps),
+            previous=SetLoadRead(weight_kg=item.previous.weight_kg, reps=item.previous.reps),
+        )
+        for item in week_overload(log, today)
+    ]
+
+
 def _personal_records(log: TrainingLog, work: pd.DataFrame, bests: pd.DataFrame) -> list[PersonalRecordRead]:
     exercises = log.exercises.set_index("exercise_id")
     sessions = bests.groupby("exercise_id")["workout_id"].nunique()
@@ -186,6 +202,7 @@ def read_overview(
         weekly_volume=_weekly_volume(log, work, today),
         volume_advice=_volume_advice(log, today, user.goal),
         week_sets=_week_sets(log, today, user.goal),
+        week_overload=_week_overload(log, today),
         body_weight=_body_weight(log),
     )
 

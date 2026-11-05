@@ -101,6 +101,7 @@ def test_overview_without_data(progress_client: TestClient) -> None:
     assert all(week["muscles"] == [] for week in overview["weekly_volume"])
     assert overview["body_weight"] == {"entries": [], "weekly_change_kg": None}
     assert overview["volume_advice"] == []
+    assert overview["week_overload"] == []
     # Every main muscle starts the week empty, against the general range while no goal is set.
     assert len(overview["week_sets"]) == 8
     assert overview["week_sets"][0] == {
@@ -182,6 +183,16 @@ def test_overview_summarizes_the_training_log(progress_client: TestClient, train
     # This week (from Monday 2026-09-14): three bench sets and two pulldowns, warm-ups left out.
     week = {item["muscle_group"]: item["hard_sets"] for item in overview["week_sets"]}
     assert (week["chest"], week["back"]) == (3.0, 2.0)
+    # The bench press went from 60 to 62.5 kg; the pulldown is new, so it has nothing to beat yet.
+    assert overview["week_overload"] == [
+        {
+            "exercise_id": training_log["bench"],
+            "exercise_name": "Press banca con barra",
+            "verdict": "beaten",
+            "current": {"weight_kg": 62.5, "reps": 8},
+            "previous": {"weight_kg": 60.0, "reps": 8},
+        }
+    ]
     assert overview["body_weight"] == {
         "entries": [
             {"measured_on": "2026-09-10", "weight_kg": 80.0, "trend_kg": 80.0},

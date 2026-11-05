@@ -223,6 +223,8 @@ export interface ProgressOverview {
   volume_advice: VolumeAdvice[]
   /** Every main muscle, in a fixed order. */
   week_sets: MuscleWeek[]
+  /** Exercises trained this week against their session before: beaten, then matched, then below. */
+  week_overload: ExerciseOverload[]
   body_weight: {
     entries: { measured_on: string; weight_kg: number; trend_kg: number }[]
     weekly_change_kg: number | null
@@ -235,6 +237,20 @@ export interface MuscleWeek {
   hard_sets: number
   min_hard_sets: number
   max_hard_sets: number
+}
+
+export interface SetLoad {
+  weight_kg: number
+  reps: number
+}
+
+/** One set beaten is enough to count, as during the workout; `current` is the set that tells it. */
+export interface ExerciseOverload {
+  exercise_id: number
+  exercise_name: string
+  verdict: 'beaten' | 'matched' | 'below'
+  current: SetLoad
+  previous: SetLoad
 }
 
 /** A main muscle trained outside the recommended weekly hard sets, on average. */
