@@ -224,8 +224,8 @@ describe('Progress', () => {
     const { user } = renderRoute('/progreso?vista=volumen')
 
     expect(await screen.findByText('Volumen: quads, chest')).toBeInTheDocument()
-    const table = screen.getByRole('table', { name: /Series por músculo/ })
-    expect(within(table).getByRole('row', { name: /Cuádriceps 7 0/ })).toBeInTheDocument()
+    // This week's count is the body's alone: no second table with other numbers.
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
 
     // The body: tapping a muscle tells how far it is from the week's minimum.
     expect(

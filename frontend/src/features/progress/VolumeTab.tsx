@@ -1,6 +1,4 @@
 import { lazy, Suspense } from 'react'
-import { formatDecimal } from '@/lib/format'
-import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
 import type { MuscleWeek, WeeklyVolume } from '@/lib/types'
 import { ChartFallback, EmptyState } from './ProgressParts'
 import { buildVolume } from './progress-data'
@@ -8,8 +6,10 @@ import { WeekVolumeBody } from './WeekVolumeBody'
 
 const VolumeChart = lazy(() => import('./ProgressCharts').then((module) => ({ default: module.VolumeChart })))
 
+// This week's count per muscle is the body's alone: it counts secondary muscles as half a set, so a
+// second table of primary-only counts would show another number for the same muscle.
 export function VolumeTab({ weeks, weekSets }: { weeks: WeeklyVolume[]; weekSets: MuscleWeek[] }) {
-  const { series, rows, comparison } = buildVolume(weeks)
+  const { series, rows } = buildVolume(weeks)
 
   if (series.length === 0) {
     return (
@@ -33,41 +33,6 @@ export function VolumeTab({ weeks, weekSets }: { weeks: WeeklyVolume[]; weekSets
         <Suspense fallback={<ChartFallback />}>
           <VolumeChart rows={rows} series={series} />
         </Suspense>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="font-heading text-lg font-medium">Esta semana</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm tabular-nums">
-            <caption className="sr-only">Series por músculo esta semana y media de las 4 anteriores</caption>
-            <thead className="text-muted-foreground text-xs">
-              <tr>
-                <th scope="col" className="py-1 pr-3 font-medium">
-                  Músculo
-                </th>
-                <th scope="col" className="py-1 pr-3 text-right font-medium">
-                  Esta semana
-                </th>
-                <th scope="col" className="py-1 text-right font-medium">
-                  Media 4 semanas
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparison.map((row) => (
-                <tr key={row.muscle} className="border-t">
-                  <th scope="row" className="py-1.5 pr-3 font-normal">
-                    {MUSCLE_GROUP_LABELS[row.muscle]}
-                  </th>
-                  <td className="py-1.5 pr-3 text-right font-medium">{row.currentWeek}</td>
-                  <td className="text-muted-foreground py-1.5 text-right">
-                    {formatDecimal(row.previousAverage)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </section>
     </div>
   )

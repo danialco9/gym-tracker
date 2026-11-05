@@ -107,27 +107,10 @@ describe('progress data', () => {
     ])
   })
 
-  it('compares the current week with the average of the previous four', () => {
-    const { comparison } = buildVolume([
-      week('2026-08-10', { chest: 20 }),
-      week('2026-08-17', { chest: 10, back: 6 }),
-      week('2026-08-24', { chest: 10 }),
-      week('2026-08-31', { chest: 12 }),
-      week('2026-09-07', { chest: 9, back: 4 }),
-      week('2026-09-14', { back: 5 }),
-    ])
-
-    expect(comparison).toEqual([
-      { muscle: 'back', currentWeek: 5, previousAverage: 2.5 },
-      { muscle: 'chest', currentWeek: 0, previousAverage: 10.3 },
-    ])
-  })
-
   it('has no series without training', () => {
     expect(buildVolume([week('2026-09-14', {})])).toEqual({
       series: [],
       rows: [{ week_start: '2026-09-14' }],
-      comparison: [],
     })
   })
 })
