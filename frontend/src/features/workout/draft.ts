@@ -71,6 +71,8 @@ export type DraftAction =
   | { type: 'updateSet'; entryId: string; setId: string; changes: SetChanges }
   | { type: 'adjustSet'; entryId: string; setId: string; field: 'reps' | 'weightKg'; delta: number }
   | { type: 'toggleDone'; entryId: string; setId: string }
+  /** Ticks (or, to undo, unticks) several sets of one exercise at once. */
+  | { type: 'markDone'; entryId: string; setIds: readonly string[]; done: boolean }
   | { type: 'removeSet'; entryId: string; setId: string }
   | { type: 'setNotes'; notes: string }
   | { type: 'discard' }
@@ -224,6 +226,11 @@ export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): W
       })
     case 'toggleDone':
       return updateSet(draft, action.entryId, action.setId, (set) => ({ ...set, done: !set.done }))
+    case 'markDone':
+      return updateEntry(draft, action.entryId, (entry) => ({
+        ...entry,
+        sets: entry.sets.map((set) => (action.setIds.includes(set.id) ? { ...set, done: action.done } : set)),
+      }))
     case 'removeSet':
       return updateEntry(draft, action.entryId, (entry) => ({
         ...entry,

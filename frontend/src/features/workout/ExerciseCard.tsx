@@ -1,4 +1,4 @@
-import { PlusIcon, Trash2Icon } from 'lucide-react'
+import { CheckCheckIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,6 +25,8 @@ interface ExerciseCardProps {
   bestE1rmKg?: number
   onSetCompleted: (setId: string) => void
   onExerciseCompleted: () => void
+  /** Ticks every pending set as it stands, for when the sets were done without logging each one. */
+  onCompleteAll: (setIds: string[]) => void
 }
 
 export function ExerciseCard({
@@ -34,11 +36,13 @@ export function ExerciseCard({
   bestE1rmKg,
   onSetCompleted,
   onExerciseCompleted,
+  onCompleteAll,
 }: ExerciseCardProps) {
   const target = formatSetPlan(entry.targets)
   // The set being logged is the first one not ticked off yet; the rest are summary lines.
   const activeIndex = entry.sets.findIndex((set) => !set.done)
   const doneCount = entry.sets.filter((set) => set.done).length
+  const pendingIds = entry.sets.filter((set) => !set.done).map((set) => set.id)
   const frames = exercise ? exerciseFrameUrls(exercise) : []
   const [showMovement, setShowMovement] = useState(false)
   // The same query as the hint under the title, so it is fetched once.
@@ -139,14 +143,23 @@ export function ExerciseCard({
             />
           )
         })}
-        <Button
-          variant="secondary"
-          className="mt-1 h-10 w-full"
-          onClick={() => dispatch({ type: 'addSet', entryId: entry.id })}
-        >
-          <PlusIcon />
-          Añadir serie
-        </Button>
+        <div className="mt-1 flex gap-2">
+          <Button
+            variant="secondary"
+            className="h-10 flex-1"
+            onClick={() => dispatch({ type: 'addSet', entryId: entry.id })}
+          >
+            <PlusIcon />
+            Añadir serie
+          </Button>
+          {/* With a single set left its own button does the same, so this one only shows for two or more. */}
+          {pendingIds.length > 1 && (
+            <Button variant="outline" className="h-10 flex-1" onClick={() => onCompleteAll(pendingIds)}>
+              <CheckCheckIcon />
+              Completar todas
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

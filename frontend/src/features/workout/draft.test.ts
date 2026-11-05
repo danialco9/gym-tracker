@@ -149,6 +149,20 @@ describe('draftReducer', () => {
     expect(apply(draft, { type: 'removeExercise', entryId: entry.id }).exercises).toEqual([])
     expect(draftReducer(draft, { type: 'discard' })).toBeNull()
   })
+
+  it('ticks several sets at once and unticks only those to undo it', () => {
+    let draft = start(legDay)
+    const entry = draft.exercises[0]
+    const [first, second, third] = entry.sets
+    draft = apply(draft, { type: 'toggleDone', entryId: entry.id, setId: first.id })
+
+    const pending = [second.id, third.id]
+    draft = apply(draft, { type: 'markDone', entryId: entry.id, setIds: pending, done: true })
+    expect(draft.exercises[0].sets.map((set) => set.done)).toEqual([true, true, true])
+
+    draft = apply(draft, { type: 'markDone', entryId: entry.id, setIds: pending, done: false })
+    expect(draft.exercises[0].sets.map((set) => set.done)).toEqual([true, false, false])
+  })
 })
 
 describe('nextPendingSet', () => {
