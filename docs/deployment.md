@@ -7,18 +7,19 @@ Browser ──HTTPS──▶ Vercel (frontend, CDN)
                      │  /api/* is rewritten (proxied) to the API, so the
                      │  session cookie stays first-party on the Vercel domain
                      ▼
-                   Render (API, Docker) ──TLS──▶ Neon (PostgreSQL)
+                   Vercel (API, FastAPI function) ──TLS──▶ Neon (PostgreSQL)
 ```
 
 | Piece | Service | Config in the repo |
 | --- | --- | --- |
 | Frontend | Vercel, root directory `frontend` | `frontend/vercel.json` |
-| API | Render web service (Docker) | `render.yaml`, `backend/Dockerfile`, `backend/docker-entrypoint.sh` |
+| API | Vercel, root directory `backend` | `backend/index.py`, `backend/vercel.json` |
+| Migrations | GitHub Actions, after each push to `main` | `.github/workflows/migrate.yml` |
 | Database | Neon PostgreSQL | — |
 | Demo reset | GitHub Actions, nightly | `.github/workflows/demo-reset.yml` |
 
-Why the proxy: the session cookie is `HttpOnly; Secure; SameSite=Lax`. If the frontend called
-`*.onrender.com` directly, the browser would treat it as a third-party cookie and drop it.
+Why the proxy: the session cookie is `HttpOnly; Secure; SameSite=Lax`. If the frontend called the
+API's own domain directly, the browser would treat it as a third-party cookie and drop it.
 
 ## 1. Database (Neon)
 
@@ -26,7 +27,10 @@ Why the proxy: the session cookie is `HttpOnly; Secure; SameSite=Lax`. If the fr
 2. Copy the **pooled** connection string (`postgresql://…-pooler…/neondb?sslmode=require`).
    Plain `postgresql://` URLs are accepted: the API switches them to the psycopg driver.
 
-## 2. API (Render)
+## 2. API (Render, former setup)
+
+The API ran here until it moved to Vercel (next section). The steps stay for reference, and for the
+Docker image, which Docker Compose still uses.
 
 1. New → **Blueprint** → connect this repository. Render reads `render.yaml`.
 2. When asked, set `GYM_DATABASE_URL` to the Neon connection string. `GYM_JWT_SECRET` is generated.
@@ -44,9 +48,9 @@ A [cron-job.org](https://cron-job.org) job calls `/api/health` every 10 minutes 
 (about 720 of the 750 free instance hours a month), and the app says "Arrancando el servidor…" if a
 request still takes longer than 5 seconds.
 
-### Moving the API to Vercel (in progress)
+### Moving the API to Vercel (done)
 
-Vercel's free plan has no minute-long wake-up, so the API is moving there as a second project:
+Vercel's free plan has no minute-long wake-up, so the API now runs there as a second project:
 
 1. New Project → import this repository → **Root Directory** `backend`. Vercel detects FastAPI and
    serves `app` from `backend/index.py`; `backend/vercel.json` pins it to `fra1`, next to Neon.

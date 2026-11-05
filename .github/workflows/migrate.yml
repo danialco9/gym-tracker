@@ -19,7 +19,7 @@ jobs:
   migrate:
     name: Upgrade schema and seed catalog
     runs-on: ubuntu-latest
-    # Skipped while Render still serves the API, since its entrypoint migrates on its own.
+    # Off until the API left Render, whose entrypoint migrated on its own; on since then.
     if: ${{ vars.PRODUCTION_MIGRATIONS_ENABLED == 'true' }}
     defaults:
       run:
