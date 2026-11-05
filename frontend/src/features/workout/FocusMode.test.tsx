@@ -206,3 +206,28 @@ describe('Complete all sets', () => {
     expect(screen.getByText('0/2')).toBeInTheDocument()
   })
 })
+
+describe('Removing an exercise', () => {
+  it('can be undone, sets and all', async () => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    render(<Toaster />)
+    const { user } = startWith(USER)
+
+    await user.click(await screen.findByRole('button', { name: 'Quitar Sentadilla con barra' }))
+
+    expect(screen.queryByRole('button', { name: 'Quitar Sentadilla con barra' })).not.toBeInTheDocument()
+    const notice = await screen.findByText('Sentadilla con barra quitado')
+    // Toasts outlive a test, so the undo is the one in this notice.
+    const toast = notice.closest('li')
+    expect(toast).not.toBeNull()
+
+    fireEvent.click(within(toast as HTMLElement).getByRole('button', { name: 'Deshacer' }))
+
+    expect(screen.getByRole('button', { name: 'Quitar Sentadilla con barra' })).toBeInTheDocument()
+    expect(screen.getByText('0/2')).toBeInTheDocument()
+  })
+})

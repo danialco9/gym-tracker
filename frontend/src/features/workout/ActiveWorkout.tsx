@@ -96,6 +96,38 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
     })
   }
 
+  // The bin sits next to the other buttons, so a removal never happens without a way back.
+  const removeExercise = (entryId: string) => {
+    const index = draft.exercises.findIndex((entry) => entry.id === entryId)
+    if (index === -1) {
+      return
+    }
+    const entry = draft.exercises[index]
+    dispatch({ type: 'removeExercise', entryId })
+    toast(`${entry.name} quitado`, {
+      action: {
+        label: 'Deshacer',
+        onClick: () => {
+          dispatch({ type: 'restoreExercise', entry, index })
+          carousel.current?.show(index)
+        },
+      },
+    })
+  }
+
+  const removeSet = (entryId: string, setId: string) => {
+    const entry = draft.exercises.find((candidate) => candidate.id === entryId)
+    const index = entry?.sets.findIndex((set) => set.id === setId) ?? -1
+    if (entry === undefined || index === -1) {
+      return
+    }
+    const set = entry.sets[index]
+    dispatch({ type: 'removeSet', entryId, setId })
+    toast(`Serie ${index + 1} de ${entry.name} quitada`, {
+      action: { label: 'Deshacer', onClick: () => dispatch({ type: 'restoreSet', entryId, set, index }) },
+    })
+  }
+
   const close = () => {
     timer.stop()
     dispatch({ type: 'discard' })
@@ -186,6 +218,8 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
               onSetCompleted={(setId) => startRest(entry.id, setId)}
               onExerciseCompleted={() => showNextExercise(entry.id)}
               onCompleteAll={(setIds) => completeAll(entry.id, setIds)}
+              onRemove={() => removeExercise(entry.id)}
+              onRemoveSet={(setId) => removeSet(entry.id, setId)}
             />
           )}
         </ExerciseCarousel>
