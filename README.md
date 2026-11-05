@@ -73,6 +73,9 @@ remove it like any other app (long press on the icon).
   today's plan first: what to do with each exercise and why, and how the week's volume of its
   muscles compares with the goal. One tap starts the workout with the suggested weights.
 - **Training streak.** Days in a row with workouts, where one rest day does not break it.
+- **Weekly overload summary.** The home screen says how many exercises trained this week beat the
+  session before ("4 de 6 ejercicios superan la última vez"), judged set by set as during the
+  workout, and lists which ones beat it, matched it or need a push.
 - **Strength ranking.** For every exercise, the share of people you out-lift ("stronger than
   64 %"), from your best estimated 1RM divided by your body weight, so light and heavy lifters
   compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
@@ -276,6 +279,7 @@ A few decisions worth calling out:
 - [x] Progressive overload in the workout: each set against the same set last time
 - [x] Weekly volume on the body: each muscle fills up towards the goal's range of hard sets
 - [x] *Completar todas*: tick the rest of an exercise at once, with an undo
+- [x] Weekly overload summary on the home screen: how many exercises beat last time, and which
 
 ## Ideas for the future
 
@@ -283,8 +287,6 @@ Not promised, roughly in order of value for the effort.
 
 **Hypertrophy and progressive overload**
 
-- [ ] Weekly overload summary: "this week you beat last time on 4 of 6 exercises", and which ones
-  to push next.
 - [ ] RIR (reps in reserve) instead of RPE: "2 more reps left" is easier to judge mid-set than a
   1–10 scale.
 - [ ] Mesocycles with a deload week: 4–6 week blocks that ramp the volume, then one lighter week.

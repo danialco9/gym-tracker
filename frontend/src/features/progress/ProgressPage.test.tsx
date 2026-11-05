@@ -140,6 +140,7 @@ const OVERVIEW: ProgressOverview = {
     },
   ],
   week_sets: weekSets({ chest: 6, triceps: 3, quads: 7, glutes: 3.5 }),
+  week_overload: [],
   body_weight: {
     entries: [
       { measured_on: '2026-09-14', weight_kg: 79.9, trend_kg: 80.1 },
@@ -258,6 +259,7 @@ describe('Progress', () => {
           weekly_volume: EMPTY_WEEKS,
           volume_advice: [],
           week_sets: weekSets(),
+          week_overload: [],
           body_weight: { entries: [], weekly_change_kg: null },
         } satisfies ProgressOverview,
       },

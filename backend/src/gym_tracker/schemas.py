@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
+from gym_tracker.analysis.overload import OverloadVerdict
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
 from gym_tracker.analysis.strength import PercentileSource, StrengthTier, Zone
 from gym_tracker.enums import Equipment, MuscleGroup, Sex, TrainingGoal
@@ -449,6 +450,21 @@ class MuscleWeekRead(BaseModel):
     max_hard_sets: int
 
 
+class SetLoadRead(BaseModel):
+    weight_kg: float
+    reps: int
+
+
+class ExerciseOverloadRead(BaseModel):
+    """An exercise trained this week against its session before: beaten, matched or below."""
+
+    exercise_id: int
+    exercise_name: str
+    verdict: OverloadVerdict
+    current: SetLoadRead
+    previous: SetLoadRead
+
+
 class ProgressOverviewRead(BaseModel):
     activity: ActivityRead
     recommendations: list[RecommendationRead]
@@ -456,6 +472,7 @@ class ProgressOverviewRead(BaseModel):
     weekly_volume: list[WeeklyVolumeRead]
     volume_advice: list[VolumeAdviceRead]
     week_sets: list[MuscleWeekRead]
+    week_overload: list[ExerciseOverloadRead]
     body_weight: BodyWeightRead
 
 
