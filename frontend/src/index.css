@@ -125,3 +125,16 @@
     @apply absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/25;
   }
 }
+
+/* Those who ask their phone for less motion get it everywhere: slides, fades, spinners and the
+   card carousel settle at once. Screens that animate in JavaScript check the same setting. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

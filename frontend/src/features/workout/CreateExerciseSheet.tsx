@@ -32,7 +32,7 @@ export function CreateExerciseSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto max-h-[90dvh] max-w-2xl gap-0 overflow-y-auto rounded-t-xl"
+        className="mx-auto max-h-[90dvh] max-w-2xl gap-0 overflow-y-auto overscroll-contain rounded-t-xl"
       >
         {/* Mounted only while open, so the form starts from the latest search each time. */}
         {open && <CreateExerciseForm initialName={initialName} onCreated={onCreated} />}

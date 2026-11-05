@@ -18,7 +18,7 @@ export function ExerciseInfoSheet({ exercise, onClose, onAdd }: ExerciseInfoShee
     <Sheet open={exercise !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="bottom"
-        className="mx-auto max-h-[90dvh] max-w-2xl gap-0 overflow-y-auto rounded-t-xl"
+        className="mx-auto max-h-[90dvh] max-w-2xl gap-0 overflow-y-auto overscroll-contain rounded-t-xl"
       >
         {exercise && <ExerciseInfo exercise={exercise} onAdd={onAdd} />}
       </SheetContent>
