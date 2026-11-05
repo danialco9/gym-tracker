@@ -22,3 +22,8 @@ node_modules/
 
 # Vercel CLI project link
 .vercel
+
+# Agent skills installed locally with `npx skills add` (personal tooling, not part of the app)
+.agents/
+.claude/skills/
+skills-lock.json
