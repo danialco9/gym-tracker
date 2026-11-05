@@ -29,7 +29,7 @@ test("picks a goal, follows today's plan for a routine and starts a streak", asy
   await page.getByRole('button', { name: /Ganar músculo/ }).click()
   await expect(page.getByText('RPE 8–9')).toBeVisible()
   await page.getByRole('button', { name: 'Guardar objetivo' }).click()
-  await expect(page.getByRole('heading', { name: 'Tu entrenamiento, medido' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /^Hola/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /Elige tu objetivo/ })).toHaveCount(0)
 
   // A routine opens today's plan first, tuned to the goal just chosen.

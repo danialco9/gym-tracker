@@ -29,6 +29,6 @@ test('logs a free workout set by set and finds it on the home page afterwards', 
   await page.getByRole('button', { name: 'Terminar y guardar' }).click()
 
   await expect(page.getByText('Entreno guardado')).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Tu entrenamiento, medido' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /^Hola/ })).toBeVisible()
   await expect(page.getByRole('listitem').filter({ hasText: 'Entreno libre' })).toContainText('2 series')
 })

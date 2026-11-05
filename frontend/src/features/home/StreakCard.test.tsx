@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Streak, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
+import { StreakCard } from './StreakCard'
 
 const USER: User = {
   id: 1,
@@ -30,6 +31,12 @@ describe('Streak on the home screen', () => {
 
     expect(await screen.findByText('5 días de racha')).toBeInTheDocument()
     expect(screen.getByText(/Puedes descansar un día sin perderla · mejor: 9 días/)).toBeInTheDocument()
+  })
+
+  it('shows the workouts of the week beside the streak', () => {
+    render(<StreakCard streak={STREAK} workoutsThisWeek={1} />)
+
+    expect(screen.getByText('1 entreno esta semana')).toBeInTheDocument()
   })
 
   it('warns when only training today keeps the streak', async () => {

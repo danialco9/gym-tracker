@@ -67,7 +67,7 @@ describe('Goal', () => {
 
     await user.click(screen.getByRole('button', { name: 'Guardar objetivo' }))
 
-    expect(await screen.findByRole('heading', { name: 'Tu entrenamiento, medido' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /^Hola/ })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     expect(screen.queryByRole('link', { name: /Elige tu objetivo/ })).not.toBeInTheDocument()
     expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ goal: 'build_muscle' })
