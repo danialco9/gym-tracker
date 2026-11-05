@@ -24,14 +24,47 @@ account with 12 weeks of simulated training. No sign-up needed.
 > in English. Open to anyone: each account sees only its own data, and the ranking shows a
 > nickname and a tier, never weights.
 
+## Install it on your phone
+
+It is a web app (PWA): there is nothing to download from a store. Once added to the home screen it
+opens full screen with its own icon, like any other app, and works without coverage.
+
+**iPhone (Safari)**
+
+1. Open https://gym-tracker-two-beta.vercel.app in **Safari**. On iOS, only an app added from
+   Safari gets notifications.
+2. Tap the **Share** button (*Compartir*, the square with an arrow). On iOS 26 it is behind the
+   **•••** button next to the address bar.
+3. Scroll down and tap **Add to Home Screen** (*Añadir a pantalla de inicio*). If *Open as Web App*
+   (*Abrir como app web*) shows, leave it on.
+4. Tap **Add** (*Añadir*), then open **Gym Tracker** from the home screen and sign in.
+5. To be told when a rest ends with the phone locked, tap **Avisarme** on the rest bar during a
+   workout and allow notifications. It needs iOS 16.4 or later and the app opened from the home
+   screen, not from Safari.
+
+**Android (Chrome)**
+
+1. Open https://gym-tracker-two-beta.vercel.app in **Chrome**.
+2. Tap **Install** (*Instalar*) if Chrome offers it below the address bar, or open the **⋮** menu
+   and choose **Install app** (*Instalar aplicación*). On some phones it reads **Add to Home
+   screen** (*Añadir a pantalla de inicio*).
+3. Confirm, then open **Gym Tracker** from the home screen or the app drawer and sign in.
+4. For the end-of-rest notice, tap **Avisarme** on the rest bar and allow notifications.
+
+**Updates** install themselves: the app checks for a new version each time it opens. To uninstall,
+remove it like any other app (long press on the icon).
+
 ## What it does
 
 - **Live workout logging.** Mobile-first screen built for the gym floor: one exercise per card,
   swiped sideways (CSS scroll snap) and moving on by itself when its sets are done, big
   `±2.5 kg` / `±1 rep` buttons, a ring with the sets done, the previous performance of each
-  exercise in view, and a hint when a set would beat your record. A full-screen rest timer
-  follows each set, as long as your goal asks for. The draft is kept in `localStorage`, so a lost
-  connection or a locked phone never loses a set.
+  exercise in view, and a hint when a set would beat your record. Each set is compared with the
+  same set last time ("Superas la última vez"), with a one-tap target to beat it, and *Completar
+  todas* ticks the rest of an exercise at once, with an undo. A rest bar above the bottom
+  navigation follows each set, as long as your goal asks for, leaving the workout usable while it
+  counts down, and it announces the next set of the exercise in hand. The draft is kept in
+  `localStorage`, so a lost connection or a locked phone never loses a set.
 - **Visual exercise picker.** A catalog of 209 exercises with line drawings, search, muscle and
   equipment filters and your recent exercises first; an info sheet animates the movement, and
   anything missing can be added as your own exercise.
@@ -43,8 +76,9 @@ account with 12 weeks of simulated training. No sign-up needed.
 - **Strength ranking.** For every exercise, the share of people you out-lift ("stronger than
   64 %"), from your best estimated 1RM divided by your body weight, so light and heavy lifters
   compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
-  body zone (chest, back, shoulders, arms, legs, core). The list shows only a nickname and a tier,
-  and anyone can leave it from the account screen.
+  body zone (chest, back, shoulders, arms, legs, core), painted on a body figure in the tier's
+  colour. The list shows only a nickname and a tier, and anyone can leave it from the account
+  screen.
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
   RPE), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
   with keyboard support.
@@ -61,10 +95,13 @@ account with 12 weeks of simulated training. No sign-up needed.
   workout is worse than an honest error — so the screens say when they are offline. A workout
   finished with no coverage waits in a queue on the phone and is sent on its own when the
   connection returns; it carries a client id, so a retry after a lost answer is never saved twice.
+  A locked phone freezes the page, so the end of a rest can also arrive as a Web Push sent by the
+  API ("Avisarme" on the rest bar).
 - **Body measurements.** Quick weight entry plus an optional full set of measurements, with history
   and a weight trend chart.
 - **Progress dashboard.** Estimated 1RM per exercise, weekly hard sets by muscle group, personal
-  records and body weight trend.
+  records and body weight trend. The volume tab opens on a body figure that fills each muscle as
+  the week's hard sets reach the goal's range: grey below, green inside, orange above.
 - **Training recommendations.** The analytics engine compares the sets you actually did against the
   ones the routine planned: everything hit at RPE ≤ 8 adds load to every planned set (keeping the
   pyramid shape), missed reps suggest holding, and a detected plateau suggests a deload. The load
@@ -96,7 +133,9 @@ flowchart LR
 
 The SPA and the API are served from the same origin on purpose: the session JWT travels in an
 `HttpOnly`, `Secure`, `SameSite=Lax` cookie, which a cross-site frontend could not send. In
-production Vercel rewrites `/api` to the Render service; in Docker Compose nginx does the same.
+production the web project on Vercel rewrites `/api` to a second Vercel project that runs the
+FastAPI app as a function (no cold start of a sleeping container); in Docker Compose nginx does the
+same.
 
 ## Stack
 
@@ -107,7 +146,7 @@ production Vercel rewrites `/api` to the Render service; in Docker Compose nginx
 | Data analysis | pandas, NumPy (scikit-learn planned) |
 | Database | PostgreSQL 18 |
 | Tooling | uv, Ruff, mypy, pytest · pnpm, oxlint, Prettier, Vitest |
-| CI/CD | GitHub Actions · Vercel (web) · Render (API, Docker) · Neon (database) |
+| CI/CD | GitHub Actions (tests, end-to-end, production migrations, nightly demo reset) · Vercel (web and API) · Neon (database) |
 
 ## Repository layout
 
@@ -118,7 +157,7 @@ e2e/        Playwright flows against the full stack
 data/       Interim CSV training log
 docs/       Deployment guide, image credits and README screenshots
 docker-compose.yml   Full local stack (PostgreSQL, API, web)
-render.yaml          Render Blueprint for the API
+render.yaml          Former Render Blueprint for the API (now on Vercel, see the deployment guide)
 ```
 
 ## Getting started
@@ -215,7 +254,7 @@ A few decisions worth calling out:
 - [x] Progress analytics API (overview and per-exercise history) and demo account
 - [x] Frontend: progress dashboard (recommendations, per-exercise charts, weekly volume, body weight)
 - [x] Rate limiting on login and registration
-- [x] Deployment setup: Vercel + Render (Docker) + Neon, public demo with nightly reset ([guide](docs/deployment.md))
+- [x] Deployment setup: Vercel + Neon, public demo with nightly reset ([guide](docs/deployment.md)); the API moved from Render to Vercel to drop the cold start
 - [x] One-command local stack with Docker Compose
 - [x] End-to-end tests (Playwright) on the full stack, in CI
 - [x] Screenshots in this README
@@ -230,3 +269,45 @@ A few decisions worth calling out:
 - [x] Focus mode and swipeable exercise cards for the live workout
 - [x] Daily training streak
 - [x] Strength ranking by percentile, per exercise and per body zone, with nicknames and an opt-out
+- [x] API moved to Vercel: no more minute-long wake-up, migrations run from GitHub Actions
+- [x] Animated exercise drawings in the live workout, and set and record animations
+- [x] Rest bar that leaves the workout usable, and an end-of-rest Web Push for a locked phone
+- [x] Ranking painted on a body figure, one colour per tier
+- [x] Progressive overload in the workout: each set against the same set last time
+- [x] Weekly volume on the body: each muscle fills up towards the goal's range of hard sets
+- [x] *Completar todas*: tick the rest of an exercise at once, with an undo
+
+## Ideas for the future
+
+Not promised, roughly in order of value for the effort.
+
+**Hypertrophy and progressive overload**
+
+- [ ] Weekly overload summary: "this week you beat last time on 4 of 6 exercises", and which ones
+  to push next.
+- [ ] RIR (reps in reserve) instead of RPE: "2 more reps left" is easier to judge mid-set than a
+  1–10 scale.
+- [ ] Mesocycles with a deload week: 4–6 week blocks that ramp the volume, then one lighter week.
+- [ ] Warm-up sets worked out from the first working set (for example 40 %, 60 % and 80 %).
+- [ ] Plate calculator: which plates to load on each side of the bar for the weight on screen.
+
+**In the gym**
+
+- [ ] Swap an exercise when the machine is taken: alternatives for the same muscle, with the
+  drawings, without losing the routine's order.
+- [ ] Supersets and circuits: two exercises that alternate, with the rest only after the pair.
+- [ ] Install guide inside the app: on an iPhone in Safari, explain how to add it to the home
+  screen, which is also what unlocks the end-of-rest notification.
+
+**History and data**
+
+- [ ] Calendar of workouts with a heat map, and editing a saved workout from it.
+- [ ] Export all your data to CSV (workouts, measurements), and import a CSV from another app.
+- [ ] Progress photos next to the body weight chart.
+- [ ] Forecasts with scikit-learn: when a lift is likely to stall, and the expected 1RM in a month.
+
+**Engineering**
+
+- [ ] Split the JavaScript bundle by route: the build warns that one chunk is over 500 kB, which
+  slows the first open on mobile data.
+- [ ] Language-model reading for the dictated sentences the rules cannot reach (listed above).
