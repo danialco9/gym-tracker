@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCurrentUser } from '@/features/auth/queries'
 import { ApiError } from '@/lib/api'
 import { formatDecimal, formatTime, plural } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { useGoalPlans } from '@/features/goal/queries'
 import { useProgressOverview } from '@/features/progress/queries'
 import {
@@ -176,10 +177,17 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
           <h1 className="font-heading truncate text-xl font-semibold">
             {draft.routineName ?? 'Entreno libre'}
           </h1>
-          <p className="text-primary text-sm font-medium tabular-nums">
-            {completed} {plural(completed, 'serie', 'series')}{' '}
-            {plural(completed, 'completada', 'completadas')}
-          </p>
+          {/* Green is for progress made, so a fresh workout starts grey. */}
+          {total > 0 && (
+            <p
+              className={cn(
+                'text-sm font-medium tabular-nums',
+                completed > 0 ? 'text-primary' : 'text-muted-foreground',
+              )}
+            >
+              {completed} de {total} {plural(total, 'serie', 'series')}
+            </p>
+          )}
         </div>
         <Button variant="ghost" size="sm" onClick={discard}>
           Descartar

@@ -18,14 +18,14 @@ test('logs a free workout set by set and finds it on the home page afterwards', 
   await page.getByRole('button', { name: 'RPE 8', exact: true }).click()
   await page.getByRole('button', { name: 'Completar serie 1' }).click()
 
-  await expect(page.getByText('1 serie completada')).toBeVisible()
+  await expect(page.getByText('1 de 1 serie')).toBeVisible()
 
   await page.getByRole('button', { name: 'Añadir serie' }).click()
   // The new set carries the previous one's numbers over, which is the point of the button.
   await expect(page.getByRole('textbox', { name: 'Peso (kg)', exact: true })).toHaveValue('80')
   await page.getByRole('button', { name: 'Completar serie 2' }).click()
 
-  await expect(page.getByText('2 series completadas')).toBeVisible()
+  await expect(page.getByText('2 de 2 series')).toBeVisible()
 
   await page.getByRole('button', { name: 'Terminar y guardar' }).click()
 
