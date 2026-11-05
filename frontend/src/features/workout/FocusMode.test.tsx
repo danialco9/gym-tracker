@@ -1,5 +1,6 @@
-import { screen, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { Toaster } from '@/components/ui/sonner'
 import type { Exercise, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
@@ -177,5 +178,31 @@ describe('Rest between sets', () => {
 
     expect(screen.queryByRole('region', { name: 'Descanso' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Terminar y guardar' })).toBeEnabled()
+  })
+})
+
+describe('Complete all sets', () => {
+  it('ticks every pending set with no rest, and can be undone', async () => {
+    // The toaster follows the system theme, which jsdom cannot tell.
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    render(<Toaster />)
+    const { user } = startWith(USER)
+
+    // Only the squat has two sets left; the bench press's single set has its own button.
+    expect(await screen.findAllByRole('button', { name: 'Completar todas' })).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: 'Completar todas' }))
+
+    expect(screen.getByText('2/2')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Descanso' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Sentadilla con barra: 2 series hechas')).toBeInTheDocument()
+
+    // A plain click: a pointer press on a toast starts its swipe, which jsdom cannot capture.
+    fireEvent.click(await screen.findByRole('button', { name: 'Deshacer' }))
+
+    expect(screen.getByText('0/2')).toBeInTheDocument()
   })
 })

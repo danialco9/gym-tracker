@@ -78,6 +78,24 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
     }
   }
 
+  // The sets were done without logging each one: no rest follows, the workout moves straight on.
+  const completeAll = (entryId: string, setIds: string[]) => {
+    timer.stop()
+    setCurrentEntryId(entryId)
+    dispatch({ type: 'markDone', entryId, setIds, done: true })
+    showNextExercise(entryId)
+    const index = draft.exercises.findIndex((entry) => entry.id === entryId)
+    toast.success(`${draft.exercises[index].name}: ${setIds.length} series hechas`, {
+      action: {
+        label: 'Deshacer',
+        onClick: () => {
+          dispatch({ type: 'markDone', entryId, setIds, done: false })
+          carousel.current?.show(index)
+        },
+      },
+    })
+  }
+
   const close = () => {
     timer.stop()
     dispatch({ type: 'discard' })
@@ -167,6 +185,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
               bestE1rmKg={records.get(entry.exerciseId)}
               onSetCompleted={(setId) => startRest(entry.id, setId)}
               onExerciseCompleted={() => showNextExercise(entry.id)}
+              onCompleteAll={(setIds) => completeAll(entry.id, setIds)}
             />
           )}
         </ExerciseCarousel>
