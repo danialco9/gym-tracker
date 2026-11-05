@@ -99,6 +99,10 @@
   }
   html {
     @apply font-sans;
+    /* Quick taps on + and − must count as taps, not as a double-tap zoom; pinch zoom still works.
+       The grey flash a tap leaves on iOS is replaced by each control's own pressed state. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground antialiased;

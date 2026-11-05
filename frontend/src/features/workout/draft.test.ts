@@ -150,6 +150,18 @@ describe('draftReducer', () => {
     expect(draftReducer(draft, { type: 'discard' })).toBeNull()
   })
 
+  it('puts a removed exercise or set back where it was', () => {
+    const draft = apply(start(legDay), { type: 'addExercise', exercise: { id: 12, name: 'Prensa' } })
+    const [squat] = draft.exercises
+    const middle = squat.sets[1]
+
+    const withoutSquat = apply(draft, { type: 'removeExercise', entryId: squat.id })
+    expect(apply(withoutSquat, { type: 'restoreExercise', entry: squat, index: 0 })).toEqual(draft)
+
+    const withoutSet = apply(draft, { type: 'removeSet', entryId: squat.id, setId: middle.id })
+    expect(apply(withoutSet, { type: 'restoreSet', entryId: squat.id, set: middle, index: 1 })).toEqual(draft)
+  })
+
   it('ticks several sets at once and unticks only those to undo it', () => {
     let draft = start(legDay)
     const entry = draft.exercises[0]

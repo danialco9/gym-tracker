@@ -27,6 +27,9 @@ interface ExerciseCardProps {
   onExerciseCompleted: () => void
   /** Ticks every pending set as it stands, for when the sets were done without logging each one. */
   onCompleteAll: (setIds: string[]) => void
+  /** Removes the exercise, or one of its sets; the caller offers the undo. */
+  onRemove: () => void
+  onRemoveSet: (setId: string) => void
 }
 
 export function ExerciseCard({
@@ -37,6 +40,8 @@ export function ExerciseCard({
   onSetCompleted,
   onExerciseCompleted,
   onCompleteAll,
+  onRemove,
+  onRemoveSet,
 }: ExerciseCardProps) {
   const target = formatSetPlan(entry.targets)
   // The set being logged is the first one not ticked off yet; the rest are summary lines.
@@ -91,12 +96,7 @@ export function ExerciseCard({
               </span>
             </ProgressRing>
           )}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Quitar ${entry.name}`}
-            onClick={() => dispatch({ type: 'removeExercise', entryId: entry.id })}
-          >
+          <Button variant="ghost" size="icon-sm" aria-label={`Quitar ${entry.name}`} onClick={onRemove}>
             <Trash2Icon />
           </Button>
         </CardAction>
@@ -139,7 +139,7 @@ export function ExerciseCard({
               }
               onDone={() => completeSet(set.id, index)}
               onBack={() => previousDone && toggleDone(previousDone.id)}
-              onRemove={() => dispatch({ type: 'removeSet', entryId: entry.id, setId: set.id })}
+              onRemove={() => onRemoveSet(set.id)}
             />
           )
         })}

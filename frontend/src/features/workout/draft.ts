@@ -74,6 +74,9 @@ export type DraftAction =
   /** Ticks (or, to undo, unticks) several sets of one exercise at once. */
   | { type: 'markDone'; entryId: string; setIds: readonly string[]; done: boolean }
   | { type: 'removeSet'; entryId: string; setId: string }
+  /** Puts a removed exercise or set back where it was, to undo a removal. */
+  | { type: 'restoreExercise'; entry: DraftExercise; index: number }
+  | { type: 'restoreSet'; entryId: string; set: DraftSet; index: number }
   | { type: 'setNotes'; notes: string }
   | { type: 'discard' }
 
@@ -235,6 +238,13 @@ export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): W
       return updateEntry(draft, action.entryId, (entry) => ({
         ...entry,
         sets: entry.sets.filter((set) => set.id !== action.setId),
+      }))
+    case 'restoreExercise':
+      return { ...draft, exercises: draft.exercises.toSpliced(action.index, 0, action.entry) }
+    case 'restoreSet':
+      return updateEntry(draft, action.entryId, (entry) => ({
+        ...entry,
+        sets: entry.sets.toSpliced(action.index, 0, action.set),
       }))
     case 'setNotes':
       return { ...draft, notes: action.notes }
