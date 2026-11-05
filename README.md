@@ -80,7 +80,8 @@ remove it like any other app (long press on the icon).
   64 %"), from your best estimated 1RM divided by your body weight, so light and heavy lifters
   compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
   body zone (chest, back, shoulders, arms, legs, core), painted on a body figure in the tier's
-  colour. The list shows only a nickname and a tier, and anyone can leave it from the account
+  colour. Each tier has a medal of its own, told apart by shape as well as colour: round, starred,
+  scalloped and seal medals, then gem cuts and a crown for Máster. The list shows only a nickname and a tier, and anyone can leave it from the account
   screen.
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
   RPE), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
