@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react'
 import { cn } from 'cn'
+import { prefersReducedMotion } from '@/lib/motion'
 
 const FRAME_MS = 650
 // Start, middle, end, middle: the movement goes there and back instead of jumping to the start.
 const SEQUENCE = [0, 1, 2, 1]
-
-function prefersReducedMotion(): boolean {
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-}
 
 interface MovementAnimationProps {
   /** The three frames from exerciseFrameUrls. */

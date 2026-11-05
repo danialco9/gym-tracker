@@ -115,7 +115,7 @@ function PickerBody({ onSelect }: Pick<ExercisePickerProps, 'onSelect'>) {
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto border-t pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t pb-[max(1rem,env(safe-area-inset-bottom))]">
         <QueryStatus
           query={exercises}
           loading="Cargando ejercicios…"

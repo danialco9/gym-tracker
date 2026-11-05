@@ -1,5 +1,6 @@
 import { useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react'
 import { cn } from 'cn'
+import { prefersReducedMotion } from '@/lib/motion'
 import type { DraftExercise } from './draft'
 
 export interface ExerciseCarouselHandle {
@@ -26,7 +27,10 @@ export function ExerciseCarousel({ exercises, children, ref }: ExerciseCarouselP
   const show = (index: number) => {
     setCurrent(index)
     const scroller = scrollerRef.current
-    scroller?.scrollTo?.({ left: index * scroller.clientWidth, behavior: 'smooth' })
+    scroller?.scrollTo?.({
+      left: index * scroller.clientWidth,
+      behavior: prefersReducedMotion() ? 'instant' : 'smooth',
+    })
   }
   useImperativeHandle(ref, () => ({ show }))
 
