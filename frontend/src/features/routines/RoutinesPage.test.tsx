@@ -182,6 +182,30 @@ describe('Routines', () => {
     expect(calls.some((call) => call.method === 'DELETE' && call.path === '/routines/7')).toBe(true)
   })
 
+  it('asks before leaving with unsaved changes, and only then', async () => {
+    mockApi({ 'GET /auth/me': { body: USER }, 'GET /routines': { body: [] } })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const { user, router } = renderRoute('/rutinas/nueva')
+
+    // Nothing typed yet: no question.
+    await user.click(await screen.findByRole('link', { name: 'Volver a rutinas' }))
+    expect(router.state.location.pathname).toBe('/rutinas')
+    expect(confirm).not.toHaveBeenCalled()
+
+    await user.click(await screen.findByRole('link', { name: /Nueva rutina/ }))
+    await user.type(await screen.findByLabelText('Nombre'), 'Pierna')
+    await user.click(screen.getByRole('link', { name: 'Volver a rutinas' }))
+
+    // Staying keeps what was typed.
+    expect(confirm).toHaveBeenCalledWith('¿Salir sin guardar? Perderás los cambios de esta rutina.')
+    expect(router.state.location.pathname).toBe('/rutinas/nueva')
+    expect(screen.getByLabelText('Nombre')).toHaveValue('Pierna')
+
+    confirm.mockReturnValue(true)
+    await user.click(screen.getByRole('link', { name: 'Volver a rutinas' }))
+    expect(router.state.location.pathname).toBe('/rutinas')
+  })
+
   it('validates the form and explains duplicate names', async () => {
     mockApi({
       'GET /auth/me': { body: USER },
