@@ -1,4 +1,4 @@
-import { GaugeIcon } from 'lucide-react'
+import { ChevronDownIcon, GaugeIcon } from 'lucide-react'
 import { formatDay } from '@/lib/format'
 import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
 import { formatSetPlan } from '@/lib/set-plan'
@@ -17,18 +17,31 @@ const toPlan = (sets: { reps: number | null; weight_kg: number | null }[]) =>
 
 function RecommendationRow({ item }: { item: Recommendation }) {
   const target = formatSetPlan(toPlan(item.target_sets))
+  // Closed it says only what to do next; the last session and the reason open on a tap.
   return (
-    <li className="space-y-1 py-2.5">
-      <p className="font-medium">{item.exercise_name}</p>
-      <p className="text-muted-foreground text-xs tabular-nums">
-        {formatDay(item.last_performed_on)}: {formatSetPlan(toPlan(item.last_sets))}
-        {target && ` · objetivo ${target}`}
-      </p>
-      <p className="text-sm tabular-nums">
-        <span className="text-muted-foreground">Próxima: </span>
-        <span className="font-semibold">{formatSetPlan(toPlan(item.suggested_sets))}</span>
-      </p>
-      <p className="text-muted-foreground text-xs">{explainRecommendation(item)}</p>
+    <li>
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-3 py-2.5 select-none [&::-webkit-details-marker]:hidden">
+          <span className="min-w-0 flex-1 space-y-0.5">
+            <span className="block font-medium">{item.exercise_name}</span>
+            <span className="block text-sm tabular-nums">
+              <span className="text-muted-foreground">Próxima: </span>
+              <span className="font-semibold">{formatSetPlan(toPlan(item.suggested_sets))}</span>
+            </span>
+          </span>
+          <ChevronDownIcon
+            className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-180"
+            aria-hidden
+          />
+        </summary>
+        <div className="space-y-1 pb-2.5">
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {formatDay(item.last_performed_on)}: {formatSetPlan(toPlan(item.last_sets))}
+            {target && ` · objetivo ${target}`}
+          </p>
+          <p className="text-muted-foreground text-xs">{explainRecommendation(item)}</p>
+        </div>
+      </details>
     </li>
   )
 }
