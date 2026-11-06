@@ -66,6 +66,27 @@ describe('Measurements', () => {
     })
   })
 
+  it('shows the last ten entries and the rest on request', async () => {
+    // Twelve daily weigh-ins, 1 to 12 September, 80,1 to 81,2 kg.
+    const measurements = Array.from({ length: 12 }, (_, index) =>
+      measurement({
+        id: index + 1,
+        measured_on: `2026-09-${String(index + 1).padStart(2, '0')}`,
+        weight_kg: 80 + (index + 1) / 10,
+      }),
+    )
+    mockApi({ 'GET /auth/me': { body: USER }, 'GET /measurements': { body: measurements } })
+    const { user } = renderRoute('/medidas')
+
+    expect(await screen.findByRole('button', { name: /81,2 kg/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /80,3 kg/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /80,2 kg/ })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Ver todas (12)' }))
+    expect(screen.getByRole('button', { name: /80,1 kg/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Ver todas/ })).not.toBeInTheDocument()
+  })
+
   it('opens a history entry to edit and delete it', async () => {
     let measurements = [
       measurement({ id: 1, measured_on: '2026-09-13', weight_kg: 79.1 }),
