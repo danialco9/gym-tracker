@@ -150,28 +150,25 @@ export function HomePage() {
             Todavía no has registrado ningún entreno.
           </p>
         )}
-        <ul className="grid gap-2 lg:grid-cols-2">
-          {workouts.data?.map((workout) => (
-            <li
-              key={workout.id}
-              className="bg-card ring-foreground/10 flex min-w-0 items-center gap-3 rounded-xl p-4 ring-1"
-            >
-              <span className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
-                <DumbbellIcon className="size-5" aria-hidden />
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate font-medium">
-                  {workout.routine_id === null
-                    ? 'Entreno libre'
-                    : (routineNames.get(workout.routine_id) ?? 'Rutina')}
+        {(workouts.data?.length ?? 0) > 0 && (
+          <ul className="bg-card ring-foreground/10 divide-border divide-y rounded-xl ring-1">
+            {workouts.data?.map((workout) => (
+              <li key={workout.id} className="min-w-0 px-4 py-3">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="truncate font-medium">
+                    {workout.routine_id === null
+                      ? 'Entreno libre'
+                      : (routineNames.get(workout.routine_id) ?? 'Rutina')}
+                  </span>
+                  <span className="text-muted-foreground shrink-0 text-sm whitespace-nowrap">
+                    {formatDate(workout.started_at)}
+                  </span>
                 </span>
-                <span className="text-muted-foreground block text-sm">
-                  {formatDate(workout.started_at)} · {workoutSummary(workout)}
-                </span>
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span className="text-muted-foreground block text-sm">{workoutSummary(workout)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   )
