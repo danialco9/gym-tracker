@@ -167,14 +167,11 @@ function sessions(exerciseId: number, name: string, count: number): ExerciseProg
 }
 
 describe('Progress', () => {
-  it('shows activity and the next-session recommendations grouped by action', async () => {
+  it('opens on the next-session recommendations, grouped by action', async () => {
     mockApi({ 'GET /auth/me': { body: USER }, 'GET /progress/overview': { body: OVERVIEW } })
     renderRoute('/progreso')
 
-    expect(await screen.findByText('Últimos 7 días')).toBeInTheDocument()
-    expect(screen.getByText('Peso -0,24 kg/sem')).toBeInTheDocument()
-
-    const increase = screen.getByRole('heading', { name: /Sube el peso/ }).closest('section')
+    const increase = (await screen.findByRole('heading', { name: /Sube el peso/ })).closest('section')
     expect(increase).not.toBeNull()
     expect(within(increase!).getByText('Sentadilla con barra')).toBeInTheDocument()
     expect(within(increase!).getByText('4 × 6 · 80 kg')).toBeInTheDocument()

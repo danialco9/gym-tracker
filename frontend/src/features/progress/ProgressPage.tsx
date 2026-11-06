@@ -2,10 +2,8 @@ import { useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatDay, formatSignedKg } from '@/lib/format'
 import { BodyWeightTab } from './BodyWeightTab'
 import { ExercisesTab } from './ExercisesTab'
-import { StatTile } from './ProgressParts'
 import { useProgressOverview } from './queries'
 import { RecommendationsTab } from './RecommendationsTab'
 import { VolumeTab } from './VolumeTab'
@@ -43,67 +41,38 @@ export function ProgressPage() {
       />
 
       {overview.data && (
-        <>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-            <StatTile
-              label="Últimos 7 días"
-              value={String(overview.data.activity.workouts_last_7_days)}
-              detail="entrenos"
+        <Tabs
+          value={tab}
+          onValueChange={(value) => {
+            if (isTab(value)) {
+              setSearchParams({ vista: value }, { replace: true })
+            }
+          }}
+        >
+          <TabsList className="h-10 w-full lg:w-auto">
+            {TABS.map(({ value, label }) => (
+              <TabsTrigger key={value} value={value}>
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <TabsContent value="proxima" className="pt-2">
+            <RecommendationsTab
+              recommendations={overview.data.recommendations}
+              volumeAdvice={overview.data.volume_advice}
+              hasWorkouts={overview.data.activity.workouts_total > 0}
             />
-            <StatTile
-              label="Últimos 28 días"
-              value={String(overview.data.activity.workouts_last_28_days)}
-              detail="entrenos"
-            />
-            <StatTile
-              className="col-span-2 sm:col-span-1"
-              label="Último entreno"
-              value={
-                overview.data.activity.last_workout_on === null
-                  ? '—'
-                  : formatDay(overview.data.activity.last_workout_on)
-              }
-              detail={
-                overview.data.body_weight.weekly_change_kg === null
-                  ? undefined
-                  : `Peso ${formatSignedKg(overview.data.body_weight.weekly_change_kg)}/sem`
-              }
-            />
-          </div>
-
-          <Tabs
-            value={tab}
-            onValueChange={(value) => {
-              if (isTab(value)) {
-                setSearchParams({ vista: value }, { replace: true })
-              }
-            }}
-          >
-            <TabsList className="h-10 w-full lg:w-auto">
-              {TABS.map(({ value, label }) => (
-                <TabsTrigger key={value} value={value}>
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <TabsContent value="proxima" className="pt-2">
-              <RecommendationsTab
-                recommendations={overview.data.recommendations}
-                volumeAdvice={overview.data.volume_advice}
-                hasWorkouts={overview.data.activity.workouts_total > 0}
-              />
-            </TabsContent>
-            <TabsContent value="ejercicios" className="pt-2">
-              <ExercisesTab records={overview.data.personal_records} />
-            </TabsContent>
-            <TabsContent value="volumen" className="pt-2">
-              <VolumeTab weeks={overview.data.weekly_volume} weekSets={overview.data.week_sets} />
-            </TabsContent>
-            <TabsContent value="peso" className="pt-2">
-              <BodyWeightTab bodyWeight={overview.data.body_weight} />
-            </TabsContent>
-          </Tabs>
-        </>
+          </TabsContent>
+          <TabsContent value="ejercicios" className="pt-2">
+            <ExercisesTab records={overview.data.personal_records} />
+          </TabsContent>
+          <TabsContent value="volumen" className="pt-2">
+            <VolumeTab weeks={overview.data.weekly_volume} weekSets={overview.data.week_sets} />
+          </TabsContent>
+          <TabsContent value="peso" className="pt-2">
+            <BodyWeightTab bodyWeight={overview.data.body_weight} />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   )
