@@ -259,22 +259,30 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={saving}>
+      {routine && (
+        <Button
+          type="button"
+          variant="destructive"
+          className="h-10 w-full"
+          disabled={deleteRoutine.isPending}
+          onClick={onDelete}
+        >
+          <Trash2Icon />
+          Eliminar rutina
+        </Button>
+      )}
+
+      {/* Fixed just above the bottom nav (the layout's bottom padding leaves room for it), so a change
+          at the top saves without scrolling past every exercise; from lg up it sticks to the content. */}
+      <div className="bg-background/95 fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 border-t px-4 py-3 backdrop-blur lg:sticky lg:bottom-0 lg:-mx-2 lg:px-2">
+        <Button
+          type="submit"
+          size="lg"
+          className="mx-auto flex h-12 w-full max-w-2xl text-base"
+          disabled={saving}
+        >
           {saving ? 'Guardando…' : 'Guardar rutina'}
         </Button>
-        {routine && (
-          <Button
-            type="button"
-            variant="destructive"
-            className="h-10 w-full"
-            disabled={deleteRoutine.isPending}
-            onClick={onDelete}
-          >
-            <Trash2Icon />
-            Eliminar rutina
-          </Button>
-        )}
       </div>
 
       <ExercisePicker
