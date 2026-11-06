@@ -58,12 +58,10 @@ function NextSession({ overview }: { overview: ProgressOverview }) {
   const count = (action: string) => recommendations.filter((item) => item.action === action).length
   const increases = count('increase_load')
   const deloads = count('deload')
-  const summary = [
+  const parts = [
     `${increases} ${plural(increases, 'ejercicio listo', 'ejercicios listos')} para subir peso`,
     deloads > 0 && `${deloads} ${plural(deloads, 'descarga', 'descargas')}`,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  ].filter((part): part is string => typeof part === 'string')
 
   return (
     <Link
@@ -74,7 +72,12 @@ function NextSession({ overview }: { overview: ProgressOverview }) {
         <ChartLineIcon className="text-primary size-5 shrink-0" aria-hidden />
         <span className="min-w-0">
           <span className="block font-medium">Próxima sesión</span>
-          <span className="text-muted-foreground block text-sm">{summary}</span>
+          {/* One fact per line: the whole sentence never fits a phone, and a wrapped "·" reads oddly. */}
+          {parts.map((part) => (
+            <span key={part} className="text-muted-foreground block text-sm">
+              {part}
+            </span>
+          ))}
         </span>
       </span>
       <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
