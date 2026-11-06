@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { BodyMeasurement, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
@@ -87,6 +87,9 @@ describe('Measurements', () => {
     const { user } = renderRoute('/medidas')
 
     expect(await screen.findByText('Gráfica con 2 pesos')).toBeInTheDocument()
+    // Today's empty field says, in words, what the last weigh-in was.
+    expect(screen.getByLabelText('Peso (kg)')).toHaveAccessibleDescription('La última vez: 78,7 kg')
+    expect(screen.getByLabelText('Peso (kg)')).toHaveAttribute('placeholder', '—')
     const entry = screen.getByRole('button', { name: /78,7 kg/ })
     expect(entry).toHaveTextContent('-0,4 kg')
     expect(entry).toHaveTextContent('Cintura 82 cm')
@@ -94,6 +97,15 @@ describe('Measurements', () => {
     await user.click(entry)
     expect(screen.getByRole('heading', { name: 'Editar medida' })).toBeInTheDocument()
     expect(screen.getByLabelText('Fecha')).toHaveValue('2026-09-14')
+    // The loaded weight reads the Spanish way, and the hint about last time steps aside.
+    expect(screen.getByLabelText('Peso (kg)')).toHaveValue('78,7')
+    expect(screen.queryByText(/La última vez/)).not.toBeInTheDocument()
+    // Another day with no entry clears the loaded values, the weight included.
+    fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-09-15' } })
+    expect(screen.getByRole('heading', { name: 'Nueva medida' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Peso (kg)')).toHaveValue('')
+    fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-09-14' } })
+    expect(screen.getByLabelText('Peso (kg)')).toHaveValue('78,7')
     expect(screen.getByLabelText('Cintura (cm)')).toBeVisible()
     await user.clear(screen.getByLabelText('Cintura (cm)'))
     await user.type(screen.getByLabelText('Cintura (cm)'), '81,5')
