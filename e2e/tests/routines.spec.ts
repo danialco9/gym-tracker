@@ -27,6 +27,8 @@ test('creates a routine with per-set targets and edits it afterwards', async ({ 
 
   await page.getByRole('link', { name: new RegExp(name) }).click()
   await expect(page.getByRole('heading', { name: 'Editar rutina' })).toBeVisible()
+  // Saved exercises open folded to their plan; a tap shows the sets.
+  await page.getByRole('button', { name: /Series de Prensa de piernas/ }).click()
   await expect(page.getByLabel('Serie 2: Peso (kg)')).toHaveValue('120')
 
   await page.getByLabel('Nombre').fill(`${name} A`)
