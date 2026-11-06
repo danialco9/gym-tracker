@@ -64,13 +64,17 @@ function TierProgress({ tier, progress }: { tier: StrengthTier; progress: number
         aria-valuenow={Math.round(progress * 100)}
         className="bg-muted h-2 overflow-hidden rounded-full"
       >
+        {/* The app's colour: a red bar on the way to Rubí read as a warning, not as progress. */}
         <div
-          className="h-full rounded-full transition-[width] duration-700"
-          style={{ width: `${progress * 100}%`, backgroundColor: STRENGTH_TIERS[next].color }}
+          className="bg-primary h-full rounded-full transition-[width] duration-700"
+          style={{ width: `${progress * 100}%` }}
         />
       </div>
       <p className="text-muted-foreground text-xs">
-        {Math.round(progress * 100)} % del camino a {STRENGTH_TIERS[next].label}
+        {Math.round(progress * 100)} % del camino a{' '}
+        <span className="font-medium" style={{ color: STRENGTH_TIERS[next].color }}>
+          {STRENGTH_TIERS[next].label}
+        </span>
       </p>
     </div>
   )
@@ -178,13 +182,16 @@ function LiftCard({ lift }: { lift: MyLift }) {
         </div>
       </div>
       <TierProgress tier={lift.tier} progress={lift.progress} />
-      <p className="text-muted-foreground flex justify-between gap-2 text-xs">
-        <span className="tabular-nums">
+      <div className="text-muted-foreground space-y-0.5 text-xs">
+        <p className="tabular-nums">
           Tu mejor:{' '}
           {lift.weight_kg > 0 ? `${formatDecimal(lift.weight_kg)} kg × ${lift.reps}` : `${lift.reps} reps`}
-        </span>
-        <span>{lift.source === 'app' ? 'Frente a usuarios de la app' : 'Estimación'}</span>
-      </p>
+        </p>
+        {/* Says who you are measured against: app users once there are enough, an estimate until then. */}
+        <p>
+          {lift.source === 'app' ? 'Comparado con usuarios de la app' : 'Estimado: aún hay pocos usuarios'}
+        </p>
+      </div>
     </li>
   )
 }

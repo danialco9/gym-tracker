@@ -109,7 +109,7 @@ describe('Ranking', () => {
     // Only the zone's exercises, with the set behind each and where its percentile comes from.
     const lift = screen.getByText('Sentadilla trasera', { selector: 'p' }).closest('li')!
     expect(within(lift).getByText('Tu mejor: 120 kg × 5')).toBeInTheDocument()
-    expect(within(lift).getByText('Frente a usuarios de la app')).toBeInTheDocument()
+    expect(within(lift).getByText('Comparado con usuarios de la app')).toBeInTheDocument()
     expect(screen.queryByText('Press banca con barra', { selector: 'p' })).not.toBeInTheDocument()
 
     expect(rowsOf()).toEqual(['1TigreRubí', '2Atleta 7 (tú)Diamante', '3Atleta 12Bronce'])
@@ -134,7 +134,7 @@ describe('Ranking', () => {
     expect(
       await screen.findByText('Más fuerte que el 50 %', { selector: 'p.font-medium' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Estimación')).toBeInTheDocument()
+    expect(screen.getByText('Estimado: aún hay pocos usuarios')).toBeInTheDocument()
     expect(screen.queryByText('Sentadilla trasera', { selector: 'p' })).not.toBeInTheDocument()
   })
 
