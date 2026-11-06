@@ -301,7 +301,9 @@ describe('Progress', () => {
     renderRoute('/')
 
     const link = await screen.findByRole('link', { name: /Próxima sesión/ })
-    expect(link).toHaveTextContent('1 ejercicio listo para subir peso · 1 descarga')
+    // One fact per line, so a phone never strands half of a sentence.
+    expect(within(link).getByText('1 ejercicio listo para subir peso')).toBeInTheDocument()
+    expect(within(link).getByText('1 descarga')).toBeInTheDocument()
     expect(link).toHaveAttribute('href', '/progreso')
   })
 })
