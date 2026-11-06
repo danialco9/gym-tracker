@@ -66,7 +66,7 @@ describe('WorkoutPage', () => {
     await user.type(await screen.findByRole('searchbox', { name: 'Buscar ejercicio' }), 'prensa')
     await user.click(screen.getByRole('button', { name: /Prensa de piernas/ }))
 
-    expect(await screen.findByText(/Última vez .*110 kg × 12/)).toBeInTheDocument()
+    expect(await screen.findByText(fullText('Última vez: 110 kg × 12'))).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Aumentar peso (kg)' }))
     await user.click(screen.getByRole('button', { name: 'Aumentar peso (kg)' }))
@@ -109,6 +109,8 @@ describe('WorkoutPage', () => {
     await user.click(screen.getByRole('button', { name: /Añadir serie/ }))
 
     expect(await screen.findByText(fullText('Última vez: 110 kg × 12'))).toBeInTheDocument()
+    // The whole last session under the title would only repeat it.
+    expect(screen.queryByText(/Última vez \(/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Supéralo con 13 reps a 110 kg' }))
 
@@ -187,6 +189,9 @@ describe('WorkoutPage', () => {
     expect(screen.queryByRole('button', { name: 'Completar serie 2' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Corregir la serie anterior' })).not.toBeInTheDocument()
 
+    // The effort is optional, so it stays folded until asked for.
+    expect(screen.queryByRole('button', { name: 'RPE 8' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Anotar esfuerzo (RPE)' }))
     await user.click(screen.getByRole('button', { name: 'RPE 8' }))
     await user.click(screen.getByRole('button', { name: 'Completar serie 1' }))
 

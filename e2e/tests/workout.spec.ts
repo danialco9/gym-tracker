@@ -14,6 +14,7 @@ test('logs a free workout set by set and finds it on the home page afterwards', 
   // One set at a time: fill the open set in, press "Hecho", and the next one opens.
   await page.getByRole('textbox', { name: 'Peso (kg)', exact: true }).fill('80')
   await page.getByRole('textbox', { name: 'Reps', exact: true }).fill('5')
+  await page.getByRole('button', { name: 'Anotar esfuerzo (RPE)' }).click()
   await page.getByRole('button', { name: 'RPE 8', exact: true }).click()
   await page.getByRole('button', { name: 'Completar serie 1' }).click()
 
