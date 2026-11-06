@@ -3,22 +3,20 @@ import { CSS } from '@dnd-kit/utilities'
 import { ChevronDownIcon, GripVerticalIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import {
-  useController,
   useFieldArray,
   useWatch,
   type Control,
   type FieldErrors,
   type UseFormGetValues,
 } from 'react-hook-form'
+import { DecimalInput } from '@/components/DecimalInput'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { plural } from '@/lib/format'
 import { formatSetPlan } from '@/lib/set-plan'
 import { cn } from '@/lib/utils'
 import {
   MAX_SETS_PER_EXERCISE,
   nextSet,
-  parseOptionalNumber,
   type RoutineExerciseValues,
   type RoutineFormValues,
 } from './routine-form'
@@ -29,45 +27,6 @@ const SET_FIELDS = [
   { key: 'targetWeightKg', label: 'Peso (kg)', column: 'Peso', inputMode: 'decimal' },
   { key: 'targetRpe', label: 'RPE', column: 'RPE', inputMode: 'decimal' },
 ] as const
-
-type SetFieldKey = (typeof SET_FIELDS)[number]['key']
-
-/** Spanish decimals, as everywhere else in the app: 37,5 rather than 37.5. */
-const toInputText = (value: number | null) => (value === null ? '' : String(value).replace('.', ','))
-
-interface TargetInputProps {
-  control: Control<RoutineFormValues>
-  name: `exercises.${number}.sets.${number}.${SetFieldKey}`
-  label: string
-  inputMode: 'numeric' | 'decimal'
-  invalid: boolean
-}
-
-function TargetInput({ control, name, label, inputMode, invalid }: TargetInputProps) {
-  const {
-    field: { ref, value, onChange, onBlur },
-  } = useController({ control, name })
-  // What is being typed, so "37," survives until the 5 arrives; the form keeps the number.
-  const [text, setText] = useState(() => toInputText(value))
-  return (
-    <Input
-      ref={ref}
-      name={name}
-      inputMode={inputMode}
-      // An empty target is a dash, never a sample number that reads like a real one.
-      placeholder="—"
-      aria-label={label}
-      className="h-10 px-1 text-center tabular-nums"
-      aria-invalid={invalid ? true : undefined}
-      value={text}
-      onChange={(event) => {
-        setText(event.target.value)
-        onChange(parseOptionalNumber(event.target.value))
-      }}
-      onBlur={onBlur}
-    />
-  )
-}
 
 const GRID = 'grid grid-cols-[1.75rem_1fr_1fr_1fr_2.25rem] items-center gap-1.5 sm:gap-2'
 
@@ -179,13 +138,16 @@ export function RoutineExerciseFields({
               <li key={field.id} className={GRID}>
                 <span className="text-muted-foreground text-center text-sm tabular-nums">{setIndex + 1}</span>
                 {SET_FIELDS.map(({ key, label, inputMode }) => (
-                  <TargetInput
+                  <DecimalInput
                     key={key}
                     control={control}
                     name={`exercises.${index}.sets.${setIndex}.${key}`}
-                    label={`Serie ${setIndex + 1}: ${label}`}
+                    aria-label={`Serie ${setIndex + 1}: ${label}`}
                     inputMode={inputMode}
-                    invalid={Boolean(errors?.sets?.[setIndex]?.[key])}
+                    // An empty target is a dash, never a sample number that reads like a real one.
+                    placeholder="—"
+                    className="h-10 px-1 text-center tabular-nums"
+                    aria-invalid={errors?.sets?.[setIndex]?.[key] ? true : undefined}
                   />
                 ))}
                 <Button

@@ -3,15 +3,14 @@ import { ChevronRightIcon, Trash2Icon } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
+import { DecimalInput } from '@/components/DecimalInput'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { FormField } from '@/features/auth/AuthForm'
-import { parseOptionalNumber } from '@/features/routines/routine-form'
 import { ApiError } from '@/lib/api'
-import { formatDay, formatDecimal } from '@/lib/format'
+import { formatDay, formatKg } from '@/lib/format'
 import type { BodyMeasurement } from '@/lib/types'
 import {
   emptyMeasurementForm,
@@ -99,6 +98,13 @@ export function MeasurementForm({ measurements, initialDate }: MeasurementFormPr
     }
   }
 
+  // Said in words: a grey number inside the field read as if it were already filled in.
+  const weightHint = !editing && lastWeight ? `La última vez: ${formatKg(lastWeight)}` : null
+  const weightDescription =
+    [errors.weightKg && `${baseId}-weight-error`, weightHint && `${baseId}-weight-hint`]
+      .filter(Boolean)
+      .join(' ') || undefined
+
   const optionalErrors = OPTIONAL_FIELDS.map(({ key }) => errors[key]?.message).filter(Boolean)
 
   return (
@@ -127,15 +133,20 @@ export function MeasurementForm({ measurements, initialDate }: MeasurementFormPr
         />
         <div className="space-y-2">
           <Label htmlFor={`${baseId}-weight`}>Peso (kg)</Label>
-          <Input
+          <DecimalInput
             id={`${baseId}-weight`}
-            inputMode="decimal"
-            placeholder={lastWeight ? formatDecimal(lastWeight) : '75'}
+            control={control}
+            name="weightKg"
+            placeholder="—"
             className="h-11 text-lg font-semibold tabular-nums"
             aria-invalid={errors.weightKg ? true : undefined}
-            aria-describedby={errors.weightKg ? `${baseId}-weight-error` : undefined}
-            {...register('weightKg', { setValueAs: parseOptionalNumber })}
+            aria-describedby={weightDescription}
           />
+          {weightHint && (
+            <p id={`${baseId}-weight-hint`} className="text-muted-foreground text-sm tabular-nums">
+              {weightHint}
+            </p>
+          )}
         </div>
       </div>
       {errors.weightKg && (
@@ -165,13 +176,13 @@ export function MeasurementForm({ measurements, initialDate }: MeasurementFormPr
                 <Label htmlFor={`${baseId}-${key}`} className="text-muted-foreground text-xs">
                   {label}
                 </Label>
-                <Input
+                <DecimalInput
                   id={`${baseId}-${key}`}
-                  inputMode="decimal"
+                  control={control}
+                  name={key}
                   placeholder={placeholder}
                   className="h-10 tabular-nums"
                   aria-invalid={errors[key] ? true : undefined}
-                  {...register(key, { setValueAs: parseOptionalNumber })}
                 />
               </div>
             ))}
