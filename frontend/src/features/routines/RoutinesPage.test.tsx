@@ -156,6 +156,11 @@ describe('Routines', () => {
     await user.click(await screen.findByRole('link', { name: /Pierna/ }))
     const name = await screen.findByLabelText('Nombre')
     expect(name).toHaveValue('Pierna')
+    // A saved exercise opens folded to its plan; a tap shows the sets.
+    const plan = screen.getByRole('button', { name: /Series de Sentadilla con barra/ })
+    expect(plan).toHaveAttribute('aria-expanded', 'false')
+    expect(plan).toHaveTextContent('60×10 · 70×8')
+    await user.click(plan)
     expect(screen.getByLabelText('Serie 1: Peso (kg)')).toHaveValue('60')
     expect(screen.getByLabelText('Serie 2: RPE')).toHaveValue('8')
     // A set without an RPE shows a dash, not a sample number that looks like a real target.

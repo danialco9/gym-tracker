@@ -1,16 +1,19 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVerticalIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { ChevronDownIcon, GripVerticalIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import {
   useController,
   useFieldArray,
+  useWatch,
   type Control,
   type FieldErrors,
   type UseFormGetValues,
 } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { plural } from '@/lib/format'
+import { formatSetPlan } from '@/lib/set-plan'
 import { cn } from '@/lib/utils'
 import {
   MAX_SETS_PER_EXERCISE,
@@ -93,6 +96,14 @@ export function RoutineExerciseFields({
       id,
     })
   const sets = useFieldArray({ control, name: `exercises.${index}.sets` })
+  const planned = useWatch({ control, name: `exercises.${index}.sets` })
+  // Folded, a card is one line of plan; a new exercise (nothing typed yet) starts open.
+  const [open, setOpen] = useState(() =>
+    planned.every((set) => set.targetReps === null && set.targetWeightKg === null && set.targetRpe === null),
+  )
+  const summary =
+    formatSetPlan(planned.map((set) => ({ reps: set.targetReps, weightKg: set.targetWeightKg }))) ??
+    `${planned.length} ${plural(planned.length, 'serie', 'series')}`
 
   const setErrors = errors?.sets
   const perSet = Array.isArray(setErrors) ? setErrors : []
@@ -103,6 +114,8 @@ export function RoutineExerciseFields({
       setErrors?.message,
     ]),
   ].filter(Boolean)
+  // An error is never hidden inside a folded card.
+  const expanded = open || messages.length > 0
 
   return (
     <div
@@ -132,7 +145,26 @@ export function RoutineExerciseFields({
         </Button>
       </div>
 
-      {sets.fields.length > 0 && (
+      <button
+        type="button"
+        aria-expanded={expanded}
+        className="hover:bg-accent flex w-full items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left text-sm tabular-nums"
+        onClick={() => setOpen(!expanded)}
+      >
+        <span className="min-w-0">
+          <span className="sr-only">Series de {name}: </span>
+          {summary}
+        </span>
+        <ChevronDownIcon
+          className={cn(
+            'text-muted-foreground size-4 shrink-0 transition-transform',
+            expanded && 'rotate-180',
+          )}
+          aria-hidden
+        />
+      </button>
+
+      {expanded && sets.fields.length > 0 && (
         <div className="space-y-2">
           <div className={cn(GRID, 'text-muted-foreground text-xs')} aria-hidden>
             <span className="text-center">Serie</span>
@@ -173,16 +205,18 @@ export function RoutineExerciseFields({
 
       {messages.length > 0 && <p className="text-destructive text-sm">{messages.join(' · ')}</p>}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={sets.fields.length >= MAX_SETS_PER_EXERCISE}
-        onClick={() => sets.append(nextSet(getValues(`exercises.${index}.sets`).at(-1)))}
-      >
-        <PlusIcon />
-        Añadir serie
-      </Button>
+      {expanded && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={sets.fields.length >= MAX_SETS_PER_EXERCISE}
+          onClick={() => sets.append(nextSet(getValues(`exercises.${index}.sets`).at(-1)))}
+        >
+          <PlusIcon />
+          Añadir serie
+        </Button>
+      )}
     </div>
   )
 }
