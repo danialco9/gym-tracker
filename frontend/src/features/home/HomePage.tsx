@@ -1,12 +1,4 @@
-import {
-  ChartLineIcon,
-  ChevronRightIcon,
-  DumbbellIcon,
-  FlameIcon,
-  ScaleIcon,
-  TargetIcon,
-  TrendingUpIcon,
-} from 'lucide-react'
+import { ChartLineIcon, ChevronRightIcon, DumbbellIcon, TargetIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import heroImage from '@/assets/hero-squat.webp'
@@ -21,7 +13,7 @@ import { useProgressOverview, useStreak } from '@/features/progress/queries'
 import { loadDraft } from '@/features/workout/draft'
 import { PendingWorkouts } from '@/features/workout/PendingWorkouts'
 import { useRecentWorkouts, useRoutines } from '@/features/workout/queries'
-import { formatDate, formatDecimal, formatDuration, formatSignedKg, plural } from '@/lib/format'
+import { formatDate, formatDuration, plural } from '@/lib/format'
 import type { ProgressOverview, Workout } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -35,71 +27,6 @@ function workoutSummary(workout: Workout): string {
   ]
     .filter(Boolean)
     .join(' · ')
-}
-
-function Stat({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: typeof FlameIcon
-  label: string
-  value: string
-  hint?: string
-}) {
-  return (
-    <div className="bg-card ring-foreground/10 rounded-xl p-4 ring-1">
-      <p className="eyebrow flex items-center gap-1.5">
-        <Icon className="size-3.5" aria-hidden />
-        {label}
-      </p>
-      <p className="stat-number mt-2.5">{value}</p>
-      {hint !== undefined && <p className="text-muted-foreground mt-1 text-xs">{hint}</p>}
-    </div>
-  )
-}
-
-/** Kilos lifted in the most recent week the analytics engine reported. */
-function weekVolumeKg(overview: ProgressOverview): number | null {
-  const week = overview.weekly_volume.at(-1)
-  return week === undefined ? null : week.muscles.reduce((total, muscle) => total + muscle.volume_kg, 0)
-}
-
-function Stats({ overview }: { overview: ProgressOverview }) {
-  const workouts = overview.activity.workouts_last_7_days
-  const volume = weekVolumeKg(overview)
-  const lastWeight = overview.body_weight.entries.at(-1)
-  const weeklyChange = overview.body_weight.weekly_change_kg
-
-  return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Stat
-        icon={FlameIcon}
-        label="Esta semana"
-        value={String(workouts)}
-        hint={plural(workouts, 'entreno', 'entrenos')}
-      />
-      <Stat
-        icon={TrendingUpIcon}
-        label="Volumen"
-        value={volume === null ? '—' : `${formatDecimal(Math.round(volume))}`}
-        hint="kg levantados"
-      />
-      <Stat
-        icon={DumbbellIcon}
-        label="Ejercicios"
-        value={String(overview.personal_records.length)}
-        hint="con marcas registradas"
-      />
-      <Stat
-        icon={ScaleIcon}
-        label="Peso"
-        value={lastWeight === undefined ? '—' : formatDecimal(lastWeight.weight_kg)}
-        hint={weeklyChange === null ? 'kg' : `kg · ${formatSignedKg(weeklyChange)}/sem`}
-      />
-    </div>
-  )
 }
 
 /** Until a goal is chosen the advice is the general one; this says it can be tailored. */
@@ -175,16 +102,11 @@ export function HomePage() {
           aria-hidden
         />
         <div className="photo-scrim" />
-        <div className="relative flex flex-col gap-5 p-6 sm:p-8 lg:min-h-64 lg:justify-end">
-          <div className="space-y-2">
-            <p className="eyebrow text-white/70">Gym Tracker</p>
-            <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance text-white sm:text-4xl">
-              Tu entrenamiento, medido
-            </h1>
-            <p className="max-w-md text-sm text-white/80">
-              Registra cada serie y decide con datos cuándo progresar.
-            </p>
-          </div>
+        {/* The user is already sold: a greeting and the one action, not a tagline. */}
+        <div className="relative flex flex-col gap-4 p-5 sm:p-8 lg:min-h-48 lg:justify-end">
+          <h1 className="font-heading truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            {currentUser?.nickname ? `Hola, ${currentUser.nickname}` : 'Hola'}
+          </h1>
           <Link
             to="/entrenar"
             className={cn(
@@ -210,18 +132,15 @@ export function HomePage() {
         />
       )}
 
-      {streak.data !== undefined && <StreakCard streak={streak.data} />}
+      {streak.data !== undefined && (
+        <StreakCard streak={streak.data} workoutsThisWeek={overview.data?.activity.workouts_last_7_days} />
+      )}
 
       {overview.data !== undefined && <OverloadCard exercises={overview.data.week_overload} />}
 
       {currentUser != null && <RankingCard user={currentUser} />}
 
-      {overview.data !== undefined && (
-        <section className="space-y-3">
-          <Stats overview={overview.data} />
-          <NextSession overview={overview.data} />
-        </section>
-      )}
+      {overview.data !== undefined && <NextSession overview={overview.data} />}
 
       <section className="space-y-3">
         <h2 className="eyebrow">Últimos entrenos</h2>
