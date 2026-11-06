@@ -21,6 +21,9 @@ export function StartWorkout({ onStart, onStartDictated }: StartWorkoutProps) {
   // A routine opens today's plan first: one decision per screen, then the workout.
   const [chosen, setChosen] = useState<Routine | null>(null)
 
+  // Without routines the free workout is the way in, so it keeps the main colour.
+  const hasRoutines = (routines.data?.length ?? 0) > 0
+
   if (chosen !== null) {
     return (
       <DailyPlan
@@ -38,13 +41,6 @@ export function StartWorkout({ onStart, onStartDictated }: StartWorkoutProps) {
         title="Nuevo entreno"
         description="Elige una rutina o empieza un entreno libre."
       />
-
-      <Button size="lg" className="h-12 w-full text-base sm:w-auto sm:px-8" onClick={() => onStart()}>
-        <PlusIcon />
-        Entreno libre
-      </Button>
-
-      <DictateWorkout onStart={onStartDictated} />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -86,6 +82,21 @@ export function StartWorkout({ onStart, onStartDictated }: StartWorkoutProps) {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* Most workouts start from a routine; these are the other ways in, kept below it. */}
+      <section className="space-y-3">
+        <h2 className="eyebrow">Sin rutina</h2>
+        <Button
+          size="lg"
+          variant={hasRoutines ? 'outline' : 'default'}
+          className="h-12 w-full text-base sm:w-auto sm:px-8"
+          onClick={() => onStart()}
+        >
+          <PlusIcon />
+          Entreno libre
+        </Button>
+        <DictateWorkout onStart={onStartDictated} />
       </section>
     </div>
   )

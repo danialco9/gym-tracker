@@ -11,7 +11,8 @@ import type { DictatedEntry } from './draft'
 import { ExercisePicker } from './ExercisePicker'
 import { useReadDictation } from './queries'
 
-const PLACEHOLDER = 'prensa 4x10 120\npress banca 12,10,8 a 60 rpe 8\ndominadas 3x8'
+// Marked as an example and dimmed, so it never reads as text already typed in.
+const PLACEHOLDER = 'Ej.: prensa 4x10 120\npress banca 12,10,8 a 60 rpe 8\ndominadas 3x8'
 
 /** A read line written out: "4 series · 10 reps · 60 kg · RPE 8". */
 function describe(exercise: DictationExercise): string {
@@ -103,6 +104,7 @@ export function DictateWorkout({ onStart }: DictateWorkoutProps) {
           rows={3}
           value={text}
           placeholder={PLACEHOLDER}
+          className="placeholder:text-muted-foreground/60"
           onChange={(event) => setText(event.target.value)}
         />
         <Button className="h-11 w-full" disabled={text.trim() === '' || read.isPending} onClick={submit}>
