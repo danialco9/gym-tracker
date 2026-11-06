@@ -169,7 +169,7 @@ function sessions(exerciseId: number, name: string, count: number): ExerciseProg
 describe('Progress', () => {
   it('shows activity and the next-session recommendations grouped by action', async () => {
     mockApi({ 'GET /auth/me': { body: USER }, 'GET /progress/overview': { body: OVERVIEW } })
-    renderRoute('/progreso')
+    const { user } = renderRoute('/progreso')
 
     expect(await screen.findByText('Últimos 7 días')).toBeInTheDocument()
     expect(screen.getByText('Peso -0,24 kg/sem')).toBeInTheDocument()
@@ -189,6 +189,11 @@ describe('Progress', () => {
       within(increase!).getByText('Completaste todas las series objetivo con RPE 8 como máximo: sube 5 kg.'),
     ).toBeInTheDocument()
     expect(within(deload!).getByText(/no mejora en las últimas sesiones/)).toBeInTheDocument()
+    // Closed, a row says only what to do next; a tap opens the last session and the reason.
+    const squat = within(increase!).getByText('Sentadilla con barra').closest('details')
+    expect(squat).not.toHaveAttribute('open')
+    await user.click(within(increase!).getByText('Sentadilla con barra'))
+    expect(squat).toHaveAttribute('open')
 
     const volume = screen.getByRole('region', { name: 'Volumen semanal' })
     expect(within(volume).getByText('Isquiotibiales')).toBeInTheDocument()
