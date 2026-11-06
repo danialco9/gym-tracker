@@ -231,7 +231,6 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
                     index={index}
                     name={field.name}
                     control={control}
-                    register={register}
                     getValues={getValues}
                     errors={errors.exercises?.[index]}
                     onRemove={() => remove(index)}

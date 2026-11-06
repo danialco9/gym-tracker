@@ -1,12 +1,13 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon, PlusIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { useState } from 'react'
 import {
+  useController,
   useFieldArray,
   type Control,
   type FieldErrors,
   type UseFormGetValues,
-  type UseFormRegister,
 } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,10 +22,49 @@ import {
 
 // `label` names the field for screen readers; `column` is the narrow heading a phone has room for.
 const SET_FIELDS = [
-  { key: 'targetReps', label: 'Reps', column: 'Reps', inputMode: 'numeric', placeholder: '10' },
-  { key: 'targetWeightKg', label: 'Peso (kg)', column: 'Peso', inputMode: 'decimal', placeholder: '60' },
-  { key: 'targetRpe', label: 'RPE', column: 'RPE', inputMode: 'decimal', placeholder: '8' },
+  { key: 'targetReps', label: 'Reps', column: 'Reps', inputMode: 'numeric' },
+  { key: 'targetWeightKg', label: 'Peso (kg)', column: 'Peso', inputMode: 'decimal' },
+  { key: 'targetRpe', label: 'RPE', column: 'RPE', inputMode: 'decimal' },
 ] as const
+
+type SetFieldKey = (typeof SET_FIELDS)[number]['key']
+
+/** Spanish decimals, as everywhere else in the app: 37,5 rather than 37.5. */
+const toInputText = (value: number | null) => (value === null ? '' : String(value).replace('.', ','))
+
+interface TargetInputProps {
+  control: Control<RoutineFormValues>
+  name: `exercises.${number}.sets.${number}.${SetFieldKey}`
+  label: string
+  inputMode: 'numeric' | 'decimal'
+  invalid: boolean
+}
+
+function TargetInput({ control, name, label, inputMode, invalid }: TargetInputProps) {
+  const {
+    field: { ref, value, onChange, onBlur },
+  } = useController({ control, name })
+  // What is being typed, so "37," survives until the 5 arrives; the form keeps the number.
+  const [text, setText] = useState(() => toInputText(value))
+  return (
+    <Input
+      ref={ref}
+      name={name}
+      inputMode={inputMode}
+      // An empty target is a dash, never a sample number that reads like a real one.
+      placeholder="—"
+      aria-label={label}
+      className="h-10 px-1 text-center tabular-nums"
+      aria-invalid={invalid ? true : undefined}
+      value={text}
+      onChange={(event) => {
+        setText(event.target.value)
+        onChange(parseOptionalNumber(event.target.value))
+      }}
+      onBlur={onBlur}
+    />
+  )
+}
 
 const GRID = 'grid grid-cols-[1.75rem_1fr_1fr_1fr_2.25rem] items-center gap-1.5 sm:gap-2'
 
@@ -34,7 +74,6 @@ interface RoutineExerciseFieldsProps {
   index: number
   name: string
   control: Control<RoutineFormValues>
-  register: UseFormRegister<RoutineFormValues>
   getValues: UseFormGetValues<RoutineFormValues>
   errors?: FieldErrors<RoutineExerciseValues>
   onRemove: () => void
@@ -45,7 +84,6 @@ export function RoutineExerciseFields({
   index,
   name,
   control,
-  register,
   getValues,
   errors,
   onRemove,
@@ -108,17 +146,14 @@ export function RoutineExerciseFields({
             {sets.fields.map((field, setIndex) => (
               <li key={field.id} className={GRID}>
                 <span className="text-muted-foreground text-center text-sm tabular-nums">{setIndex + 1}</span>
-                {SET_FIELDS.map(({ key, label, inputMode, placeholder }) => (
-                  <Input
+                {SET_FIELDS.map(({ key, label, inputMode }) => (
+                  <TargetInput
                     key={key}
+                    control={control}
+                    name={`exercises.${index}.sets.${setIndex}.${key}`}
+                    label={`Serie ${setIndex + 1}: ${label}`}
                     inputMode={inputMode}
-                    placeholder={placeholder}
-                    aria-label={`Serie ${setIndex + 1}: ${label}`}
-                    className="h-10 px-1 text-center tabular-nums"
-                    aria-invalid={errors?.sets?.[setIndex]?.[key] ? true : undefined}
-                    {...register(`exercises.${index}.sets.${setIndex}.${key}`, {
-                      setValueAs: parseOptionalNumber,
-                    })}
+                    invalid={Boolean(errors?.sets?.[setIndex]?.[key])}
                   />
                 ))}
                 <Button
