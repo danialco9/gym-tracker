@@ -6,8 +6,8 @@ import { renderRoute } from '@/test/render'
 import { localToday } from './measurement-form'
 
 // Recharts needs real layout (ResizeObserver, element sizes), which jsdom does not provide.
-vi.mock('./WeightChart', () => ({
-  WeightChart: ({ points }: { points: unknown[] }) => <p>Gráfica con {points.length} pesos</p>,
+vi.mock('@/features/progress/ProgressCharts', () => ({
+  BodyWeightChart: ({ entries }: { entries: unknown[] }) => <p>Gráfica con {entries.length} pesos</p>,
 }))
 
 const USER: User = {
@@ -95,6 +95,18 @@ describe('Measurements', () => {
     const calls = mockApi({
       'GET /auth/me': { body: USER },
       'GET /measurements': () => ({ body: measurements }),
+      // Only the part of the overview this page reads: the weigh-ins with their 7-day mean.
+      'GET /progress/overview': {
+        body: {
+          body_weight: {
+            entries: [
+              { measured_on: '2026-09-13', weight_kg: 79.1, trend_kg: 79.1 },
+              { measured_on: '2026-09-14', weight_kg: 78.7, trend_kg: 78.9 },
+            ],
+            weekly_change_kg: null,
+          },
+        },
+      },
       'PUT /measurements/2': ({ body }) => {
         measurements = [measurements[0], { id: 2, ...(body as Omit<BodyMeasurement, 'id'>) }]
         return { body: measurements[1] }

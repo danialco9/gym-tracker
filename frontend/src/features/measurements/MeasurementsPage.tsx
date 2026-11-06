@@ -1,16 +1,23 @@
 import { lazy, Suspense, useRef, useState } from 'react'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
+import { ChartFallback } from '@/features/progress/ProgressParts'
+import { useProgressOverview } from '@/features/progress/queries'
 import { formatKg, formatSignedKg } from '@/lib/format'
 import { localToday } from './measurement-form'
 import { MeasurementForm } from './MeasurementForm'
 import { MeasurementHistory } from './MeasurementHistory'
 import { useMeasurements } from './queries'
 
-const WeightChart = lazy(() => import('./WeightChart').then((module) => ({ default: module.WeightChart })))
+// The same chart as Progreso → Peso (each weigh-in plus the 7-day mean), so one number looks one way.
+const BodyWeightChart = lazy(() =>
+  import('@/features/progress/ProgressCharts').then((module) => ({ default: module.BodyWeightChart })),
+)
 
 export function MeasurementsPage() {
   const measurements = useMeasurements()
+  // Saving a measurement refreshes it too, so the chart follows the form.
+  const trend = useProgressOverview().data?.body_weight.entries
   const formRef = useRef<HTMLDivElement>(null)
   // Opening a history entry remounts the form on that entry's date.
   const [formSeed, setFormSeed] = useState(() => ({ date: localToday(), version: 0 }))
@@ -57,9 +64,13 @@ export function MeasurementsPage() {
                     {formatSignedKg(Math.round((last.weightKg - first.weightKg) * 100) / 100)} en total
                   </span>
                 </div>
-                <Suspense fallback={<div className="bg-muted h-48 animate-pulse rounded-xl" />}>
-                  <WeightChart points={weights} />
-                </Suspense>
+                {trend === undefined || trend.length < 2 ? (
+                  <ChartFallback />
+                ) : (
+                  <Suspense fallback={<ChartFallback />}>
+                    <BodyWeightChart entries={trend} />
+                  </Suspense>
+                )}
               </section>
             )}
           </div>
