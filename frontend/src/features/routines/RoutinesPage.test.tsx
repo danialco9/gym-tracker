@@ -108,6 +108,8 @@ describe('Routines', () => {
     await user.clear(squatCard.getByLabelText('Serie 2: Peso (kg)'))
     await user.type(squatCard.getByLabelText('Serie 2: Peso (kg)'), '72,5')
     await user.click(squatCard.getByRole('button', { name: 'Añadir serie' }))
+    // The copied weight reads the Spanish way, like the rest of the app.
+    expect(squatCard.getByLabelText('Serie 3: Peso (kg)')).toHaveValue('72,5')
     await user.clear(squatCard.getByLabelText('Serie 3: Reps'))
     await user.type(squatCard.getByLabelText('Serie 3: Reps'), '6')
     await user.type(squatCard.getByLabelText('Serie 3: RPE'), '9')
@@ -156,6 +158,9 @@ describe('Routines', () => {
     expect(name).toHaveValue('Pierna')
     expect(screen.getByLabelText('Serie 1: Peso (kg)')).toHaveValue('60')
     expect(screen.getByLabelText('Serie 2: RPE')).toHaveValue('8')
+    // A set without an RPE shows a dash, not a sample number that looks like a real target.
+    expect(screen.getByLabelText('Serie 1: RPE')).toHaveValue('')
+    expect(screen.getByLabelText('Serie 1: RPE')).toHaveAttribute('placeholder', '—')
     await user.clear(name)
     await user.type(name, 'Pierna A')
     await user.click(screen.getByRole('button', { name: 'Guardar rutina' }))
