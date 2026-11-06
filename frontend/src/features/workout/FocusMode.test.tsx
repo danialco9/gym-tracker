@@ -217,9 +217,11 @@ describe('Removing an exercise', () => {
     render(<Toaster />)
     const { user } = startWith(USER)
 
-    await user.click(await screen.findByRole('button', { name: 'Quitar Sentadilla con barra' }))
+    await user.click(await screen.findByRole('button', { name: 'Quitar ejercicio Sentadilla con barra' }))
 
-    expect(screen.queryByRole('button', { name: 'Quitar Sentadilla con barra' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Quitar ejercicio Sentadilla con barra' }),
+    ).not.toBeInTheDocument()
     const notice = await screen.findByText('Sentadilla con barra quitado')
     // Toasts outlive a test, so the undo is the one in this notice.
     const toast = notice.closest('li')
@@ -227,7 +229,7 @@ describe('Removing an exercise', () => {
 
     fireEvent.click(within(toast as HTMLElement).getByRole('button', { name: 'Deshacer' }))
 
-    expect(screen.getByRole('button', { name: 'Quitar Sentadilla con barra' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Quitar ejercicio Sentadilla con barra' })).toBeInTheDocument()
     expect(screen.getByText('0/2')).toBeInTheDocument()
   })
 })

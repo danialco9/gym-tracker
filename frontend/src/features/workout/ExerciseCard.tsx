@@ -99,9 +99,6 @@ export function ExerciseCard({
               </span>
             </ProgressRing>
           )}
-          <Button variant="ghost" size="icon-sm" aria-label={`Quitar ${entry.name}`} onClick={onRemove}>
-            <Trash2Icon />
-          </Button>
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-1">
@@ -163,6 +160,17 @@ export function ExerciseCard({
             </Button>
           )}
         </div>
+        {/* Down here, away from the set's own bin, so removing a set never takes the whole exercise. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground mx-auto mt-1 flex"
+          aria-label={`Quitar ejercicio ${entry.name}`}
+          onClick={onRemove}
+        >
+          <Trash2Icon />
+          Quitar ejercicio
+        </Button>
       </CardContent>
     </Card>
   )

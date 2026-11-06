@@ -12,7 +12,7 @@ async function logOneSet(page: Page) {
   await page.getByRole('button', { name: 'Sentadilla con barra' }).click()
   await page.getByRole('textbox', { name: 'Peso (kg)', exact: true }).fill('80')
   await page.getByRole('button', { name: 'Completar serie 1' }).click()
-  await expect(page.getByText('1 serie completada')).toBeVisible()
+  await expect(page.getByText('1 de 1 serie')).toBeVisible()
 }
 
 async function savedWorkouts(request: APIRequestContext) {
