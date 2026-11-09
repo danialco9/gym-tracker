@@ -5,9 +5,8 @@ import { formatDecimal } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { WEIGHT_STEP_KG, type DraftSet } from './draft'
 import type { LastTimeComparison } from './last-time'
+import { RIR_OPTIONS, matchesRirOption } from './rir'
 import { Stepper } from './Stepper'
-
-const RPE_OPTIONS = [6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10]
 
 interface ActiveSetProps {
   number: number
@@ -91,31 +90,31 @@ export function ActiveSet({
           size="sm"
           className="text-muted-foreground -ml-1 h-8"
           aria-expanded={false}
-          aria-label="Anotar esfuerzo (RPE)"
+          aria-label="Anotar cuántas reps te quedaban"
           onClick={() => setRpeOpen(true)}
         >
           <PlusIcon />
-          Esfuerzo (RPE)
+          Reps en reserva
         </Button>
       ) : (
         <div>
           <p id={rpeLabelId} className="text-muted-foreground mb-1 text-xs">
-            Esfuerzo (RPE), opcional
+            ¿Cuántas reps más podías hacer? (opcional)
           </p>
           {/* Toggle buttons rather than a select: one tap, and tapping the chosen one clears it. */}
           <div role="group" aria-labelledby={rpeLabelId} className="grid grid-cols-5 gap-1">
-            {RPE_OPTIONS.map((rpe) => {
-              const selected = set.rpe === rpe
+            {RIR_OPTIONS.map((option) => {
+              const selected = matchesRirOption(set.rpe, option)
               return (
                 <Button
-                  key={rpe}
+                  key={option.label}
                   variant={selected ? 'default' : 'outline'}
                   className="h-9 px-0 text-sm tabular-nums"
                   aria-pressed={selected}
-                  aria-label={`RPE ${formatDecimal(rpe)}`}
-                  onClick={() => onChange({ rpe: selected ? null : rpe })}
+                  aria-label={`Me quedaban ${option.label} reps`}
+                  onClick={() => onChange({ rpe: selected ? null : option.rpe })}
                 >
-                  {formatDecimal(rpe)}
+                  {option.label}
                 </Button>
               )
             })}
