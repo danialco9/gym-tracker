@@ -56,6 +56,24 @@ def test_reads_a_rep_list_with_weight_and_rpe() -> None:
 
 
 @pytest.mark.parametrize(
+    ("text", "rpe"),
+    [
+        ("press banca 3x8 a 60 rir 2", 8.0),
+        ("press banca 3x8 a 60 RIR 0", 10.0),
+        ("press banca 3x8 a 60 rir 1,5", 8.5),
+        # More reps left than the scale holds still reads as the easiest effort, not an error.
+        ("press banca 3x8 a 60 rir 12", 1.0),
+    ],
+)
+def test_reads_reps_in_reserve_as_rpe(text: str, rpe: float) -> None:
+    [exercise] = RuleBasedReader().read(text, CATALOG)
+
+    assert exercise.exercise_id == 2
+    assert [item.reps for item in exercise.sets] == [8, 8, 8]
+    assert all(item.weight_kg == 60 and item.rpe == rpe for item in exercise.sets)
+
+
+@pytest.mark.parametrize(
     ("text", "weight"),
     [
         ("sentadilla 5x5 100kg", 100.0),

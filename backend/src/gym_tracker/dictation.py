@@ -1,7 +1,7 @@
 """Turns a workout written in plain Spanish into sets ready to review.
 
 The rule-based reader below understands the shorthand people actually write at the gym
-("prensa 4x10 120", "press banca 12,10,8 a 60 rpe 8"). It runs locally, so it always works and
+("prensa 4x10 120", "press banca 12,10,8 a 60 rir 2"). It runs locally, so it always works and
 costs nothing. ``WorkoutReader`` is the seam a language model plugs into later, for the sentences
 the rules cannot reach; nothing outside this module changes when it does.
 """
@@ -49,6 +49,7 @@ STOPWORDS = frozenset(
         "repeticion",
         "repeticiones",
         "rpe",
+        "rir",
         "kg",
         "kgs",
         "kilo",
@@ -71,7 +72,8 @@ _WEIGHT = re.compile(
 )
 # Any leftover number, which is the weight once the repetitions have been taken out.
 _BARE_NUMBER = re.compile(r"(?<![\d,.])(\d{1,4}(?:[.,]\d{1,2})?)(?![\d,.])")
-_RPE = re.compile(r"\brpe\s*(\d{1,2}(?:[.,]5)?)\b", re.IGNORECASE)
+# "rpe 8", or "rir 2" (reps left in reserve), which is stored as RPE 10 - RIR.
+_EFFORT = re.compile(r"\b(rpe|rir)\s*(\d{1,2}(?:[.,]5)?)\b", re.IGNORECASE)
 _LINE_SEPARATOR = re.compile(r"[\n;]+|\s+y\s+(?=\D)")
 
 
@@ -213,10 +215,11 @@ def _read_weight(line: str, *, allow_bare_number: bool) -> tuple[float | None, s
 def _read_line(line: str) -> tuple[str, tuple[ReadSet, ...]]:
     remainder = line
     rpe: float | None = None
-    rpe_match = _RPE.search(remainder)
-    if rpe_match:
-        rpe = _clamp(_number(rpe_match.group(1)), MIN_RPE, MAX_RPE)
-        remainder = _cut(remainder, rpe_match)
+    effort = _EFFORT.search(remainder)
+    if effort:
+        value = _number(effort.group(2))
+        rpe = _clamp(10 - value if effort.group(1).lower() == "rir" else value, MIN_RPE, MAX_RPE)
+        remainder = _cut(remainder, effort)
 
     reps_per_set, remainder = _read_repetitions(remainder)
     # Only trust a unitless number as the weight once the repetitions have been accounted for:
