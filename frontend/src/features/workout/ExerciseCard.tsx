@@ -1,4 +1,4 @@
-import { CheckCheckIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { ArrowLeftRightIcon, CheckCheckIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,6 +29,8 @@ interface ExerciseCardProps {
   onCompleteAll: (setIds: string[]) => void
   /** Removes the exercise, or one of its sets; the caller offers the undo. */
   onRemove: () => void
+  /** Offers other exercises for the same muscle, for the sets still to do. */
+  onSwap: () => void
   onRemoveSet: (setId: string) => void
 }
 
@@ -41,6 +43,7 @@ export function ExerciseCard({
   onExerciseCompleted,
   onCompleteAll,
   onRemove,
+  onSwap,
   onRemoveSet,
 }: ExerciseCardProps) {
   const target = formatSetPlan(entry.targets)
@@ -161,16 +164,31 @@ export function ExerciseCard({
           )}
         </div>
         {/* Down here, away from the set's own bin, so removing a set never takes the whole exercise. */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground mx-auto mt-1 flex"
-          aria-label={`Quitar ejercicio ${entry.name}`}
-          onClick={onRemove}
-        >
-          <Trash2Icon />
-          Quitar ejercicio
-        </Button>
+        <div className="mt-1 flex justify-center gap-2">
+          {/* Swapping moves the sets still to do; with none left there is nothing to move. */}
+          {pendingIds.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              aria-label={`Cambiar ejercicio ${entry.name}`}
+              onClick={onSwap}
+            >
+              <ArrowLeftRightIcon />
+              Cambiar
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            aria-label={`Quitar ejercicio ${entry.name}`}
+            onClick={onRemove}
+          >
+            <Trash2Icon />
+            Quitar
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

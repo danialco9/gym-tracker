@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { progressKeys } from '@/features/progress/queries'
 import { apiFetch } from '@/lib/api'
 import type { Dictation, Exercise, ExerciseIn, LastSession, Routine, Workout, WorkoutIn } from '@/lib/types'
@@ -26,13 +26,17 @@ export function useRoutines() {
   })
 }
 
-export function useLastSession(exerciseId: number) {
-  return useQuery({
+/** Shared by the hook and by the swap, which reads it once on the spot. */
+export const lastSessionQuery = (exerciseId: number) =>
+  queryOptions({
     queryKey: queryKeys.lastSession(exerciseId),
     queryFn: ({ signal }) =>
       apiFetch<LastSession | null>(`/exercises/${exerciseId}/last-session`, { signal }),
     staleTime: 5 * 60_000,
   })
+
+export function useLastSession(exerciseId: number) {
+  return useQuery(lastSessionQuery(exerciseId))
 }
 
 export function useRecentWorkouts(limit = 5) {

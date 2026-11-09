@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { PlusIcon } from 'lucide-react'
 import { useRef, useState, type Dispatch } from 'react'
 import { useNavigate } from 'react-router'
@@ -8,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCurrentUser } from '@/features/auth/queries'
 import { ApiError } from '@/lib/api'
 import { formatDecimal, formatTime, plural } from '@/lib/format'
+import { randomId } from '@/lib/id'
+import type { Exercise } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useGoalPlans } from '@/features/goal/queries'
 import { useProgressOverview } from '@/features/progress/queries'
@@ -23,9 +26,10 @@ import { ExerciseCard } from './ExerciseCard'
 import { ExerciseCarousel, type ExerciseCarouselHandle } from './ExerciseCarousel'
 import { ExercisePicker } from './ExercisePicker'
 import { enqueueWorkout, isTransient } from './outbox'
-import { useExercises, useSaveWorkout } from './queries'
+import { lastSessionQuery, useExercises, useSaveWorkout } from './queries'
 import { useRestNotification, useRestPushSetting } from './rest-push'
 import { RestBar } from './RestBar'
+import { SwapExerciseSheet } from './SwapExerciseSheet'
 import { DEFAULT_REST_SECONDS, useRestTimer } from './useRestTimer'
 
 interface ActiveWorkoutProps {
@@ -35,6 +39,10 @@ interface ActiveWorkoutProps {
 
 export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
+  // The exercise being swapped (by entry id), first among its alternatives and then, if none will do,
+  // in the whole catalog.
+  const [swapping, setSwapping] = useState<{ entryId: string; searching: boolean } | null>(null)
+  const queryClient = useQueryClient()
   const carousel = useRef<ExerciseCarouselHandle>(null)
   const timer = useRestTimer()
   const saveWorkout = useSaveWorkout()
@@ -49,6 +57,11 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   )
   const catalog = new Map(useExercises().data?.map((exercise) => [exercise.id, exercise]))
   const completed = completedSetCount(draft)
+  const inWorkout = new Set(draft.exercises.map((entry) => entry.exerciseId))
+  const swappedEntry = draft.exercises.find((entry) => entry.id === swapping?.entryId)
+  // Only while choosing among the alternatives; the search takes over from it.
+  const swappedExercise =
+    swappedEntry && swapping?.searching === false ? catalog.get(swappedEntry.exerciseId) : undefined
   const total = draft.exercises.reduce((sum, entry) => sum + entry.sets.length, 0)
   // The exercise of the last set ticked off: the rest announces what follows it, not the routine's first.
   const [currentEntryId, setCurrentEntryId] = useState<string>()
@@ -110,6 +123,36 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
         label: 'Deshacer',
         onClick: () => {
           dispatch({ type: 'restoreExercise', entry, index })
+          carousel.current?.show(index)
+        },
+      },
+    })
+  }
+
+  const swapExercise = async (entryId: string, exercise: Exercise) => {
+    setSwapping(null)
+    const index = draft.exercises.findIndex((entry) => entry.id === entryId)
+    if (index === -1) {
+      return
+    }
+    const original = draft.exercises[index]
+    // What was lifted on it last time; never done before (or offline), its sets start without a weight.
+    const lastSession = await queryClient.fetchQuery(lastSessionQuery(exercise.id)).catch(() => null)
+    const weightsKg =
+      lastSession?.sets
+        .filter((set) => set.exercise_id === exercise.id && !set.is_warmup)
+        .map((set) => set.weight_kg) ?? []
+    const replacementId = randomId()
+    dispatch({ type: 'swapExercise', entryId, exercise, replacementId, weightsKg })
+    // With sets done the original stays, and the replacement comes right after it.
+    if (original.sets.some((set) => set.done)) {
+      requestAnimationFrame(() => carousel.current?.show(index + 1))
+    }
+    toast(`${original.name} cambiado por ${exercise.name}`, {
+      action: {
+        label: 'Deshacer',
+        onClick: () => {
+          dispatch({ type: 'undoSwap', original, replacementId })
           carousel.current?.show(index)
         },
       },
@@ -227,6 +270,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
               onExerciseCompleted={() => showNextExercise(entry.id)}
               onCompleteAll={(setIds) => completeAll(entry.id, setIds)}
               onRemove={() => removeExercise(entry.id)}
+              onSwap={() => setSwapping({ entryId: entry.id, searching: false })}
               onRemoveSet={(setId) => removeSet(entry.id, setId)}
             />
           )}
@@ -272,6 +316,21 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
           const index = draft.exercises.length
           requestAnimationFrame(() => carousel.current?.show(index))
         }}
+      />
+
+      <SwapExerciseSheet
+        exercise={swappedExercise ?? null}
+        exclude={inWorkout}
+        onSelect={(exercise) => swapping && void swapExercise(swapping.entryId, exercise)}
+        onSearch={() => swapping && setSwapping({ ...swapping, searching: true })}
+        onClose={() => setSwapping(null)}
+      />
+      <ExercisePicker
+        open={swapping?.searching === true}
+        onOpenChange={(open) => !open && setSwapping(null)}
+        title="Cambiar ejercicio"
+        selectLabel="Cambiar por este"
+        onSelect={(exercise) => swapping && void swapExercise(swapping.entryId, exercise)}
       />
 
       {showRest && (

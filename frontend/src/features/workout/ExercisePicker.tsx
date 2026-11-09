@@ -18,9 +18,18 @@ interface ExercisePickerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSelect: (exercise: Exercise) => void
+  /** The sheet's title and the exercise sheet's button: adding an exercise unless told otherwise. */
+  title?: string
+  selectLabel?: string
 }
 
-export function ExercisePicker({ open, onOpenChange, onSelect }: ExercisePickerProps) {
+export function ExercisePicker({
+  open,
+  onOpenChange,
+  onSelect,
+  title = 'Añadir ejercicio',
+  selectLabel = 'Añadir',
+}: ExercisePickerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -29,7 +38,7 @@ export function ExercisePicker({ open, onOpenChange, onSelect }: ExercisePickerP
         className="top-0 mx-auto h-dvh max-w-2xl gap-0 border-t-0 sm:border-x"
       >
         {/* Mounted only while open, so every visit starts with an empty search and no filters. */}
-        <PickerBody onSelect={onSelect} />
+        <PickerBody onSelect={onSelect} title={title} selectLabel={selectLabel} />
       </SheetContent>
     </Sheet>
   )
@@ -39,7 +48,13 @@ type FilterKind = 'muscle' | 'equipment'
 
 const NO_FILTERS: ExerciseFilters = { muscle: null, equipment: null }
 
-function PickerBody({ onSelect }: Pick<ExercisePickerProps, 'onSelect'>) {
+interface PickerBodyProps {
+  onSelect: (exercise: Exercise) => void
+  title: string
+  selectLabel: string
+}
+
+function PickerBody({ onSelect, title, selectLabel }: PickerBodyProps) {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<ExerciseFilters>(NO_FILTERS)
   const [openFilter, setOpenFilter] = useState<FilterKind | null>(null)
@@ -65,7 +80,7 @@ function PickerBody({ onSelect }: Pick<ExercisePickerProps, 'onSelect'>) {
         <SheetClose render={<Button variant="ghost" size="icon-lg" aria-label="Volver" />}>
           <ArrowLeftIcon />
         </SheetClose>
-        <SheetTitle className="flex-1 text-lg font-semibold">Añadir ejercicio</SheetTitle>
+        <SheetTitle className="flex-1 text-lg font-semibold">{title}</SheetTitle>
         <SheetDescription className="sr-only">
           Busca por nombre o filtra por músculo y material.
         </SheetDescription>
@@ -152,6 +167,7 @@ function PickerBody({ onSelect }: Pick<ExercisePickerProps, 'onSelect'>) {
 
       <ExerciseInfoSheet
         exercise={info}
+        addLabel={selectLabel}
         onClose={() => setInfo(null)}
         onAdd={(exercise) => {
           setInfo(null)
@@ -275,7 +291,7 @@ interface ExerciseSectionProps {
   onInfo: (exercise: Exercise) => void
 }
 
-function ExerciseSection({ title, exercises, onSelect, onInfo }: ExerciseSectionProps) {
+export function ExerciseSection({ title, exercises, onSelect, onInfo }: ExerciseSectionProps) {
   const headingId = useId()
   return (
     <section aria-labelledby={headingId}>

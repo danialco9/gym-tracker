@@ -162,6 +162,60 @@ describe('draftReducer', () => {
     expect(apply(withoutSet, { type: 'restoreSet', entryId: squat.id, set: middle, index: 1 })).toEqual(draft)
   })
 
+  it('swaps an exercise in its place, with the reps of the plan and the weights of last time', () => {
+    const draft = apply(start(legDay), { type: 'addExercise', exercise: { id: 20, name: 'Curl femoral' } })
+    const [squat] = draft.exercises
+    const press = { id: 12, name: 'Prensa de piernas' }
+
+    const swapped = apply(draft, {
+      type: 'swapExercise',
+      entryId: squat.id,
+      exercise: press,
+      replacementId: 'press',
+      weightsKg: [150, 140],
+    })
+
+    expect(swapped.exercises.map((entry) => entry.name)).toEqual(['Prensa de piernas', 'Curl femoral'])
+    const [replacement] = swapped.exercises
+    expect(replacement.targets).toEqual(Array(3).fill({ reps: 8, weightKg: null }))
+    // Set by set; the last weight known carries on.
+    expect(replacement.sets.map((set) => [set.reps, set.weightKg])).toEqual([
+      [8, 150],
+      [8, 140],
+      [8, 140],
+    ])
+
+    expect(apply(swapped, { type: 'undoSwap', original: squat, replacementId: 'press' })).toEqual(draft)
+  })
+
+  it('keeps the sets already done with the original, and moves the rest to the replacement', () => {
+    let draft = start(legDay)
+    const squat = draft.exercises[0]
+    draft = apply(draft, { type: 'toggleDone', entryId: squat.id, setId: squat.sets[0].id })
+    const before = draft.exercises[0]
+
+    const swapped = apply(draft, {
+      type: 'swapExercise',
+      entryId: squat.id,
+      exercise: { id: 12, name: 'Prensa de piernas' },
+      replacementId: 'press',
+      weightsKg: [],
+    })
+
+    const [original, replacement] = swapped.exercises
+    expect(original.sets).toEqual([before.sets[0]])
+    expect(original.targets).toHaveLength(1)
+    expect(replacement.name).toBe('Prensa de piernas')
+    // Never done before: no weight to go on, rather than the squat's.
+    expect(replacement.sets.map((set) => [set.reps, set.weightKg, set.done])).toEqual([
+      [8, 0, false],
+      [8, 0, false],
+    ])
+    expect(replacement.targets).toHaveLength(2)
+
+    expect(apply(swapped, { type: 'undoSwap', original: before, replacementId: 'press' })).toEqual(draft)
+  })
+
   it('ticks several sets at once and unticks only those to undo it', () => {
     let draft = start(legDay)
     const entry = draft.exercises[0]

@@ -69,6 +69,20 @@ export type DraftAction =
   | { type: 'startDictated'; startedAt: string; entries: DictatedEntry[] }
   | { type: 'addExercise'; exercise: Pick<Exercise, 'id' | 'name'> }
   | { type: 'removeExercise'; entryId: string }
+  /**
+   * Swaps an exercise for another, in its place: the sets still to do move to it, with ``weightsKg``
+   * (what was lifted on it last time, set by set) as their weights. Sets already done stay with the
+   * original, followed by the replacement.
+   */
+  | {
+      type: 'swapExercise'
+      entryId: string
+      exercise: Pick<Exercise, 'id' | 'name'>
+      replacementId: string
+      weightsKg: readonly number[]
+    }
+  /** Undoes a swap: the original exercise is back as it was, and its replacement is gone. */
+  | { type: 'undoSwap'; original: DraftExercise; replacementId: string }
   | { type: 'addSet'; entryId: string }
   | { type: 'updateSet'; entryId: string; setId: string; changes: SetChanges }
   | { type: 'adjustSet'; entryId: string; setId: string; field: 'reps' | 'weightKg'; delta: number }
@@ -140,6 +154,31 @@ function entryFromRoutine(
             newSet({ reps: set.reps ?? DEFAULT_REPS, weightKg: set.weightKg ?? 0, rpe: null }),
           ),
   }
+}
+
+function swapEntry(
+  entry: DraftExercise,
+  action: Extract<DraftAction, { type: 'swapExercise' }>,
+): DraftExercise[] {
+  const done = entry.sets.filter((set) => set.done)
+  const replacement: DraftExercise = {
+    id: action.replacementId,
+    exerciseId: action.exercise.id,
+    name: action.exercise.name,
+    // The plan's reps still apply to the sets left; its weights were for the other exercise.
+    targets: entry.targets.slice(done.length).map((target) => ({ reps: target.reps, weightKg: null })),
+    sets: entry.sets
+      .filter((set) => !set.done)
+      .map((set, index) => ({
+        ...set,
+        weightKg: action.weightsKg[index] ?? action.weightsKg.at(-1) ?? 0,
+        rpe: null,
+      })),
+  }
+  if (done.length === 0) {
+    return [replacement]
+  }
+  return [{ ...entry, targets: entry.targets.slice(0, done.length), sets: done }, replacement]
 }
 
 function updateEntry(
@@ -219,6 +258,26 @@ export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): W
       }
     case 'removeExercise':
       return { ...draft, exercises: draft.exercises.filter((entry) => entry.id !== action.entryId) }
+    case 'swapExercise':
+      return {
+        ...draft,
+        exercises: draft.exercises.flatMap((entry) =>
+          entry.id === action.entryId ? swapEntry(entry, action) : [entry],
+        ),
+      }
+    case 'undoSwap': {
+      // With sets done, the original stayed next to its replacement; otherwise the replacement took its place.
+      const split = draft.exercises.some((entry) => entry.id === action.original.id)
+      return {
+        ...draft,
+        exercises: draft.exercises.flatMap((entry) => {
+          if (entry.id === action.replacementId) {
+            return split ? [] : [action.original]
+          }
+          return [entry.id === action.original.id ? action.original : entry]
+        }),
+      }
+    }
     case 'addSet':
       return updateEntry(draft, action.entryId, (entry) => ({
         ...entry,
