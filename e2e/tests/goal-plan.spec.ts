@@ -27,7 +27,7 @@ test("picks a goal, follows today's plan for a routine and starts a streak", asy
   await page.getByRole('link', { name: /Elige tu objetivo/ }).click()
 
   await page.getByRole('button', { name: /Ganar músculo/ }).click()
-  await expect(page.getByText('RPE 8–9')).toBeVisible()
+  await expect(page.getByText('RIR 1–2')).toBeVisible()
   await page.getByRole('button', { name: 'Guardar objetivo' }).click()
   await expect(page.getByRole('heading', { name: /^Hola/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /Elige tu objetivo/ })).toHaveCount(0)
@@ -36,7 +36,7 @@ test("picks a goal, follows today's plan for a routine and starts a streak", asy
   await page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Entrenar' }).click()
   await page.getByRole('button', { name: /Pierna/ }).click()
   await expect(page.getByRole('heading', { name: 'Pierna' })).toBeVisible()
-  await expect(page.getByText('Ganar músculo · RPE 8–9 · descanso 2–3 min')).toBeVisible()
+  await expect(page.getByText('Ganar músculo · RIR 1–2 · descanso 2–3 min')).toBeVisible()
   const plan = page.getByRole('list', { name: 'Ejercicios de hoy' })
   await expect(plan.getByText('Sentadilla con barra')).toBeVisible()
   await expect(plan.getByText('2 × 8 · 60 kg')).toBeVisible()

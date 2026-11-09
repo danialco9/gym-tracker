@@ -206,7 +206,7 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
         <div className="space-y-1">
           <h2 className="font-heading text-lg font-medium">Ejercicios</h2>
           <p className="text-muted-foreground text-sm">
-            Arrastra desde el asa para ordenarlos. Cada serie puede tener sus reps, peso y RPE (todo
+            Arrastra desde el asa para ordenarlos. Cada serie puede tener sus reps, peso y RIR (todo
             opcional); se precargan al empezar el entreno.
           </p>
         </div>

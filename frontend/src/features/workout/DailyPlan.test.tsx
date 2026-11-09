@@ -134,7 +134,7 @@ describe("Today's plan", () => {
     await user.click(await screen.findByRole('button', { name: /Pierna/ }))
 
     expect(screen.getByRole('heading', { name: 'Pierna' })).toBeInTheDocument()
-    expect(await screen.findByText('Ganar músculo · RPE 8–9 · descanso 2–3 min')).toBeInTheDocument()
+    expect(await screen.findByText('Ganar músculo · RIR 1–2 · descanso 2–3 min')).toBeInTheDocument()
     const exercises = screen.getByRole('list', { name: 'Ejercicios de hoy' })
     const squat = within(exercises).getByText('Sentadilla con barra').closest('li')!
     expect(within(squat).getByText('Sube el peso')).toBeInTheDocument()

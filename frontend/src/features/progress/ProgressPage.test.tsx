@@ -183,7 +183,7 @@ describe('Progress', () => {
     expect(within(deload!).getByText('110×12 · 117,5×10 · 127,5×8')).toBeInTheDocument()
     // Each suggestion says why.
     expect(
-      within(increase!).getByText('Completaste todas las series objetivo con RPE 8 como máximo: sube 5 kg.'),
+      within(increase!).getByText('Completaste todas las series objetivo con RIR 2 o más: sube 5 kg.'),
     ).toBeInTheDocument()
     expect(within(deload!).getByText(/no mejora en las últimas sesiones/)).toBeInTheDocument()
     // Closed, a row says only what to do next; a tap opens the last session and the reason.

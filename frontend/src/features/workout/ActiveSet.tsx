@@ -5,7 +5,7 @@ import { formatDecimal } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { WEIGHT_STEP_KG, type DraftSet } from './draft'
 import type { LastTimeComparison } from './last-time'
-import { RIR_OPTIONS, matchesRirOption } from './rir'
+import { RIR_OPTIONS, matchesRirOption } from '@/lib/rir'
 import { Stepper } from './Stepper'
 
 interface ActiveSetProps {

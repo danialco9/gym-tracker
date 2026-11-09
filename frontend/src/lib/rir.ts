@@ -18,3 +18,10 @@ export const matchesRirOption = (rpe: number | null, option: (typeof RIR_OPTIONS
 
 /** "2", "1,5" or "4+" for a stored RPE; half points from older sets or dictation stay readable. */
 export const formatRir = (rpe: number) => (rpe <= 6 ? '4+' : formatDecimal(10 - rpe))
+
+/** Exact conversions for typed targets (routines), where any value is kept as is. */
+export const rpeToRir = (rpe: number | null) => (rpe === null ? null : 10 - rpe)
+export const rirToRpe = (rir: number | null) => (rir === null ? null : 10 - rir)
+
+/** An RPE range turned around: RPE 8–9 is RIR 1–2. */
+export const rirRange = ({ min, max }: { min: number; max: number }) => ({ min: 10 - max, max: 10 - min })

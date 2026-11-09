@@ -89,8 +89,8 @@ export function RecommendationsTab({ recommendations, volumeAdvice, hasWorkouts 
       ) : (
         <>
           <p className="text-muted-foreground text-sm">
-            Según tu última sesión de cada ejercicio de las últimas 4 semanas, su objetivo en la rutina y el
-            RPE.
+            Según tu última sesión de cada ejercicio de las últimas 4 semanas, su objetivo en la rutina y las
+            reps en reserva (RIR).
           </p>
           {groupRecommendations(recommendations).map(({ action, items }) => {
             const Icon = ACTION_ICONS[action]
