@@ -5,6 +5,7 @@ import heroImage from '@/assets/hero-squat.webp'
 import { QueryStatus } from '@/components/QueryStatus'
 import { buttonVariants } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
+import { BlockCard } from '@/features/home/BlockCard'
 import { GettingStarted } from '@/features/home/GettingStarted'
 import { OverloadCard } from '@/features/home/OverloadCard'
 import { RankingCard } from '@/features/home/RankingCard'
@@ -138,6 +139,8 @@ export function HomePage() {
       {streak.data !== undefined && (
         <StreakCard streak={streak.data} workoutsThisWeek={overview.data?.activity.workouts_last_7_days} />
       )}
+
+      {currentUser?.block != null && <BlockCard block={currentUser.block} />}
 
       {overview.data !== undefined && <OverloadCard exercises={overview.data.week_overload} />}
 

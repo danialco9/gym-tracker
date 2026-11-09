@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from gym_tracker.api.progress import get_today
+from gym_tracker.api.deps import get_today
 from gym_tracker.demo import DEMO_EMAIL, DEMO_PASSWORD, ROUTINES, seed_demo
 from gym_tracker.models import Routine, User, Workout
 

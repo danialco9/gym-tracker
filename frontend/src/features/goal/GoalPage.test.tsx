@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { GoalPlan, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
@@ -88,6 +88,67 @@ describe('Goal', () => {
     expect(current).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByText('60–90 s')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar objetivo' })).toBeEnabled()
+  })
+
+  it('saves training blocks with the goal, sending only what changed', async () => {
+    const calls = mockApi({
+      ...HOME,
+      'GET /auth/me': { body: { ...USER, goal: 'build_muscle' } },
+      'PATCH /auth/me': ({ body }) => ({
+        body: {
+          ...USER,
+          goal: 'build_muscle',
+          ...(body as object),
+          block: { week: 1, weeks: 5, is_deload: false },
+        },
+      }),
+    })
+    const { user, router } = renderRoute('/objetivo')
+
+    expect(await screen.findByRole('button', { name: 'Sin bloques' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Entrenas igual todas las semanas.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Bloques de 5 semanas' }))
+    expect(screen.getByText(/4 semanas apretando y 1 de descarga/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Guardar objetivo' }))
+
+    expect(await screen.findByRole('region', { name: 'Tu bloque' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/')
+    expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ block_weeks: 5 })
+  })
+
+  it('starts a running block again this week', async () => {
+    const calls = mockApi({
+      ...HOME,
+      'GET /auth/me': {
+        body: {
+          ...USER,
+          goal: 'build_muscle',
+          block_weeks: 4,
+          block: { week: 3, weeks: 4, is_deload: false },
+        },
+      },
+      'PATCH /auth/me': {
+        body: {
+          ...USER,
+          goal: 'build_muscle',
+          block_weeks: 4,
+          block: { week: 1, weeks: 4, is_deload: false },
+        },
+      },
+    })
+    const { user } = renderRoute('/objetivo')
+
+    expect(await screen.findByRole('button', { name: 'Bloques de 4 semanas' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: 'Guardar objetivo' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Empezar el bloque de nuevo esta semana' }))
+
+    await waitFor(() =>
+      expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ block_weeks: 4 }),
+    )
   })
 
   it('says so when the goal cannot be saved', async () => {

@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from gym_tracker.api.progress import get_today
+from gym_tracker.api.deps import get_today
 from gym_tracker.config import Settings
 from gym_tracker.models import Workout, WorkoutSet
 from gym_tracker.users import create_user

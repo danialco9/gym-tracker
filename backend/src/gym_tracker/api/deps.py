@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
@@ -18,6 +19,14 @@ ACCESS_TOKEN_COOKIE = "access_token"
 
 SessionDep = Annotated[Session, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+
+def get_today(settings: SettingsDep) -> date:
+    """Today in the configured time zone, so weeks turn over at local midnight."""
+    return datetime.now(settings.zone).date()
+
+
+TodayDep = Annotated[date, Depends(get_today)]
 
 
 def set_session_cookie(response: Response, user_id: int, settings: Settings, *, remember: bool) -> None:
