@@ -66,6 +66,8 @@ export function explainRecommendation(item: Recommendation): string {
       const percent = heaviest > 0 ? ` (un ${Math.round((item.increment_kg / heaviest) * 100)} % más)` : ''
       return `Subir ${step} sería un salto grande${percent}: primero suma una repetición por serie.`
     }
+    case 'deload_week':
+      return 'Semana de descarga: la mitad de series con el mismo peso, dejando 3 o 4 reps en reserva.'
   }
 }
 

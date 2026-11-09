@@ -12,7 +12,7 @@ import type { DictatedEntry } from './draft'
 import { useRoutines } from './queries'
 
 interface StartWorkoutProps {
-  onStart: (routine?: Routine, suggestions?: ReadonlyMap<number, PlannedSet[]>) => void
+  onStart: (routine?: Routine, suggestions?: ReadonlyMap<number, PlannedSet[]>, deload?: boolean) => void
   onStartDictated: (entries: DictatedEntry[]) => void
 }
 
@@ -28,7 +28,7 @@ export function StartWorkout({ onStart, onStartDictated }: StartWorkoutProps) {
     return (
       <DailyPlan
         routine={chosen}
-        onStart={(suggestions) => onStart(chosen, suggestions)}
+        onStart={(suggestions, deload) => onStart(chosen, suggestions, deload)}
         onBack={() => setChosen(null)}
       />
     )

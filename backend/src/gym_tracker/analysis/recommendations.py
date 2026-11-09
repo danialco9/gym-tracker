@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import StrEnum
@@ -38,6 +38,7 @@ class Reason(StrEnum):
     EASY_WITHOUT_PLAN = "easy_without_plan"
     WITHOUT_PLAN = "without_plan"
     JUMP_TOO_BIG = "jump_too_big"
+    DELOAD_WEEK = "deload_week"
 
 
 @dataclass(frozen=True)
@@ -210,6 +211,29 @@ def decide_progression(
     return suggest(Action.HOLD, Reason.TARGETS_HIT_HARD, weights)
 
 
+def decide_deload_week(*, performed: Sequence[PerformedSet], planned: Sequence[PlannedSet]) -> Progression:
+    """The deload week of a training block: the same weights and target reps, half the sets.
+
+    Rounded up, so a single set stays. Lighter work for a week lets fatigue clear before the next
+    block; nothing the last session said about progressing applies until then.
+    """
+    if not performed:
+        raise ValueError("At least one performed set is needed")
+    weights = _next_weights(performed, planned)
+    # The planned reps of each set, or what was done in it without a plan.
+    last = len(performed) - 1
+    reps = [
+        planned[index].reps if planned and planned[index].reps is not None else performed[min(index, last)].reps
+        for index in range(len(weights))
+    ]
+    kept = math.ceil(len(weights) / 2)
+    return Progression(
+        Action.HOLD,
+        Reason.DELOAD_WEEK,
+        tuple(PlannedSet(reps=rep, weight_kg=weight) for rep, weight in zip(reps[:kept], weights[:kept], strict=True)),
+    )
+
+
 def _optional_int(value: Any) -> int | None:
     return None if pd.isna(value) else int(value)
 
@@ -234,17 +258,38 @@ def _planned_sets(log: TrainingLog) -> dict[tuple[str, str], tuple[PlannedSet, .
     return plans
 
 
+def _without_deload_weeks(work: pd.DataFrame, in_deload: Callable[[date], bool]) -> pd.DataFrame:
+    """Drop the sets done in deload weeks, except for exercises trained only then.
+
+    A deload session is light on purpose: as "the last time" it would read as targets missed, and in
+    the plateau window as a stall.
+    """
+    deload = work["date"].dt.date.map(in_deload).astype(bool)
+    building_ids = set(work.loc[~deload, "exercise_id"])
+    kept: pd.DataFrame = work.loc[~deload | ~work["exercise_id"].isin(building_ids)]
+    return kept
+
+
 def recommend(
-    log: TrainingLog, rules: ProgressionRules = DEFAULT_RULES, today: date | None = None
+    log: TrainingLog,
+    rules: ProgressionRules = DEFAULT_RULES,
+    today: date | None = None,
+    in_deload: Callable[[date], bool] | None = None,
 ) -> list[Recommendation]:
     """Suggest the next session for every exercise, based on its most recent one.
 
     Given ``today``, exercises last trained more than ``max_age_days`` before are left out: a lift
     dropped from the routine months ago needs no next step.
+
+    For someone training in blocks, ``in_deload`` tells the days of the deload weeks. Those sessions
+    are left out of the decision, and if ``today`` is one of them every suggestion is the deload.
     """
     work = working_sets(log)
     if work.empty:
         return []
+    if in_deload is not None:
+        work = _without_deload_weeks(work, in_deload)
+    deload_week = today is not None and in_deload is not None and in_deload(today)
 
     plateaus = detect_plateaus(session_bests(work), window=rules.plateau_window)
     stalled_ids = set(plateaus.loc[plateaus["stalled"].astype(bool), "exercise_id"])
@@ -274,12 +319,16 @@ def recommend(
             str(exercises.at[exercise_id, "muscle_group"]) if known else None,
             rules,
         )
-        progression = decide_progression(
-            performed=performed,
-            planned=planned,
-            stalled=exercise_id in stalled_ids,
-            increment_kg=increment,
-            rules=rules,
+        progression = (
+            decide_deload_week(performed=performed, planned=planned)
+            if deload_week
+            else decide_progression(
+                performed=performed,
+                planned=planned,
+                stalled=exercise_id in stalled_ids,
+                increment_kg=increment,
+                rules=rules,
+            )
         )
         recommendations.append(
             Recommendation(

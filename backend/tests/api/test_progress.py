@@ -203,6 +203,23 @@ def test_overview_summarizes_the_training_log(progress_client: TestClient, train
     }
 
 
+def test_overview_in_a_deload_week_suggests_half_the_sets(
+    progress_client: TestClient, training_log: dict[str, int]
+) -> None:
+    # Four-week blocks from 24 August: the week of 14 September, today's, is the deload.
+    progress_client.app.dependency_overrides[get_today] = lambda: date(2026, 8, 24)  # type: ignore[attr-defined]
+    assert progress_client.patch("/api/auth/me", json={"block_weeks": 4}).status_code == 200
+    progress_client.app.dependency_overrides[get_today] = lambda: TODAY  # type: ignore[attr-defined]
+
+    recommendations = progress_client.get("/api/progress/overview").json()["recommendations"]
+
+    assert [(item["action"], item["reason"]) for item in recommendations] == [("hold", "deload_week")] * 2
+    # The bench builds on the session before the deload week; the pulldown was only done in it.
+    assert recommendations[0]["last_performed_on"] == "2026-09-08"
+    assert recommendations[0]["suggested_sets"] == [{"reps": 8, "weight_kg": 60.0}] * 2
+    assert recommendations[1]["suggested_sets"] == [{"reps": 10, "weight_kg": 50.0}]
+
+
 def test_overview_advises_on_weekly_volume_and_drops_old_exercises(
     progress_client: TestClient, training_log: dict[str, int]
 ) -> None:

@@ -63,6 +63,8 @@ export type DraftAction =
       routine?: Routine
       /** Suggested sets per exercise id, prefilled instead of the routine's plan. */
       suggestions?: ReadonlyMap<number, PlannedSet[]>
+      /** The deload week of a training block: the routine's plan counts half its sets. */
+      deload?: boolean
     }
   | { type: 'startDictated'; startedAt: string; entries: DictatedEntry[] }
   | { type: 'addExercise'; exercise: Pick<Exercise, 'id' | 'name'> }
@@ -109,11 +111,19 @@ function newSet(template?: Pick<DraftSet, 'reps' | 'weightKg' | 'rpe'>): DraftSe
   }
 }
 
-function entryFromRoutine(item: RoutineExercise, suggested: PlannedSet[] = []): DraftExercise {
-  const targets = item.sets.map((planned) => ({
-    reps: planned.target_reps,
-    weightKg: planned.target_weight_kg,
+/** The deload week keeps the first half of the sets, rounded up so a single set stays. */
+export const deloadSets = <T>(sets: readonly T[]): T[] => sets.slice(0, Math.ceil(sets.length / 2))
+
+function entryFromRoutine(
+  item: RoutineExercise,
+  suggested: PlannedSet[] = [],
+  deload = false,
+): DraftExercise {
+  const planned = item.sets.map((set) => ({
+    reps: set.target_reps,
+    weightKg: set.target_weight_kg,
   }))
+  const targets = deload ? deloadSets(planned) : planned
   // A suggestion for today wins over the routine's plan, which stays shown as the target.
   const prefill =
     suggested.length > 0 ? suggested.map((set) => ({ reps: set.reps, weightKg: set.weight_kg })) : targets
@@ -165,7 +175,7 @@ export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): W
       notes: '',
       exercises:
         action.routine?.exercises.map((item) =>
-          entryFromRoutine(item, action.suggestions?.get(item.exercise.id)),
+          entryFromRoutine(item, action.suggestions?.get(item.exercise.id), action.deload),
         ) ?? [],
     }
   }

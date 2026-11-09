@@ -34,3 +34,11 @@ def block_week(started_on: date, weeks: int, today: date) -> BlockWeek:
     # A start in the future (a clock change, a hand-edited row) reads as the first week, not a negative one.
     week = max(elapsed_weeks, 0) % weeks + 1
     return BlockWeek(week=week, weeks=weeks, is_deload=week == weeks)
+
+
+def in_deload_week(started_on: date, weeks: int, day: date) -> bool:
+    """Whether ``day`` fell in a deload week of the blocks started on ``started_on``.
+
+    Days before the first block never did: restarting a block leaves the history before it alone.
+    """
+    return day >= week_start(started_on) and block_week(started_on, weeks, day).is_deload

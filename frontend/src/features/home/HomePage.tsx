@@ -142,7 +142,10 @@ export function HomePage() {
 
       {currentUser?.block != null && <BlockCard block={currentUser.block} />}
 
-      {overview.data !== undefined && <OverloadCard exercises={overview.data.week_overload} />}
+      {/* Lifting less is the point of a deload week, so beating last time is not the yardstick. */}
+      {overview.data !== undefined && currentUser?.block?.is_deload !== true && (
+        <OverloadCard exercises={overview.data.week_overload} />
+      )}
 
       {currentUser != null && <RankingCard user={currentUser} />}
 

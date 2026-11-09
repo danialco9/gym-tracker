@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from functools import partial
 from pathlib import Path
 
 import pytest
@@ -10,12 +11,14 @@ from gym_tracker.analysis import (
     Reason,
     VolumeStatus,
     current_week_sets,
+    decide_deload_week,
     decide_progression,
     load_increment,
     load_training_log,
     recommend,
     volume_advice,
 )
+from gym_tracker.analysis.mesocycle import in_deload_week
 from tests.conftest import WriteLog
 
 STRAIGHT_PLAN = [PlannedSet(reps=10, weight_kg=60)] * 3
@@ -225,6 +228,65 @@ def test_recommend_leaves_out_exercises_not_trained_for_weeks(write_log: WriteLo
     # A machine leg lift moves in 5 kg steps.
     assert current.increment_kg == 5.0
     assert [item.weight_kg for item in current.suggested_sets] == [155.0]
+
+
+@pytest.mark.parametrize(("set_count", "kept"), [(4, 2), (3, 2), (1, 1)])
+def test_a_deload_week_keeps_the_weights_with_half_the_sets(set_count: int, kept: int) -> None:
+    plan = [PlannedSet(reps=10, weight_kg=60)] * set_count
+    done = performed(*[(60, 10)] * set_count, rpe=7)
+
+    progression = decide_deload_week(performed=done, planned=plan)
+
+    assert (progression.action, progression.reason) == (Action.HOLD, Reason.DELOAD_WEEK)
+    assert progression.suggested_sets == (PlannedSet(reps=10, weight_kg=60),) * kept
+
+
+def _block_log(write_log: WriteLog) -> Path:
+    """A normal session, then a lighter one in the deload week of a two-week block started 2026-09-07."""
+    return write_log(
+        exercises="lat-pulldown,Jalón al pecho,back,biceps,machine",
+        routines="pull,Pull,",
+        routine_exercises="""
+            pull,lat-pulldown,1,1,10,,8
+            pull,lat-pulldown,1,2,10,,8
+            pull,lat-pulldown,1,3,10,,8
+        """,
+        workouts="""
+            w1,2026-09-08,pull,
+            w2,2026-09-15,pull,
+        """,
+        workout_sets="""
+            w1,lat-pulldown,1,10,50,8,false
+            w1,lat-pulldown,2,10,50,8,false
+            w1,lat-pulldown,3,10,50,8,false
+            w2,lat-pulldown,1,10,50,6,false
+            w2,lat-pulldown,2,10,50,6,false
+        """,
+    )
+
+
+def test_recommend_in_a_deload_week_halves_the_sets(write_log: WriteLog) -> None:
+    log = load_training_log(_block_log(write_log))
+    in_deload = partial(in_deload_week, date(2026, 9, 7), 2)
+
+    [recommendation] = recommend(log, today=date(2026, 9, 17), in_deload=in_deload)
+
+    assert (recommendation.action, recommendation.reason) == (Action.HOLD, Reason.DELOAD_WEEK)
+    assert recommendation.suggested_sets == (PlannedSet(reps=10, weight_kg=50),) * 2
+
+
+def test_recommend_after_a_deload_week_builds_on_the_session_before_it(write_log: WriteLog) -> None:
+    log = load_training_log(_block_log(write_log))
+    in_deload = partial(in_deload_week, date(2026, 9, 7), 2)
+
+    # Without blocks the two light sets read as targets missed.
+    [unaware] = recommend(log, today=date(2026, 9, 22))
+    assert unaware.reason is Reason.TARGETS_MISSED
+
+    [recommendation] = recommend(log, today=date(2026, 9, 22), in_deload=in_deload)
+    assert (recommendation.action, recommendation.reason) == (Action.INCREASE_LOAD, Reason.TARGETS_HIT)
+    assert recommendation.last_performed_on == date(2026, 9, 8)
+    assert recommendation.suggested_sets == (PlannedSet(reps=10, weight_kg=52.5),) * 3
 
 
 def _weekly_log(write_log: WriteLog, chest_sets_per_week: int, weeks: int) -> Path:
