@@ -12,7 +12,7 @@ import { ExercisePicker } from './ExercisePicker'
 import { useReadDictation } from './queries'
 
 // Marked as an example and dimmed, so it never reads as text already typed in.
-const PLACEHOLDER = 'Ej.: prensa 4x10 120\npress banca 12,10,8 a 60 rpe 8\ndominadas 3x8'
+const PLACEHOLDER = 'Ej.: prensa 4x10 120\npress banca 12,10,8 a 60 rir 2\ndominadas 3x8'
 
 /** A read line written out: "4 series · 10 reps · 60 kg · RPE 8". */
 function describe(exercise: DictationExercise): string {

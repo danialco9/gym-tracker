@@ -69,8 +69,8 @@ remove it like any other app (long press on the icon).
   equipment filters and your recent exercises first; an info sheet animates the movement, and
   anything missing can be added as your own exercise.
 - **Training goal and today's plan.** Pick lose fat, build muscle or recomposition, and the app
-  sets the rep ranges, effort (RPE), rest and weekly volume to aim for. Opening a routine shows
-  today's plan first: what to do with each exercise and why, and how the week's volume of its
+  sets the rep ranges, effort (RIR, reps in reserve), rest and weekly volume to aim for. Opening a
+  routine shows today's plan first: what to do with each exercise and why, and how the week's volume of its
   muscles compares with the goal. One tap starts the workout with the suggested weights.
 - **Training streak.** Days in a row with workouts, where one rest day does not break it.
 - **Weekly overload summary.** The home screen says how many exercises trained this week beat the
@@ -84,10 +84,10 @@ remove it like any other app (long press on the icon).
   scalloped and seal medals, then gem cuts and a crown for Máster. The list shows only a nickname and a tier, and anyone can leave it from the account
   screen.
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
-  RPE), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
+  RIR), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
   with keyboard support.
 - **Logging a workout in plain language.** Type (or dictate with the phone keyboard) `prensa 4x10
-  120, press banca 12,10,8 a 60 rpe 8` and the server reads it into sets, matched against your
+  120, press banca 12,10,8 a 60 rir 2` and the server reads it into sets, matched against your
   exercise catalog. It never saves on its own: the reading prefills the workout screen for you to
   review. Where the text genuinely fits more than one exercise - `press banca` is both the barbell
   and the dumbbell entry - it offers the candidates instead of guessing, since the wrong one
@@ -107,8 +107,8 @@ remove it like any other app (long press on the icon).
   records and body weight trend. The volume tab opens on a body figure that fills each muscle as
   the week's hard sets reach the goal's range: grey below, green inside, orange above.
 - **Training recommendations.** The analytics engine compares the sets you actually did against the
-  ones the routine planned: everything hit at RPE ≤ 8 adds load to every planned set (keeping the
-  pyramid shape), missed reps suggest holding, and a detected plateau suggests a deload. The load
+  ones the routine planned: everything hit with 2 or more reps in reserve adds load to every
+  planned set (keeping the pyramid shape), missed reps suggest holding, and a detected plateau suggests a deload. The load
   step depends on the equipment (2 kg dumbbells, 2.5 kg barbell, doubled for heavy leg lifts), and
   when it would be more than 10% of the weight, reps go up first. Every suggestion says why, and
   only exercises trained in the last four weeks get one. It also flags main muscles trained below
@@ -281,6 +281,7 @@ A few decisions worth calling out:
 - [x] Weekly volume on the body: each muscle fills up towards the goal's range of hard sets
 - [x] *Completar todas*: tick the rest of an exercise at once, with an undo
 - [x] Weekly overload summary on the home screen: how many exercises beat last time, and which
+- [x] Effort as reps in reserve (RIR) instead of RPE, while logging, in goals, routines, recommendations and dictation
 
 ## Ideas for the future
 
@@ -288,8 +289,6 @@ Not promised, roughly in order of value for the effort.
 
 **Hypertrophy and progressive overload**
 
-- [ ] RIR (reps in reserve) instead of RPE: "2 more reps left" is easier to judge mid-set than a
-  1–10 scale.
 - [ ] Mesocycles with a deload week: 4–6 week blocks that ramp the volume, then one lighter week.
 - [ ] Warm-up sets worked out from the first working set (for example 40 %, 60 % and 80 %).
 - [ ] Plate calculator: which plates to load on each side of the bar for the weight on screen.
