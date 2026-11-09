@@ -190,9 +190,9 @@ describe('WorkoutPage', () => {
     expect(screen.queryByRole('button', { name: 'Corregir la serie anterior' })).not.toBeInTheDocument()
 
     // The effort is optional, so it stays folded until asked for.
-    expect(screen.queryByRole('button', { name: 'RPE 8' })).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Anotar esfuerzo (RPE)' }))
-    await user.click(screen.getByRole('button', { name: 'RPE 8' }))
+    expect(screen.queryByRole('button', { name: 'Me quedaban 2 reps' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Anotar cuántas reps te quedaban' }))
+    await user.click(screen.getByRole('button', { name: 'Me quedaban 2 reps' }))
     await user.click(screen.getByRole('button', { name: 'Completar serie 1' }))
 
     // Set 1 collapses to a summary line and set 2 takes over.
@@ -204,7 +204,8 @@ describe('WorkoutPage', () => {
     await user.click(screen.getByRole('button', { name: 'Corregir la serie anterior' }))
 
     expect(screen.getByRole('button', { name: 'Completar serie 1' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'RPE 8' })).toHaveAttribute('aria-pressed', 'true')
+    // Stored as RPE 8 underneath, shown back as 2 reps left.
+    expect(screen.getByRole('button', { name: 'Me quedaban 2 reps' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('restores the draft saved on this device', async () => {

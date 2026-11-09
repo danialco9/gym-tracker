@@ -1,6 +1,7 @@
 import { CheckIcon, PencilIcon } from 'lucide-react'
-import { formatDecimal, formatKg } from '@/lib/format'
+import { formatKg } from '@/lib/format'
 import type { DraftSet } from './draft'
+import { formatRir } from './rir'
 
 interface SummaryProps {
   number: number
@@ -26,9 +27,7 @@ export function CompletedSetRow({ number, set, onEdit }: SummaryProps & { onEdit
         {formatKg(set.weightKg)} × {set.reps}
       </span>
       {set.rpe !== null && (
-        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-          RPE {formatDecimal(set.rpe)}
-        </span>
+        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">RIR {formatRir(set.rpe)}</span>
       )}
       <PencilIcon className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
     </button>
