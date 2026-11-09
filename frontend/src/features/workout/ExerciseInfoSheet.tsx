@@ -11,22 +11,30 @@ interface ExerciseInfoSheetProps {
   exercise: Exercise | null
   onClose: () => void
   onAdd: (exercise: Exercise) => void
+  /** What the main button says; it adds the exercise unless told otherwise. */
+  addLabel?: string
 }
 
-export function ExerciseInfoSheet({ exercise, onClose, onAdd }: ExerciseInfoSheetProps) {
+export function ExerciseInfoSheet({ exercise, onClose, onAdd, addLabel = 'Añadir' }: ExerciseInfoSheetProps) {
   return (
     <Sheet open={exercise !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="bottom"
         className="mx-auto max-h-[90dvh] max-w-2xl gap-0 overflow-y-auto overscroll-contain rounded-t-xl"
       >
-        {exercise && <ExerciseInfo exercise={exercise} onAdd={onAdd} />}
+        {exercise && <ExerciseInfo exercise={exercise} onAdd={onAdd} addLabel={addLabel} />}
       </SheetContent>
     </Sheet>
   )
 }
 
-function ExerciseInfo({ exercise, onAdd }: { exercise: Exercise; onAdd: (exercise: Exercise) => void }) {
+interface ExerciseInfoProps {
+  exercise: Exercise
+  onAdd: (exercise: Exercise) => void
+  addLabel: string
+}
+
+function ExerciseInfo({ exercise, onAdd, addLabel }: ExerciseInfoProps) {
   const frames = exerciseFrameUrls(exercise)
   const secondary = exercise.secondary_muscles.map((muscle) => MUSCLE_GROUP_LABELS[muscle]).join(', ')
 
@@ -67,7 +75,7 @@ function ExerciseInfo({ exercise, onAdd }: { exercise: Exercise; onAdd: (exercis
       </dl>
 
       <Button size="lg" className="h-12 w-full text-base" onClick={() => onAdd(exercise)}>
-        Añadir
+        {addLabel}
       </Button>
     </div>
   )

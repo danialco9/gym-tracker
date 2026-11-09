@@ -67,7 +67,9 @@ remove it like any other app (long press on the icon).
   `localStorage`, so a lost connection or a locked phone never loses a set.
 - **Visual exercise picker.** A catalog of 209 exercises with line drawings, search, muscle and
   equipment filters and your recent exercises first; an info sheet animates the movement, and
-  anything missing can be added as your own exercise.
+  anything missing can be added as your own exercise. When a machine is taken mid-workout,
+  *Cambiar* offers the closest exercises for the same muscle and swaps it in place, with the weight
+  you lifted on it last time; sets already done stay with the original.
 - **Training goal and today's plan.** Pick lose fat, build muscle or recomposition, and the app
   sets the rep ranges, effort (RIR, reps in reserve), rest and weekly volume to aim for. Opening a
   routine shows today's plan first: what to do with each exercise and why, and how the week's volume of its
@@ -288,6 +290,7 @@ A few decisions worth calling out:
 - [x] Weekly overload summary on the home screen: how many exercises beat last time, and which
 - [x] Effort as reps in reserve (RIR) instead of RPE, while logging, in goals, routines, recommendations and dictation
 - [x] Training blocks (mesocycles) of 4–6 weeks that end in a deload week with half the sets
+- [x] Swap an exercise when the machine is taken, for the closest ones of the same muscle
 
 ## Ideas for the future
 
@@ -301,8 +304,6 @@ Not promised, roughly in order of value for the effort.
 
 **In the gym**
 
-- [ ] Swap an exercise when the machine is taken: alternatives for the same muscle, with the
-  drawings, without losing the routine's order.
 - [ ] Supersets and circuits: two exercises that alternate, with the rest only after the pair.
 - [ ] Install guide inside the app: on an iPhone in Safari, explain how to add it to the home
   screen, which is also what unlocks the end-of-rest notification.
