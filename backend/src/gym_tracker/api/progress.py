@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date, timedelta
+from functools import partial
 
 import pandas as pd
 from fastapi import APIRouter, Depends
@@ -25,6 +27,7 @@ from gym_tracker.analysis import (
     working_sets,
 )
 from gym_tracker.analysis.database import load_user_log
+from gym_tracker.analysis.mesocycle import in_deload_week
 from gym_tracker.api.common import not_found, visible_to
 from gym_tracker.api.deps import (
     CurrentUser,
@@ -33,7 +36,7 @@ from gym_tracker.api.deps import (
     TodayDep,
     get_current_user,
 )
-from gym_tracker.models import Exercise
+from gym_tracker.models import Exercise, User
 from gym_tracker.schemas import (
     ActivityRead,
     BodyWeightPointRead,
@@ -72,7 +75,16 @@ def _activity(log: TrainingLog, today: date) -> ActivityRead:
     )
 
 
-def _recommendations(log: TrainingLog, today: date) -> list[RecommendationRead]:
+def _deload_days(user: User) -> Callable[[date], bool] | None:
+    """For someone training in blocks, whether a day fell in one of their deload weeks."""
+    if user.block_weeks is None or user.block_started_on is None:
+        return None
+    return partial(in_deload_week, user.block_started_on, user.block_weeks)
+
+
+def _recommendations(
+    log: TrainingLog, today: date, in_deload: Callable[[date], bool] | None
+) -> list[RecommendationRead]:
     return [
         RecommendationRead(
             exercise_id=int(item.exercise_id),
@@ -85,7 +97,7 @@ def _recommendations(log: TrainingLog, today: date) -> list[RecommendationRead]:
             target_sets=[PlannedSetRead(reps=s.reps, weight_kg=s.weight_kg) for s in item.target_sets],
             suggested_sets=[PlannedSetRead(reps=s.reps, weight_kg=s.weight_kg) for s in item.suggested_sets],
         )
-        for item in recommend(log, today=today)
+        for item in recommend(log, today=today, in_deload=in_deload)
     ]
 
 
@@ -194,7 +206,7 @@ def read_overview(
     bests = session_bests(work)
     return ProgressOverviewRead(
         activity=_activity(log, today),
-        recommendations=_recommendations(log, today),
+        recommendations=_recommendations(log, today, _deload_days(user)),
         personal_records=_personal_records(log, work, bests) if not work.empty else [],
         weekly_volume=_weekly_volume(log, work, today),
         volume_advice=_volume_advice(log, today, user.goal),

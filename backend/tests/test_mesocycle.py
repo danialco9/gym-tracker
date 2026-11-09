@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from gym_tracker.analysis.mesocycle import BlockWeek, block_week, week_start
+from gym_tracker.analysis.mesocycle import BlockWeek, block_week, in_deload_week, week_start
 
 # A Monday.
 START = date(2026, 11, 9)
@@ -35,3 +35,12 @@ def test_a_block_started_midweek_counts_from_that_monday() -> None:
 
 def test_a_start_in_the_future_reads_as_the_first_week() -> None:
     assert block_week(START, 4, date(2026, 11, 1)).week == 1
+
+
+def test_in_deload_week_tells_the_days_of_every_deload() -> None:
+    # Four-week blocks from START: the deload weeks start on 30 November and 28 December.
+    assert in_deload_week(START, 4, date(2026, 12, 3))
+    assert in_deload_week(START, 4, date(2026, 12, 31))
+    assert not in_deload_week(START, 4, date(2026, 12, 7))
+    # Before the first block there were no deloads, whatever the arithmetic says.
+    assert not in_deload_week(START, 4, date(2026, 11, 5))

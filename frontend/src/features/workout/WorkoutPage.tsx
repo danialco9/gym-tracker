@@ -8,8 +8,8 @@ export function WorkoutPage() {
   if (draft === null) {
     return (
       <StartWorkout
-        onStart={(routine, suggestions) =>
-          dispatch({ type: 'start', startedAt: new Date().toISOString(), routine, suggestions })
+        onStart={(routine, suggestions, deload) =>
+          dispatch({ type: 'start', startedAt: new Date().toISOString(), routine, suggestions, deload })
         }
         onStartDictated={(entries) =>
           dispatch({ type: 'startDictated', startedAt: new Date().toISOString(), entries })

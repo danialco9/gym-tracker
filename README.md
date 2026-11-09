@@ -113,6 +113,11 @@ remove it like any other app (long press on the icon).
   when it would be more than 10% of the weight, reps go up first. Every suggestion says why, and
   only exercises trained in the last four weeks get one. It also flags main muscles trained below
   10 or above 20 hard sets a week, counting a set as half for its secondary muscles.
+- **Training blocks.** Optionally, train in 4–6 week blocks whose last week is a deload: the home
+  screen shows the week of the block, and in the deload week today's plan halves the sets at the
+  same weights with 3–4 reps in reserve, without touching the routine. Deload sessions are left
+  out of the next recommendations, so a light week never reads as missed reps or a plateau. A new
+  block starts on its own after the deload.
 
 ## Architecture
 
@@ -282,6 +287,7 @@ A few decisions worth calling out:
 - [x] *Completar todas*: tick the rest of an exercise at once, with an undo
 - [x] Weekly overload summary on the home screen: how many exercises beat last time, and which
 - [x] Effort as reps in reserve (RIR) instead of RPE, while logging, in goals, routines, recommendations and dictation
+- [x] Training blocks (mesocycles) of 4–6 weeks that end in a deload week with half the sets
 
 ## Ideas for the future
 
@@ -289,7 +295,7 @@ Not promised, roughly in order of value for the effort.
 
 **Hypertrophy and progressive overload**
 
-- [ ] Mesocycles with a deload week: 4–6 week blocks that ramp the volume, then one lighter week.
+- [ ] Ramp the volume across a training block: a set more each week up to the deload.
 - [ ] Warm-up sets worked out from the first working set (for example 40 %, 60 % and 80 %).
 - [ ] Plate calculator: which plates to load on each side of the bar for the weight on screen.
 

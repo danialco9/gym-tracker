@@ -178,6 +178,7 @@ export type ProgressionReason =
   | 'easy_without_plan'
   | 'without_plan'
   | 'jump_too_big'
+  | 'deload_week'
 
 export interface PlannedSet {
   reps: number | null

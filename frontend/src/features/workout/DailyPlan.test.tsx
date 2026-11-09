@@ -153,6 +153,48 @@ describe("Today's plan", () => {
     expect(weights.map((input) => (input as HTMLInputElement).value)).toEqual(['65', '30'])
   })
 
+  it('halves the sets in the deload week of a training block', async () => {
+    mockApi({
+      'GET /auth/me': {
+        body: { ...USER, block_weeks: 4, block: { week: 4, weeks: 4, is_deload: true } },
+      },
+      'GET /routines': { body: [LEG_DAY] },
+      'GET /progress/overview': {
+        body: {
+          ...OVERVIEW,
+          recommendations: [
+            {
+              ...OVERVIEW.recommendations[0],
+              action: 'hold',
+              reason: 'deload_week',
+              suggested_sets: [1, 2].map(() => ({ reps: 8, weight_kg: 60 })),
+            },
+          ],
+        },
+      },
+      'GET /progress/goals': { body: GOAL_PLANS },
+    })
+    const { user } = renderRoute('/entrenar')
+
+    await user.click(await screen.findByRole('button', { name: /Pierna/ }))
+
+    expect(screen.getByText('Semana de descarga')).toBeInTheDocument()
+    const exercises = screen.getByRole('list', { name: 'Ejercicios de hoy' })
+    const squat = within(exercises).getByText('Sentadilla con barra').closest('li')!
+    expect(await within(squat).findByText('2 × 8 · 60 kg')).toBeInTheDocument()
+    expect(within(squat).getByText('Mitad de series, mismo peso')).toBeInTheDocument()
+    // Without a suggestion, the routine's own plan is halved too.
+    const curl = within(exercises).getByText('Curl femoral tumbado').closest('li')!
+    expect(within(curl).getByText('1 × 12 · 30 kg')).toBeInTheDocument()
+    // Adding sets is not this week's advice.
+    expect(screen.queryByText('Isquiotibiales:')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Empezar con este plan' }))
+
+    expect(await screen.findByText('Objetivo: 2 × 8 · 60 kg')).toBeInTheDocument()
+    expect(screen.getByText('Objetivo: 1 × 12 · 30 kg')).toBeInTheDocument()
+  })
+
   it('goes back to the routines', async () => {
     mockApi({
       'GET /auth/me': { body: USER },

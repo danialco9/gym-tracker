@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ListChecksIcon, PlayIcon, TargetIcon } from 'lucide-react'
+import { BatteryChargingIcon, ChevronLeftIcon, ListChecksIcon, PlayIcon, TargetIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
@@ -17,14 +17,22 @@ import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
 import { formatSetPlan } from '@/lib/set-plan'
 import type { PlannedSet, Recommendation, Routine, RoutineExercise } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { deloadSets } from './draft'
 
 const toPlan = (sets: PlannedSet[]) => sets.map((set) => ({ reps: set.reps, weightKg: set.weight_kg }))
 
-function PlanRow({ item, recommendation }: { item: RoutineExercise; recommendation?: Recommendation }) {
+interface PlanRowProps {
+  item: RoutineExercise
+  recommendation?: Recommendation
+  deloadWeek: boolean
+}
+
+function PlanRow({ item, recommendation, deloadWeek }: PlanRowProps) {
   const Icon = recommendation === undefined ? ListChecksIcon : ACTION_ICONS[recommendation.action]
+  const routineSets = item.sets.map((set) => ({ reps: set.target_reps, weightKg: set.target_weight_kg }))
   const plan =
     recommendation === undefined
-      ? formatSetPlan(item.sets.map((set) => ({ reps: set.target_reps, weightKg: set.target_weight_kg })))
+      ? formatSetPlan(deloadWeek ? deloadSets(routineSets) : routineSets)
       : formatSetPlan(toPlan(recommendation.suggested_sets))
   return (
     <li className="flex gap-3 py-3">
@@ -42,10 +50,15 @@ function PlanRow({ item, recommendation }: { item: RoutineExercise; recommendati
       <span className="min-w-0 space-y-0.5">
         <span className="block font-medium">{item.exercise.name}</span>
         <span className="text-muted-foreground block text-xs">
-          {recommendation === undefined ? 'Según tu rutina' : ACTION_TITLES[recommendation.action]}
+          {/* The notice above the list already says why: in the deload week the row only says what changes. */}
+          {deloadWeek
+            ? 'Mitad de series, mismo peso'
+            : recommendation === undefined
+              ? 'Según tu rutina'
+              : ACTION_TITLES[recommendation.action]}
         </span>
         {plan !== null && <span className="block text-sm font-semibold tabular-nums">{plan}</span>}
-        {recommendation !== undefined && (
+        {recommendation !== undefined && !deloadWeek && (
           <span className="text-muted-foreground block text-xs">{explainRecommendation(recommendation)}</span>
         )}
       </span>
@@ -55,8 +68,8 @@ function PlanRow({ item, recommendation }: { item: RoutineExercise; recommendati
 
 interface DailyPlanProps {
   routine: Routine
-  /** Starts the workout with today's suggested sets per exercise id. */
-  onStart: (suggestions: ReadonlyMap<number, PlannedSet[]>) => void
+  /** Starts the workout with today's suggested sets per exercise id; in a deload week, half the routine's. */
+  onStart: (suggestions: ReadonlyMap<number, PlannedSet[]>, deload: boolean) => void
   onBack: () => void
 }
 
@@ -66,7 +79,9 @@ interface DailyPlanProps {
  * start: while the analysis loads (or if it fails), the routine's own plan is there.
  */
 export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
-  const goal = useCurrentUser().data?.goal ?? null
+  const currentUser = useCurrentUser().data
+  const goal = currentUser?.goal ?? null
+  const deloadWeek = currentUser?.block?.is_deload === true
   const goalPlan = useGoalPlans().data?.find((plan) => plan.goal === goal)
   const overview = useProgressOverview()
 
@@ -84,7 +99,7 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
         suggestions.set(item.exercise.id, recommendation.suggested_sets)
       }
     }
-    onStart(suggestions)
+    onStart(suggestions, deloadWeek)
   }
 
   return (
@@ -116,6 +131,18 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
         </Link>
       )}
 
+      {deloadWeek && (
+        <p className="ring-chart-1/60 flex gap-3 rounded-xl p-4 text-sm ring-1">
+          <BatteryChargingIcon className="text-chart-1 size-5 shrink-0" aria-hidden />
+          <span>
+            <span className="block font-medium">Semana de descarga</span>
+            <span className="text-muted-foreground block">
+              La mitad de series con el mismo peso, dejando 3 o 4 reps en reserva. Tu rutina no cambia.
+            </span>
+          </span>
+        </p>
+      )}
+
       <QueryStatus
         query={overview}
         loading="Preparando el plan…"
@@ -130,12 +157,18 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
           className="bg-card ring-foreground/10 divide-y rounded-xl px-4 ring-1"
         >
           {routine.exercises.map((item) => (
-            <PlanRow key={item.id} item={item} recommendation={recommendations.get(item.exercise.id)} />
+            <PlanRow
+              key={item.id}
+              item={item}
+              recommendation={recommendations.get(item.exercise.id)}
+              deloadWeek={deloadWeek}
+            />
           ))}
         </ul>
       )}
 
-      {volume.length > 0 && (
+      {/* Adding sets is the opposite of what this week is for. */}
+      {volume.length > 0 && !deloadWeek && (
         <section
           aria-labelledby="plan-volume"
           className="bg-card ring-foreground/10 space-y-2 rounded-xl p-4 ring-1"
