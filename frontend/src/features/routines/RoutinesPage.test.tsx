@@ -112,7 +112,7 @@ describe('Routines', () => {
     expect(squatCard.getByLabelText('Serie 3: Peso (kg)')).toHaveValue('72,5')
     await user.clear(squatCard.getByLabelText('Serie 3: Reps'))
     await user.type(squatCard.getByLabelText('Serie 3: Reps'), '6')
-    await user.type(squatCard.getByLabelText('Serie 3: Reps en reserva'), '1')
+    await user.type(squatCard.getByLabelText('Serie 3: RIR (reps en reserva)'), '1')
 
     await user.click(screen.getByRole('button', { name: 'Guardar rutina' }))
 
@@ -162,10 +162,10 @@ describe('Routines', () => {
     expect(plan).toHaveTextContent('60×10 · 70×8')
     await user.click(plan)
     expect(screen.getByLabelText('Serie 1: Peso (kg)')).toHaveValue('60')
-    expect(screen.getByLabelText('Serie 2: Reps en reserva')).toHaveValue('2')
+    expect(screen.getByLabelText('Serie 2: RIR (reps en reserva)')).toHaveValue('2')
     // A set without an RIR shows a dash, not a sample number that looks like a real target.
-    expect(screen.getByLabelText('Serie 1: Reps en reserva')).toHaveValue('')
-    expect(screen.getByLabelText('Serie 1: Reps en reserva')).toHaveAttribute('placeholder', '—')
+    expect(screen.getByLabelText('Serie 1: RIR (reps en reserva)')).toHaveValue('')
+    expect(screen.getByLabelText('Serie 1: RIR (reps en reserva)')).toHaveAttribute('placeholder', '—')
     await user.clear(name)
     await user.type(name, 'Pierna A')
     await user.click(screen.getByRole('button', { name: 'Guardar rutina' }))

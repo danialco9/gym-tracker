@@ -25,7 +25,7 @@ import {
 const SET_FIELDS = [
   { key: 'targetReps', label: 'Reps', column: 'Reps', inputMode: 'numeric' },
   { key: 'targetWeightKg', label: 'Peso (kg)', column: 'Peso', inputMode: 'decimal' },
-  { key: 'targetRir', label: 'Reps en reserva', column: 'RIR', inputMode: 'decimal' },
+  { key: 'targetRir', label: 'RIR (reps en reserva)', column: 'RIR', inputMode: 'decimal' },
 ] as const
 
 const GRID = 'grid grid-cols-[1.75rem_1fr_1fr_1fr_2.25rem] items-center gap-1.5 sm:gap-2'
