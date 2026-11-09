@@ -11,8 +11,9 @@ import { TRAINING_GOAL_LABELS } from '@/lib/labels'
 import { rirRange } from '@/lib/rir'
 import type { GoalPlan, TrainingGoal } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { BlockPicker } from './BlockPicker'
 import { formatRange, formatRest } from './goal-format'
-import { useGoalPlans, useUpdateGoal } from './queries'
+import { useGoalPlans, useUpdateGoal, type TrainingChanges } from './queries'
 
 const GOALS: { goal: TrainingGoal; icon: LucideIcon; tip: string }[] = [
   {
@@ -65,26 +66,51 @@ function PlanSummary({ plan, tip }: { plan: GoalPlan; tip: string }) {
   )
 }
 
-/** One decision: what the user trains for. The plan below previews what each choice means. */
+/**
+ * How the user trains: the goal, whose plan previews what each choice means, and optionally the
+ * training blocks that end in a deload week. One "Guardar" sends only what changed.
+ */
 export function GoalPage() {
-  const current = useCurrentUser().data?.goal ?? null
+  const currentUser = useCurrentUser().data
+  const current = currentUser?.goal ?? null
+  const currentBlock = currentUser?.block_weeks ?? null
   const plans = useGoalPlans()
   const updateGoal = useUpdateGoal()
   const navigate = useNavigate()
   const [picked, setPicked] = useState<TrainingGoal | null>(null)
+  // Undefined until touched, as null is a choice of its own: no blocks.
+  const [pickedBlock, setPickedBlock] = useState<number | null | undefined>(undefined)
   const selected = picked ?? current
+  const selectedBlock = pickedBlock === undefined ? currentBlock : pickedBlock
 
   const plan = plans.data?.find((item) => item.goal === selected)
   const tip = GOALS.find((item) => item.goal === selected)?.tip ?? ''
+  const changes: TrainingChanges = {
+    ...(selected !== current && { goal: selected }),
+    ...(selectedBlock !== currentBlock && { block_weeks: selectedBlock }),
+  }
+  const hasChanges = Object.keys(changes).length > 0
 
   const save = () => {
-    if (selected === null) return
-    updateGoal.mutate(selected, {
+    if (selected === null || !hasChanges) return
+    updateGoal.mutate(changes, {
       onSuccess: () => {
-        toast.success(`Objetivo guardado: ${TRAINING_GOAL_LABELS[selected].title}`)
+        toast.success(
+          changes.goal !== undefined
+            ? `Objetivo guardado: ${TRAINING_GOAL_LABELS[selected].title}`
+            : 'Bloques guardados',
+        )
         navigate('/')
       },
     })
+  }
+
+  const restartBlock = () => {
+    if (currentBlock === null) return
+    updateGoal.mutate(
+      { block_weeks: currentBlock },
+      { onSuccess: () => toast.success(`Bloque reiniciado: semana 1 de ${currentBlock}`) },
+    )
   }
 
   return (
@@ -133,6 +159,12 @@ export function GoalPage() {
         <>
           <QueryStatus query={plans} loading="Cargando tu plan…" error="No se pudo cargar el plan." />
           {plan !== undefined && <PlanSummary plan={plan} tip={tip} />}
+          <BlockPicker
+            value={selectedBlock}
+            onChange={setPickedBlock}
+            onRestart={currentBlock !== null && selectedBlock === currentBlock ? restartBlock : undefined}
+            restarting={updateGoal.isPending}
+          />
         </>
       )}
 
@@ -146,7 +178,7 @@ export function GoalPage() {
         size="lg"
         className="h-12 w-full text-base"
         onClick={save}
-        disabled={selected === null || selected === current || updateGoal.isPending}
+        disabled={selected === null || !hasChanges || updateGoal.isPending}
       >
         {updateGoal.isPending ? 'Guardando…' : 'Guardar objetivo'}
       </Button>

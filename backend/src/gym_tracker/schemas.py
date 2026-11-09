@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
+from gym_tracker.analysis.mesocycle import MAX_BLOCK_WEEKS, MIN_BLOCK_WEEKS
 from gym_tracker.analysis.overload import OverloadVerdict
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
 from gym_tracker.analysis.strength import PercentileSource, StrengthTier, Zone
@@ -121,7 +122,16 @@ class UserRead(ORMModel):
     sex: Sex | None
     nickname: str | None
     show_in_ranking: bool
+    block_weeks: int | None
+    # Where this week falls in the training block; null without blocks.
+    block: BlockWeekRead | None = None
     created_at: datetime
+
+
+class BlockWeekRead(BaseModel):
+    week: int
+    weeks: int
+    is_deload: bool
 
 
 class UserUpdate(PartialUpdate):
@@ -134,6 +144,9 @@ class UserUpdate(PartialUpdate):
     # Letters, digits, "_" and "."; no spaces, so nobody can pose as an unnamed "Atleta 12".
     nickname: str | None = Field(default=None, pattern=NICKNAME_PATTERN)
     show_in_ranking: bool | None = None
+    # Weeks per training block, deload included. Sending it (even the same value) starts a new block
+    # this week; null stops using blocks.
+    block_weeks: int | None = Field(default=None, ge=MIN_BLOCK_WEEKS, le=MAX_BLOCK_WEEKS)
 
 
 class HealthRead(BaseModel):

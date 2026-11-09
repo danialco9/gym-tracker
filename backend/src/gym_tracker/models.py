@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Numeric,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -42,6 +43,10 @@ class User(Base):
     # The public name in the ranking; null until the user picks one, never the email.
     nickname: Mapped[str | None] = mapped_column(String(20))
     show_in_ranking: Mapped[bool] = mapped_column(server_default=text("true"))
+    # Training blocks (analysis/mesocycle.py): their length in weeks and the Monday the first began.
+    # Both null without blocks; they are set and cleared together.
+    block_weeks: Mapped[int | None] = mapped_column(SmallInteger)
+    block_started_on: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

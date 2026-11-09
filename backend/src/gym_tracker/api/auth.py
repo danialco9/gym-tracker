@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, status
 
+from gym_tracker.analysis.mesocycle import block_week, week_start
 from gym_tracker.api.common import commit_or_conflict
 from gym_tracker.api.deps import (
     ACCESS_TOKEN_COOKIE,
@@ -16,10 +17,12 @@ from gym_tracker.api.deps import (
     RateLimiterDep,
     SessionDep,
     SettingsDep,
+    TodayDep,
     set_session_cookie,
 )
 from gym_tracker.config import Settings
 from gym_tracker.mail import Email, Mailer
+from gym_tracker.models import User
 from gym_tracker.password_reset import create_reset_token, reset_email, reset_password
 from gym_tracker.rate_limit import (
     DEMO_PER_CLIENT,
@@ -31,6 +34,7 @@ from gym_tracker.rate_limit import (
     Check,
 )
 from gym_tracker.schemas import (
+    BlockWeekRead,
     DeleteAccountRequest,
     LoginRequest,
     PasswordResetConfirm,
@@ -185,17 +189,29 @@ def logout(response: Response, settings: SettingsDep) -> None:
     _clear_session_cookie(response, settings)
 
 
+def _user_read(user: User, today: date) -> UserRead:
+    read = UserRead.model_validate(user)
+    if user.block_weeks is not None and user.block_started_on is not None:
+        week = block_week(user.block_started_on, user.block_weeks, today)
+        read.block = BlockWeekRead(week=week.week, weeks=week.weeks, is_deload=week.is_deload)
+    return read
+
+
 @router.get("/me")
-def read_current_user(user: CurrentUser) -> UserRead:
-    return UserRead.model_validate(user)
+def read_current_user(user: CurrentUser, today: TodayDep) -> UserRead:
+    return _user_read(user, today)
 
 
 @router.patch("/me")
-def update_current_user(payload: UserUpdate, session: SessionDep, user: CurrentUser) -> UserRead:
-    for field, value in payload.model_dump(exclude_unset=True).items():
+def update_current_user(payload: UserUpdate, session: SessionDep, user: CurrentUser, today: TodayDep) -> UserRead:
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(user, field, value)
+    if "block_weeks" in changes:
+        # Choosing a length, or the same one again, starts a block this week.
+        user.block_started_on = None if changes["block_weeks"] is None else week_start(today)
     commit_or_conflict(session, NICKNAME_TAKEN)
-    return UserRead.model_validate(user)
+    return _user_read(user, today)
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

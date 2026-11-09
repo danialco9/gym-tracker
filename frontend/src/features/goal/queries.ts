@@ -14,11 +14,16 @@ export function useGoalPlans() {
   })
 }
 
+/** What the goal screen changes. Sending `block_weeks`, even the same value, starts a block this week. */
+export interface TrainingChanges {
+  goal?: TrainingGoal | null
+  block_weeks?: number | null
+}
+
 export function useUpdateGoal() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (goal: TrainingGoal | null) =>
-      apiFetch<User>('/auth/me', { method: 'PATCH', body: { goal } }),
+    mutationFn: (changes: TrainingChanges) => apiFetch<User>('/auth/me', { method: 'PATCH', body: changes }),
     onSuccess: (user) => {
       saveCachedUser(user)
       queryClient.setQueryData(currentUserQueryKey, user)

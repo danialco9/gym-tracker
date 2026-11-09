@@ -40,7 +40,19 @@ export interface User {
   /** The public name in the ranking; null until the user picks one, never the email. */
   nickname: string | null
   show_in_ranking: boolean
+  // Optional: a session cached on the phone by an older version of the app does not carry them.
+  /** Weeks per training block, deload included; null without blocks. */
+  block_weeks?: number | null
+  /** Where this week falls in the block, worked out by the server; null without blocks. */
+  block?: BlockWeek | null
   created_at: string
+}
+
+export interface BlockWeek {
+  week: number
+  weeks: number
+  /** The last week of every block: lighter, to recover. */
+  is_deload: boolean
 }
 
 interface Range {

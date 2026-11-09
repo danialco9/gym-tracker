@@ -1,9 +1,10 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from gym_tracker.api.deps import get_today
 from gym_tracker.config import Settings
 from gym_tracker.models import User
 from gym_tracker.security import create_access_token
@@ -67,6 +68,39 @@ def test_the_training_goal_starts_empty_and_can_be_set_and_cleared(auth_client: 
 
 def test_an_unknown_training_goal_is_rejected(auth_client: TestClient) -> None:
     assert auth_client.patch("/api/auth/me", json={"goal": "get_huge"}).status_code == 422
+
+
+def _on(client: TestClient, today: date) -> None:
+    client.app.dependency_overrides[get_today] = lambda: today  # type: ignore[attr-defined]
+
+
+def test_a_training_block_starts_this_week_and_counts_the_weeks(auth_client: TestClient) -> None:
+    me = auth_client.get("/api/auth/me").json()
+    assert me["block_weeks"] is None
+    assert me["block"] is None
+
+    _on(auth_client, date(2026, 11, 11))  # a Wednesday
+    response = auth_client.patch("/api/auth/me", json={"block_weeks": 4})
+    assert response.status_code == 200
+    assert response.json()["block"] == {"week": 1, "weeks": 4, "is_deload": False}
+
+    _on(auth_client, date(2026, 11, 30))
+    assert auth_client.get("/api/auth/me").json()["block"] == {"week": 4, "weeks": 4, "is_deload": True}
+    # Other changes leave the block where it is.
+    assert auth_client.patch("/api/auth/me", json={"goal": "lose_fat"}).json()["block"]["week"] == 4
+
+    # Sending the length again starts over this week.
+    assert auth_client.patch("/api/auth/me", json={"block_weeks": 4}).json()["block"]["week"] == 1
+
+    cleared = auth_client.patch("/api/auth/me", json={"block_weeks": None}).json()
+    assert cleared["block_weeks"] is None
+    assert cleared["block"] is None
+    auth_client.app.dependency_overrides.pop(get_today)  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("weeks", [3, 7, 0])
+def test_a_block_length_outside_four_to_six_weeks_is_rejected(auth_client: TestClient, weeks: int) -> None:
+    assert auth_client.patch("/api/auth/me", json={"block_weeks": weeks}).status_code == 422
 
 
 def test_the_sex_starts_empty_and_can_be_set_and_cleared(auth_client: TestClient) -> None:

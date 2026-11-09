@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
-from typing import Annotated
+from datetime import date, timedelta
 
 import pandas as pd
 from fastapi import APIRouter, Depends
@@ -27,7 +26,13 @@ from gym_tracker.analysis import (
 )
 from gym_tracker.analysis.database import load_user_log
 from gym_tracker.api.common import not_found, visible_to
-from gym_tracker.api.deps import CurrentUser, SessionDep, SettingsDep, get_current_user
+from gym_tracker.api.deps import (
+    CurrentUser,
+    SessionDep,
+    SettingsDep,
+    TodayDep,
+    get_current_user,
+)
 from gym_tracker.models import Exercise
 from gym_tracker.schemas import (
     ActivityRead,
@@ -55,14 +60,6 @@ from gym_tracker.schemas import (
 router = APIRouter(prefix="/progress", tags=["progress"])
 
 VOLUME_WEEKS = 8
-
-
-def get_today(settings: SettingsDep) -> date:
-    """Today in the configured time zone, so weeks turn over at local midnight."""
-    return datetime.now(settings.zone).date()
-
-
-TodayDep = Annotated[date, Depends(get_today)]
 
 
 def _activity(log: TrainingLog, today: date) -> ActivityRead:
