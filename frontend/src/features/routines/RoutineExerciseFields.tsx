@@ -25,7 +25,7 @@ import {
 const SET_FIELDS = [
   { key: 'targetReps', label: 'Reps', column: 'Reps', inputMode: 'numeric' },
   { key: 'targetWeightKg', label: 'Peso (kg)', column: 'Peso', inputMode: 'decimal' },
-  { key: 'targetRpe', label: 'RPE', column: 'RPE', inputMode: 'decimal' },
+  { key: 'targetRir', label: 'RIR (reps en reserva)', column: 'RIR', inputMode: 'decimal' },
 ] as const
 
 const GRID = 'grid grid-cols-[1.75rem_1fr_1fr_1fr_2.25rem] items-center gap-1.5 sm:gap-2'
@@ -58,7 +58,7 @@ export function RoutineExerciseFields({
   const planned = useWatch({ control, name: `exercises.${index}.sets` })
   // Folded, a card is one line of plan; a new exercise (nothing typed yet) starts open.
   const [open, setOpen] = useState(() =>
-    planned.every((set) => set.targetReps === null && set.targetWeightKg === null && set.targetRpe === null),
+    planned.every((set) => set.targetReps === null && set.targetWeightKg === null && set.targetRir === null),
   )
   const summary =
     formatSetPlan(planned.map((set) => ({ reps: set.targetReps, weightKg: set.targetWeightKg }))) ??

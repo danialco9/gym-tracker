@@ -62,7 +62,7 @@ describe('Goal', () => {
 
     expect(screen.getByRole('button', { name: /Ganar músculo/ })).toHaveAttribute('aria-pressed', 'true')
     expect(await screen.findByText('12–20')).toBeInTheDocument()
-    expect(screen.getByText('RPE 8–9')).toBeInTheDocument()
+    expect(screen.getByText('RIR 1–2')).toBeInTheDocument()
     expect(screen.getByText('2–3 min')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Guardar objetivo' }))
@@ -79,7 +79,7 @@ describe('Goal', () => {
 
     const current = await screen.findByRole('button', { name: /Recomposición/ })
     expect(current).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByText('RPE 7,5–8,5')).toBeInTheDocument()
+    expect(await screen.findByText('RIR 1,5–2,5')).toBeInTheDocument()
     expect(screen.getByText('90–150 s')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar objetivo' })).toBeDisabled()
 

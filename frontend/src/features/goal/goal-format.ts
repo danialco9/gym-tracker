@@ -1,5 +1,6 @@
 import { formatDecimal } from '@/lib/format'
 import { TRAINING_GOAL_LABELS } from '@/lib/labels'
+import { rirRange } from '@/lib/rir'
 import type { GoalPlan } from '@/lib/types'
 
 type Range = GoalPlan['rpe']
@@ -18,11 +19,11 @@ export function formatRest(rest: Range): string {
   return `${formatRange(rest)} s`
 }
 
-/** "Ganar músculo · RPE 8–9 · descanso 2–3 min". */
+/** "Ganar músculo · RIR 1–2 · descanso 2–3 min". */
 export function goalSummary(plan: GoalPlan): string {
   return [
     TRAINING_GOAL_LABELS[plan.goal].title,
-    `RPE ${formatRange(plan.rpe)}`,
+    `RIR ${formatRange(rirRange(plan.rpe))}`,
     `descanso ${formatRest(plan.rest_seconds)}`,
   ].join(' · ')
 }

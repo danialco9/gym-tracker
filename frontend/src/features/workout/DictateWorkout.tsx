@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ApiError } from '@/lib/api'
 import { formatDecimal, plural } from '@/lib/format'
+import { formatRir } from '@/lib/rir'
 import type { Dictation, DictationExercise } from '@/lib/types'
 import type { DictatedEntry } from './draft'
 import { ExercisePicker } from './ExercisePicker'
@@ -14,7 +15,7 @@ import { useReadDictation } from './queries'
 // Marked as an example and dimmed, so it never reads as text already typed in.
 const PLACEHOLDER = 'Ej.: prensa 4x10 120\npress banca 12,10,8 a 60 rpe 8\ndominadas 3x8'
 
-/** A read line written out: "4 series · 10 reps · 60 kg · RPE 8". */
+/** A read line written out: "4 series · 10 reps · 60 kg · RIR 2". */
 function describe(exercise: DictationExercise): string {
   const [first] = exercise.sets
   const reps = exercise.sets.map((set) => set.reps).filter((value) => value !== null)
@@ -23,7 +24,7 @@ function describe(exercise: DictationExercise): string {
     `${exercise.sets.length} ${plural(exercise.sets.length, 'serie', 'series')}`,
     reps.length === 0 ? null : sameReps ? `${reps[0]} reps` : reps.join(', '),
     first?.weight_kg == null ? null : `${formatDecimal(first.weight_kg)} kg`,
-    first?.rpe == null ? null : `RPE ${formatDecimal(first.rpe)}`,
+    first?.rpe == null ? null : `RIR ${formatRir(first.rpe)}`,
   ]
     .filter(Boolean)
     .join(' · ')

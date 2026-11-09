@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
 import { TRAINING_GOAL_LABELS } from '@/lib/labels'
+import { rirRange } from '@/lib/rir'
 import type { GoalPlan, TrainingGoal } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { formatRange, formatRest } from './goal-format'
@@ -39,7 +40,7 @@ function PlanSummary({ plan, tip }: { plan: GoalPlan; tip: string }) {
       hint: `${formatRange(plan.isolation_reps)} en aislamiento`,
     },
     { label: 'Series por músculo', value: formatRange(plan.weekly_hard_sets), hint: 'a la semana' },
-    { label: 'Intensidad', value: `RPE ${formatRange(plan.rpe)}`, hint: 'esfuerzo de 1 a 10' },
+    { label: 'Intensidad', value: `RIR ${formatRange(rirRange(plan.rpe))}`, hint: 'reps en reserva' },
     { label: 'Descanso', value: formatRest(plan.rest_seconds), hint: 'entre series' },
   ]
   return (

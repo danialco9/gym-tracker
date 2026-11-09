@@ -1,7 +1,7 @@
 import { CheckIcon, PencilIcon } from 'lucide-react'
 import { formatKg } from '@/lib/format'
 import type { DraftSet } from './draft'
-import { formatRir } from './rir'
+import { formatRir } from '@/lib/rir'
 
 interface SummaryProps {
   number: number

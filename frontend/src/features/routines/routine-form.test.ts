@@ -46,8 +46,8 @@ describe('routine form', () => {
           exerciseId: 11,
           name: 'Sentadilla con barra',
           sets: [
-            { targetReps: 10, targetWeightKg: 60, targetRpe: null },
-            { targetReps: 8, targetWeightKg: 70, targetRpe: 8.5 },
+            { targetReps: 10, targetWeightKg: 60, targetRir: null },
+            { targetReps: 8, targetWeightKg: 70, targetRir: 1.5 },
           ],
         },
       ],
@@ -68,11 +68,11 @@ describe('routine form', () => {
   })
 
   it('starts a new set as a copy of the previous one', () => {
-    const previous = { targetReps: 8, targetWeightKg: 70, targetRpe: null }
+    const previous = { targetReps: 8, targetWeightKg: 70, targetRir: null }
 
     expect(nextSet(previous)).toEqual(previous)
     expect(nextSet(previous)).not.toBe(previous)
-    expect(nextSet(undefined)).toEqual({ targetReps: null, targetWeightKg: null, targetRpe: null })
+    expect(nextSet(undefined)).toEqual({ targetReps: null, targetWeightKg: null, targetRir: null })
   })
 
   it('parses optional numeric inputs', () => {
@@ -91,8 +91,8 @@ describe('routine form', () => {
           exerciseId: 11,
           name: 'Sentadilla',
           sets: [
-            { targetReps: 1.5, targetWeightKg: Number.NaN, targetRpe: 11 },
-            { targetReps: 0, targetWeightKg: null, targetRpe: null },
+            { targetReps: 1.5, targetWeightKg: Number.NaN, targetRir: 11 },
+            { targetReps: 0, targetWeightKg: null, targetRir: null },
           ],
         },
       ],
@@ -104,7 +104,7 @@ describe('routine form', () => {
         'Ponle un nombre a la rutina',
         'Reps: usa un número entero',
         'Peso: introduce un número',
-        'RPE: máximo 10',
+        'RIR: máximo 9',
         'Reps: mínimo 1',
       ]),
     )
@@ -114,7 +114,7 @@ describe('routine form', () => {
     const sets = Array.from({ length: 21 }, () => ({
       targetReps: null,
       targetWeightKg: null,
-      targetRpe: null,
+      targetRir: null,
     }))
     const result = routineFormSchema.safeParse({
       name: 'Pierna',

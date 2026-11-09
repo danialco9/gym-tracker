@@ -48,7 +48,7 @@ describe('progress data', () => {
 
   it('explains each recommendation with the numbers of the last session', () => {
     expect(explainRecommendation(recommendation('Press banca', 'increase_load'))).toBe(
-      'Completaste todas las series objetivo con RPE 8 como máximo: sube 2,5 kg.',
+      'Completaste todas las series objetivo con RIR 2 o más: sube 2,5 kg.',
     )
     expect(
       explainRecommendation(
@@ -57,7 +57,7 @@ describe('progress data', () => {
           last_sets: [{ reps: 8, weight_kg: 60, rpe: 9.5 }],
         }),
       ),
-    ).toBe('Completaste el objetivo, pero llegaste a RPE 9,5: repite el peso hasta que cueste menos.')
+    ).toBe('Completaste el objetivo, pero llegaste a RIR 0,5: repite el peso hasta que cueste menos.')
     expect(
       explainRecommendation(
         recommendation('Jalón', 'increase_reps', {

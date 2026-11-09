@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { rirToRpe, rpeToRir } from '@/lib/rir'
 import type { Routine, RoutineIn } from '@/lib/types'
 
 function optionalTarget(label: string, min: number, max: number, integer = false) {
@@ -15,7 +16,7 @@ export const DEFAULT_SET_COUNT = 3
 export const routineSetSchema = z.object({
   targetReps: optionalTarget('Reps', 1, 100, true),
   targetWeightKg: optionalTarget('Peso', 0, 1000),
-  targetRpe: optionalTarget('RPE', 1, 10),
+  targetRir: optionalTarget('RIR', 0, 9),
 })
 
 export const routineExerciseSchema = z.object({
@@ -38,7 +39,7 @@ export type RoutineFormValues = z.infer<typeof routineFormSchema>
 
 export const emptyRoutineForm: RoutineFormValues = { name: '', description: '', exercises: [] }
 
-export const emptySet = (): RoutineSetValues => ({ targetReps: null, targetWeightKg: null, targetRpe: null })
+export const emptySet = (): RoutineSetValues => ({ targetReps: null, targetWeightKg: null, targetRir: null })
 
 /** A new set repeats the previous one, so a straight or ramped plan needs little typing. */
 export const nextSet = (previous: RoutineSetValues | undefined): RoutineSetValues =>
@@ -54,7 +55,7 @@ export function routineToForm(routine: Routine): RoutineFormValues {
       sets: item.sets.map((planned) => ({
         targetReps: planned.target_reps,
         targetWeightKg: planned.target_weight_kg,
-        targetRpe: planned.target_rpe,
+        targetRir: rpeToRir(planned.target_rpe),
       })),
     })),
   }
@@ -69,7 +70,7 @@ export function formToRoutinePayload(values: RoutineFormValues): RoutineIn {
       sets: item.sets.map((planned) => ({
         target_reps: planned.targetReps,
         target_weight_kg: planned.targetWeightKg,
-        target_rpe: planned.targetRpe,
+        target_rpe: rirToRpe(planned.targetRir),
       })),
     })),
   }

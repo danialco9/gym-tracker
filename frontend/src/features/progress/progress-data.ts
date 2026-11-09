@@ -1,6 +1,7 @@
 import { ArrowDownIcon, ArrowUpIcon, RepeatIcon, TrendingUpIcon, type LucideIcon } from 'lucide-react'
 import { formatDecimal, formatKg, plural } from '@/lib/format'
 import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
+import { formatRir } from '@/lib/rir'
 import type { MuscleGroup, ProgressionAction, Recommendation, VolumeAdvice, WeeklyVolume } from '@/lib/types'
 
 export const ACTION_ORDER: readonly ProgressionAction[] = ['increase_load', 'increase_reps', 'hold', 'deload']
@@ -45,18 +46,19 @@ function shortfall(item: Recommendation): string {
 export function explainRecommendation(item: Recommendation): string {
   const rpe = hardestRpe(item)
   const step = formatKg(item.increment_kg)
-  const withRpe = rpe === null ? '' : ` con RPE ${formatDecimal(rpe)} como máximo`
+  // The hardest set is the one with the fewest reps left, so its RIR is the floor.
+  const withRir = rpe === null ? '' : ` con RIR ${formatRir(rpe)} o más`
   switch (item.reason) {
     case 'targets_hit':
-      return `Completaste todas las series objetivo${withRpe}: sube ${step}.`
+      return `Completaste todas las series objetivo${withRir}: sube ${step}.`
     case 'targets_hit_hard':
-      return `Completaste el objetivo, pero llegaste a RPE ${formatDecimal(rpe ?? 10)}: repite el peso hasta que cueste menos.`
+      return `Completaste el objetivo, pero llegaste a RIR ${formatRir(rpe ?? 10)}: repite el peso hasta que cueste menos.`
     case 'targets_missed':
       return `${capitalize(shortfall(item))}: mantén el peso hasta completarlas.`
     case 'plateau':
       return 'Tu mejor marca estimada no mejora en las últimas sesiones: baja el peso y vuelve a construir.'
     case 'easy_without_plan':
-      return `Sin objetivo de repeticiones y${withRpe || ' sin esfuerzo alto'}: sube ${step}.`
+      return `Sin objetivo de repeticiones y${withRir || ' sin esfuerzo alto'}: sube ${step}.`
     case 'without_plan':
       return 'Sin objetivo de repeticiones en la rutina: busca una repetición más con el mismo peso.'
     case 'jump_too_big': {
