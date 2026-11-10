@@ -11,7 +11,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, fiel
 from gym_tracker.analysis.mesocycle import MAX_BLOCK_WEEKS, MIN_BLOCK_WEEKS
 from gym_tracker.analysis.overload import OverloadVerdict
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
-from gym_tracker.analysis.strength import PercentileSource, StrengthTier, Zone
+from gym_tracker.analysis.strength import StrengthTier, Zone
 from gym_tracker.enums import Equipment, MuscleGroup, Sex, TrainingGoal
 from gym_tracker.push import MAX_REST_SECONDS, is_push_service
 from gym_tracker.slugs import SLUG_PATTERN
@@ -517,38 +517,9 @@ class ExerciseProgressRead(BaseModel):
 # Ranking
 
 
-class RankingEntryRead(BaseModel):
-    position: int
-    # The nickname, or "Atleta <id>" until the user picks one; never the email.
-    name: str
-    tier: StrengthTier
-    is_me: bool
-
-
-class RankingMeRead(BaseModel):
-    # Null while the user has no body weight logged or no ranked lift.
-    tier: StrengthTier | None
-    # Progress towards the next tier, from 0 to 1.
-    progress: float | None
-    # The share of people who lift less, from 0 to 100.
-    percentile: float | None
-    # Where the percentile comes from; only for a single exercise.
-    source: PercentileSource | None = None
-    # Null when the user is not on the list: hidden from it, no body weight or no ranked lift.
-    position: int | None
-    needs_body_weight: bool
-    show_in_ranking: bool
-
-
 class RankedExerciseRead(BaseModel):
     id: int
     name: str
-
-
-class ExerciseRankingRead(BaseModel):
-    exercise: RankedExerciseRead
-    me: RankingMeRead
-    entries: list[RankingEntryRead]
 
 
 class ZoneStandingRead(BaseModel):
@@ -566,8 +537,8 @@ class MyLiftRead(BaseModel):
     zone: Zone
     tier: StrengthTier
     progress: float
+    # The share of gym-goers of the same body weight and sex who lift less, from 0 to 100.
     percentile: float
-    source: PercentileSource
     # The set with the best estimated max; for pull-ups and dips, the weight added to the body.
     weight_kg: float
     reps: int
@@ -575,16 +546,7 @@ class MyLiftRead(BaseModel):
 
 class MyRankingRead(BaseModel):
     needs_body_weight: bool
-    show_in_ranking: bool
     # Every zone, in a fixed order.
     zones: list[ZoneStandingRead]
     # By zone, best first.
     lifts: list[MyLiftRead]
-
-
-class ZoneRankingRead(BaseModel):
-    zone: Zone
-    me: RankingMeRead
-    entries: list[RankingEntryRead]
-    # Ranked exercises of the zone that someone on the list or the user has lifted, by name.
-    exercises: list[RankedExerciseRead]

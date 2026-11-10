@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { BodyMap } from '@/features/ranking/BodyMap'
 import { useMyRanking } from '@/features/ranking/queries'
 import { STRENGTH_TIERS, ZONE_LABELS } from '@/lib/labels'
-import type { MyRanking, User } from '@/lib/types'
+import type { MyRanking } from '@/lib/types'
 
 function summary(ranking: MyRanking): string {
   if (ranking.needs_body_weight) {
@@ -17,8 +17,8 @@ function summary(ranking: MyRanking): string {
   return `Mejor: ${ZONE_LABELS[best.zone].label} · ${STRENGTH_TIERS[best.tier ?? 'bronze'].label}`
 }
 
-/** The body coloured by tier, a way into the ranking and, until there is one, a nudge to pick a nickname. */
-export function RankingCard({ user }: { user: User }) {
+/** The body coloured by tier and a way into the ranking. */
+export function RankingCard() {
   const ranking = useMyRanking().data
   if (ranking === undefined) {
     return null
@@ -36,11 +36,6 @@ export function RankingCard({ user }: { user: User }) {
           <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
         </span>
         <span className="text-muted-foreground block text-sm">{summary(ranking)}</span>
-        {user.nickname === null && (
-          <span className="text-primary block text-sm">
-            Elige tu apodo: ahora sales como Atleta {user.id}
-          </span>
-        )}
       </span>
     </Link>
   )

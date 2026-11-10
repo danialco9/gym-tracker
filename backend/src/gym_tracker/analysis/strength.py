@@ -1,24 +1,32 @@
 """Strength tiers, from Bronze to Master, for the ranking.
 
-A lift is measured relative to body weight: the best estimated one-rep max divided by the lifter's
-body weight, so a light and a heavy lifter compete on equal terms. The tier comes from the lift's
-percentile, the share of people who lift less: among the app's users once enough of them do the
-exercise, and until then from an estimate of how gym-goers lift it.
+The tier comes from the lift's percentile: the share of gym-goers of the lifter's own body weight
+and sex whose best estimated one-rep max is lower, so a light and a heavy lifter compete on equal
+terms. Nobody is compared with the app's other users.
 
-The estimate takes each exercise's own scale, the ratio a top lifter reaches (about the strongest
-2 % of men), because 1.5x body weight is little on a leg press but out of reach on a curl. Dumbbell
-scales are per dumbbell, as the weight is logged.
+The percentile is an estimate from published strength standards (see ``strength_standards``),
+which cover the main lifts. Every other exercise borrows the standards of a similar lift, through
+each exercise's own scale: the ratio of one-rep max to body weight a top lifter reaches, because
+1.5x body weight is little on a leg press but out of reach on a curl. Dumbbell scales are per
+dumbbell, as the weight is logged.
 """
 
 from __future__ import annotations
 
 import math
-from bisect import bisect_left, bisect_right
+from bisect import bisect_right
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from statistics import NormalDist
 
+from gym_tracker.analysis.strength_standards import (
+    ADDED_WEIGHT_STANDARDS,
+    FEMALE_BODY_WEIGHTS,
+    FEMALE_STANDARDS,
+    MALE_BODY_WEIGHTS,
+    MALE_STANDARDS,
+)
 from gym_tracker.enums import Equipment, MuscleGroup, Sex
 
 # Beyond about 12 reps the Epley estimate overrates the max, so longer sets count as 12.
@@ -79,7 +87,8 @@ ZONES: dict[MuscleGroup, Zone] = {
     MuscleGroup.CALVES: Zone.LEGS,
 }
 
-# The ratio of estimated 1RM to body weight that the strongest 2 % of men reach, per catalog exercise.
+# The ratio of estimated 1RM to body weight that a top lifter reaches, per catalog exercise: what
+# tells how the loads of two exercises compare.
 MASTER_RATIOS: dict[str, float] = {
     # Chest
     "bench-press": 2.0,
@@ -320,7 +329,7 @@ _EQUIPMENT_FACTORS: dict[Equipment, float] = {
 
 
 def master_ratio(slug: str, muscle_group: MuscleGroup, equipment: Equipment | None) -> float | None:
-    """An exercise's scale for the estimate (see MASTER_RATIOS), or None when it is not ranked."""
+    """An exercise's scale (see MASTER_RATIOS), or None when it is not ranked."""
     if slug in MASTER_RATIOS:
         return MASTER_RATIOS[slug]
     if slug in UNRANKED or equipment not in _EQUIPMENT_FACTORS:
@@ -335,56 +344,106 @@ def estimated_max(weight_kg: float, reps: int) -> float:
     return weight_kg * (1 + min(reps, MAX_ESTIMATED_REPS) / EPLEY_REPS_DIVISOR)
 
 
-class PercentileSource(StrEnum):
-    # How gym-goers are estimated to lift, while too few app users do the exercise.
-    ESTIMATE = "estimate"
-    # The app's own users: at least MIN_APP_LIFTERS of them.
-    APP = "app"
-
-
-# From this many other lifters on an exercise (of the same sex, when known), the app's users are
-# compared with each other instead of with the estimate.
-MIN_APP_LIFTERS = 30
-
-# The estimate: lifts relative to body weight spread log-normally, this wide in log terms. With the
-# scale at the 98th percentile of men, the typical man lifts about 0.44 of it.
-LOG_SPREAD = 0.40
-_SCALE_PERCENTILE = 0.98
+# The share of gym-goers each column of a standards row is stronger than. The standards come from
+# lifters who log their lifts, more trained than the usual gym-goer, so each level counts one step
+# up: the lift that beats half of them (two years of training) beats 80 % of gym-goers, and the
+# typical gym-goer is their novice, with six months of training.
+GYM_GOER_PERCENTILES: tuple[float, ...] = (0.20, 0.50, 0.80, 0.95, 0.99)
 _NORMAL = NormalDist()
-# The typical woman's lift as a share of the typical man's, per zone: closer on the legs.
-FEMALE_MEDIAN_FACTORS: dict[Zone, float] = {
-    Zone.CHEST: 0.55,
-    Zone.BACK: 0.60,
-    Zone.SHOULDERS: 0.55,
-    Zone.ARMS: 0.55,
-    Zone.LEGS: 0.70,
-    Zone.CORE: 0.65,
-}
+_STANDARD_SCORES = tuple(_NORMAL.inv_cdf(share) for share in GYM_GOER_PERCENTILES)
 # With the sex unknown, the lift is compared with men and women together, in this proportion.
 MALE_SHARE = 0.5
 
+# The lift with standards that a muscle's other exercises are measured on, by equipment; None holds
+# the rest of the equipment.
+_REFERENCE_LIFTS: dict[MuscleGroup, dict[Equipment | None, str]] = {
+    MuscleGroup.CHEST: {
+        Equipment.DUMBBELL: "dumbbell-bench-press",
+        Equipment.BODYWEIGHT: "triceps-dip",
+        None: "bench-press",
+    },
+    MuscleGroup.BACK: {Equipment.CABLE: "lat-pulldown", Equipment.BODYWEIGHT: "pull-up", None: "barbell-row"},
+    MuscleGroup.LOWER_BACK: {None: "deadlift"},
+    MuscleGroup.TRAPS: {None: "deadlift"},
+    MuscleGroup.SHOULDERS: {
+        Equipment.DUMBBELL: "dumbbell-shoulder-press",
+        Equipment.KETTLEBELL: "dumbbell-shoulder-press",
+        None: "overhead-press",
+    },
+    MuscleGroup.BICEPS: {Equipment.DUMBBELL: "dumbbell-curl", None: "barbell-curl"},
+    MuscleGroup.TRICEPS: {Equipment.BODYWEIGHT: "triceps-dip", None: "triceps-pushdown"},
+    MuscleGroup.FOREARMS: {Equipment.DUMBBELL: "dumbbell-curl", None: "barbell-curl"},
+    MuscleGroup.ABS: {None: "lat-pulldown"},
+    MuscleGroup.QUADS: {Equipment.MACHINE: "leg-press", None: "back-squat"},
+    MuscleGroup.HAMSTRINGS: {Equipment.MACHINE: "leg-extension", None: "romanian-deadlift"},
+    MuscleGroup.GLUTES: {None: "hip-thrust"},
+    MuscleGroup.ADDUCTORS: {None: "leg-extension"},
+    MuscleGroup.ABDUCTORS: {None: "leg-extension"},
+    MuscleGroup.CALVES: {None: "leg-press"},
+}
 
-def estimated_percentile(ratio: float, scale: float, zone: Zone, sex: Sex | None) -> float:
-    """The estimated share of gym-goers (of the same sex, when known) who lift less, from 0 to 1."""
-    male_median = scale * math.exp(-_NORMAL.inv_cdf(_SCALE_PERCENTILE) * LOG_SPREAD)
 
-    def below(median: float) -> float:
-        return _NORMAL.cdf(math.log(ratio / median) / LOG_SPREAD)
+@dataclass(frozen=True)
+class Standard:
+    """The lift whose standards an exercise is measured on."""
 
-    male = below(male_median)
-    female = below(male_median * FEMALE_MEDIAN_FACTORS[zone])
-    if sex is Sex.MALE:
-        return male
-    if sex is Sex.FEMALE:
-        return female
-    return MALE_SHARE * male + (1 - MALE_SHARE) * female
+    lift: str
+    # What a load on the exercise is worth on that lift: 1 for the lift itself.
+    factor: float
 
 
-def app_percentile(ratio: float, others: Sequence[float]) -> float:
-    """The share of the other lifters (``others``, sorted) who lift less; a tie counts half."""
-    below = bisect_left(others, ratio)
-    tied = bisect_right(others, ratio) - below
-    return (below + tied / 2) / len(others)
+def standard_for(slug: str, muscle_group: MuscleGroup, equipment: Equipment | None) -> Standard | None:
+    """The standards an exercise is ranked with, or None when it is not ranked.
+
+    An exercise without standards of its own borrows those of a similar lift, with its loads scaled
+    by how the two compare (see MASTER_RATIOS).
+    """
+    scale = master_ratio(slug, muscle_group, equipment)
+    if scale is None:
+        return None
+    if slug in MALE_STANDARDS:
+        return Standard(slug, 1.0)
+    references = _REFERENCE_LIFTS[muscle_group]
+    lift = references.get(equipment, references[None])
+    return Standard(lift, MASTER_RATIOS[lift] / scale)
+
+
+def _standards_at(lift: str, sex: Sex, body_weight_kg: float) -> list[float]:
+    """The lift's standards for a body weight, between the two rows around it."""
+    rows, body_weights = (
+        (MALE_STANDARDS[lift], MALE_BODY_WEIGHTS) if sex is Sex.MALE else (FEMALE_STANDARDS[lift], FEMALE_BODY_WEIGHTS)
+    )
+    # Lighter and heavier lifters than the table covers take its first and last rows.
+    weight = min(max(body_weight_kg, body_weights[0]), body_weights[-1])
+    index = min(bisect_right(body_weights, weight), len(body_weights) - 1) - 1
+    share = (weight - body_weights[index]) / (body_weights[index + 1] - body_weights[index])
+    # Pull-ups and dips have the added weight as standard; the lift is that plus the body.
+    own = body_weight_kg if lift in ADDED_WEIGHT_STANDARDS else 0.0
+    return [low + (high - low) * share + own for low, high in zip(rows[index], rows[index + 1], strict=True)]
+
+
+def _share_below(max_kg: float, standards: Sequence[float]) -> float:
+    """The share of lifters under a max: a straight line between standards, in log kilos and normal scores."""
+    logs = [math.log(standard) for standard in standards]
+    # Below the first standard and above the last, the nearest stretch carries on.
+    index = min(max(bisect_right(standards, max_kg), 1), len(standards) - 1) - 1
+    slope = (_STANDARD_SCORES[index + 1] - _STANDARD_SCORES[index]) / (logs[index + 1] - logs[index])
+    return _NORMAL.cdf(_STANDARD_SCORES[index] + (math.log(max_kg) - logs[index]) * slope)
+
+
+def estimated_percentile(max_kg: float, body_weight_kg: float, standard: Standard, sex: Sex | None) -> float:
+    """The estimated share of gym-goers of the same body weight (and sex, when known) who lift less.
+
+    ``max_kg`` is the estimated one-rep max on the exercise, body included on pull-ups and dips.
+    """
+    equivalent = max_kg * standard.factor
+
+    def below(of_sex: Sex) -> float:
+        return _share_below(equivalent, _standards_at(standard.lift, of_sex, body_weight_kg))
+
+    if sex is None:
+        return MALE_SHARE * below(Sex.MALE) + (1 - MALE_SHARE) * below(Sex.FEMALE)
+    return below(sex)
 
 
 def zone_score(percentiles: list[float]) -> float:
