@@ -1,8 +1,12 @@
-"""The public strength ranking: tiers from Bronze to Master by percentile, per exercise and per zone."""
+"""The strength ranking: the user's tier from Bronze to Master by percentile, per exercise and per zone.
+
+Everyone is compared with gym-goers at large, never with the app's other users, so the ranking has
+no list of people: each user sees only their own standing.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from fastapi import APIRouter
 from sqlalchemy import func, select
@@ -12,7 +16,6 @@ from gym_tracker.analysis.strength import (
     BODYWEIGHT_LIFTS,
     MAX_ESTIMATED_REPS,
     ZONES,
-    PercentileSource,
     Standard,
     Zone,
     estimated_max,
@@ -21,21 +24,10 @@ from gym_tracker.analysis.strength import (
     tier_for,
     zone_score,
 )
-from gym_tracker.api.common import not_found
-from gym_tracker.api.deps import CurrentUser, SessionDep, SettingsDep
+from gym_tracker.api.deps import CurrentUser, SessionDep
 from gym_tracker.enums import Equipment, MuscleGroup, Sex
-from gym_tracker.models import BodyMeasurement, Exercise, User, Workout, WorkoutSet
-from gym_tracker.schemas import (
-    ExerciseRankingRead,
-    MyLiftRead,
-    MyRankingRead,
-    RankedExerciseRead,
-    RankingEntryRead,
-    RankingMeRead,
-    ZoneRankingRead,
-    ZoneStandingRead,
-)
-from gym_tracker.users import normalize_email
+from gym_tracker.models import BodyMeasurement, Exercise, Workout, WorkoutSet
+from gym_tracker.schemas import MyLiftRead, MyRankingRead, RankedExerciseRead, ZoneStandingRead
 
 router = APIRouter(prefix="/ranking", tags=["ranking"])
 
@@ -57,30 +49,6 @@ class _Best:
     reps: int
 
 
-@dataclass(frozen=True)
-class _Percentile:
-    share: float
-    source: PercentileSource
-
-
-@dataclass
-class _Lifter:
-    id: int
-    name: str
-    # Hidden lifters still get their own tier; they are only left off the list.
-    listed: bool
-    sex: Sex | None
-    body_weight_kg: float | None
-    # Best lift per ranked exercise id.
-    best: dict[int, _Best] = field(default_factory=dict)
-    # Percentile per ranked exercise id, filled in once everyone's best lifts are known.
-    percentiles: dict[int, _Percentile] = field(default_factory=dict)
-
-    def zone_percentile(self, exercises: dict[int, _RankedExercise], zone: Zone) -> float | None:
-        shares = [p.share for id_, p in self.percentiles.items() if exercises[id_].zone is zone]
-        return zone_score(shares) if shares else None
-
-
 def _ranked_exercises(session: Session) -> dict[int, _RankedExercise]:
     """Catalog exercises with standards; custom ones have nothing to be compared with."""
     rows = session.execute(
@@ -97,192 +65,97 @@ def _ranked_exercises(session: Session) -> dict[int, _RankedExercise]:
     return ranked
 
 
-def _best_lifts(session: Session, demo_email: str, exercises: dict[int, _RankedExercise]) -> dict[int, _Lifter]:
-    """Every user with their latest body weight and best set per ranked lift; the demo is never listed."""
-    demo = normalize_email(demo_email)
-    latest_weights = session.execute(
-        select(BodyMeasurement.user_id, BodyMeasurement.weight_kg)
-        .where(BodyMeasurement.weight_kg.is_not(None))
-        .order_by(BodyMeasurement.user_id, BodyMeasurement.measured_on.desc())
-        .distinct(BodyMeasurement.user_id)
+def _body_weight(session: Session, user_id: int) -> float | None:
+    """The user's latest logged body weight."""
+    weight = session.scalar(
+        select(BodyMeasurement.weight_kg)
+        .where(BodyMeasurement.user_id == user_id, BodyMeasurement.weight_kg.is_not(None))
+        .order_by(BodyMeasurement.measured_on.desc())
+        .limit(1)
     )
-    weights = {user_id: float(weight) for user_id, weight in latest_weights if weight is not None}
-    lifters = {
-        id_: _Lifter(
-            id=id_,
-            name=nickname or f"Atleta {id_}",
-            listed=show_in_ranking and email != demo,
-            sex=Sex(sex) if sex else None,
-            body_weight_kg=weights.get(id_),
-        )
-        for id_, nickname, show_in_ranking, email, sex in session.execute(
-            select(User.id, User.nickname, User.show_in_ranking, User.email, User.sex)
-        )
-    }
+    return float(weight) if weight is not None else None
 
+
+def _best_lifts(
+    session: Session, user_id: int, body_weight_kg: float, exercises: dict[int, _RankedExercise]
+) -> dict[int, _Best]:
+    """The user's set with the best estimated max, per ranked exercise id."""
     # One row per distinct load and rep count, which is all the best estimate needs.
     reps = func.least(WorkoutSet.reps, MAX_ESTIMATED_REPS)
     sets = session.execute(
-        select(Workout.user_id, WorkoutSet.exercise_id, WorkoutSet.weight_kg, reps)
+        select(WorkoutSet.exercise_id, WorkoutSet.weight_kg, reps)
         .join(Workout)
-        .where(~WorkoutSet.is_warmup, WorkoutSet.reps >= 1, WorkoutSet.exercise_id.in_(exercises))
-        .group_by(Workout.user_id, WorkoutSet.exercise_id, WorkoutSet.weight_kg, reps)
+        .where(
+            Workout.user_id == user_id,
+            ~WorkoutSet.is_warmup,
+            WorkoutSet.reps >= 1,
+            WorkoutSet.exercise_id.in_(exercises),
+        )
+        .group_by(WorkoutSet.exercise_id, WorkoutSet.weight_kg, reps)
     )
-    for user_id, exercise_id, weight_kg, set_reps in sets:
-        lifter = lifters[user_id]
-        if lifter.body_weight_kg is None:
-            continue
+    best: dict[int, _Best] = {}
+    for exercise_id, weight_kg, set_reps in sets:
         added = float(weight_kg)
-        load = added + (lifter.body_weight_kg if exercises[exercise_id].slug in BODYWEIGHT_LIFTS else 0)
+        load = added + (body_weight_kg if exercises[exercise_id].slug in BODYWEIGHT_LIFTS else 0)
         if load <= 0:
             continue
         max_kg = estimated_max(load, set_reps)
-        best = lifter.best.get(exercise_id)
-        if best is None or max_kg > best.max_kg:
-            lifter.best[exercise_id] = _Best(max_kg, added, set_reps)
-    return lifters
-
-
-def _lifters(session: Session, demo_email: str, exercises: dict[int, _RankedExercise]) -> dict[int, _Lifter]:
-    """Everyone's best lifts with their percentiles among gym-goers of their body weight and sex."""
-    lifters = _best_lifts(session, demo_email, exercises)
-    for lifter in lifters.values():
-        for exercise_id, best in lifter.best.items():
-            # A best lift implies a body weight: lifts without one are skipped.
-            assert lifter.body_weight_kg is not None
-            share = estimated_percentile(
-                best.max_kg, lifter.body_weight_kg, exercises[exercise_id].standard, lifter.sex
-            )
-            lifter.percentiles[exercise_id] = _Percentile(share, PercentileSource.ESTIMATE)
-    return lifters
+        if exercise_id not in best or max_kg > best[exercise_id].max_kg:
+            best[exercise_id] = _Best(max_kg, added, set_reps)
+    return best
 
 
 def _percent(share: float) -> float:
     return round(share * 100, 1)
 
 
-def _board(
-    lifters: dict[int, _Lifter],
-    me: User,
-    score_of: dict[int, float],
-    source: PercentileSource | None = None,
-) -> tuple[RankingMeRead, list[RankingEntryRead]]:
-    """The list, best first (ties by seniority), and the user's own standing."""
-    listed = sorted(
-        (lifter for lifter in lifters.values() if lifter.listed and lifter.id in score_of),
-        key=lambda lifter: (-score_of[lifter.id], lifter.id),
-    )
-    entries = [
-        RankingEntryRead(
-            position=position,
-            name=lifter.name,
-            tier=tier_for(score_of[lifter.id]).tier,
-            is_me=lifter.id == me.id,
-        )
-        for position, lifter in enumerate(listed, start=1)
-    ]
-    mine = tier_for(score_of[me.id]) if me.id in score_of else None
-    standing = RankingMeRead(
-        tier=mine.tier if mine else None,
-        progress=mine.progress if mine else None,
-        percentile=_percent(score_of[me.id]) if me.id in score_of else None,
-        source=source if mine else None,
-        position=next((entry.position for entry in entries if entry.is_me), None),
-        needs_body_weight=lifters[me.id].body_weight_kg is None,
-        show_in_ranking=me.show_in_ranking,
-    )
-    return standing, entries
-
-
-def _lifted(lifters: dict[int, _Lifter], me: User, exercises: dict[int, _RankedExercise]) -> list[RankedExerciseRead]:
-    """The given exercises that someone on the list or the user has lifted, by name."""
-    lifted = {
-        exercise_id
-        for lifter in lifters.values()
-        if lifter.listed or lifter.id == me.id
-        for exercise_id in lifter.best
-        if exercise_id in exercises
-    }
-    return sorted(
-        (RankedExerciseRead(id=id_, name=exercises[id_].name) for id_ in lifted),
-        key=lambda exercise: exercise.name,
-    )
-
-
 @router.get("/zones")
-def read_my_ranking(session: SessionDep, user: CurrentUser, settings: SettingsDep) -> MyRankingRead:
-    """The user's tier in every zone and in every ranked exercise they have done."""
+def read_my_ranking(session: SessionDep, user: CurrentUser) -> MyRankingRead:
+    """The user's tier in every zone and in every ranked exercise they have done.
+
+    Each lift is placed among gym-goers of the user's body weight and sex; without a body weight
+    logged there is no tier.
+    """
     exercises = _ranked_exercises(session)
-    lifters = _lifters(session, settings.demo_email, exercises)
-    me = lifters[user.id]
+    body_weight_kg = _body_weight(session, user.id)
+    sex = Sex(user.sex) if user.sex else None
+    best: dict[int, _Best] = {}
+    # The share of gym-goers under each of those lifts, from 0 to 1.
+    shares: dict[int, float] = {}
+    if body_weight_kg is not None:
+        best = _best_lifts(session, user.id, body_weight_kg, exercises)
+        shares = {
+            exercise_id: estimated_percentile(lift.max_kg, body_weight_kg, exercises[exercise_id].standard, sex)
+            for exercise_id, lift in best.items()
+        }
+
     zones = []
     for zone in Zone:
-        share = me.zone_percentile(exercises, zone)
-        standing = tier_for(share) if share is not None else None
+        in_zone = [share for exercise_id, share in shares.items() if exercises[exercise_id].zone is zone]
+        score = zone_score(in_zone) if in_zone else None
+        standing = tier_for(score) if score is not None else None
         zones.append(
             ZoneStandingRead(
                 zone=zone,
                 tier=standing.tier if standing else None,
                 progress=standing.progress if standing else None,
-                percentile=_percent(share) if share is not None else None,
+                percentile=_percent(score) if score is not None else None,
             )
         )
     order = list(Zone)
     lifts = []
-    for exercise_id, percentile in me.percentiles.items():
-        exercise, best, standing = exercises[exercise_id], me.best[exercise_id], tier_for(percentile.share)
+    for exercise_id, share in shares.items():
+        exercise, lift, tier = exercises[exercise_id], best[exercise_id], tier_for(share)
         lifts.append(
             MyLiftRead(
                 exercise=RankedExerciseRead(id=exercise_id, name=exercise.name),
                 zone=exercise.zone,
-                tier=standing.tier,
-                progress=standing.progress,
-                percentile=_percent(percentile.share),
-                source=percentile.source,
-                weight_kg=best.weight_kg,
-                reps=best.reps,
+                tier=tier.tier,
+                progress=tier.progress,
+                percentile=_percent(share),
+                weight_kg=lift.weight_kg,
+                reps=lift.reps,
             )
         )
     lifts.sort(key=lambda lift: (order.index(lift.zone), -lift.percentile, lift.exercise.name))
-    return MyRankingRead(
-        needs_body_weight=me.body_weight_kg is None,
-        show_in_ranking=user.show_in_ranking,
-        zones=zones,
-        lifts=lifts,
-    )
-
-
-@router.get("/zones/{zone}")
-def read_zone_ranking(zone: Zone, session: SessionDep, user: CurrentUser, settings: SettingsDep) -> ZoneRankingRead:
-    """Everyone's tier in one zone: the mean percentile of the zone's exercises each has done."""
-    exercises = _ranked_exercises(session)
-    lifters = _lifters(session, settings.demo_email, exercises)
-    scores = {
-        lifter.id: share
-        for lifter in lifters.values()
-        if (share := lifter.zone_percentile(exercises, zone)) is not None
-    }
-    me, entries = _board(lifters, user, scores)
-    in_zone = {id_: exercise for id_, exercise in exercises.items() if exercise.zone is zone}
-    return ZoneRankingRead(zone=zone, me=me, entries=entries, exercises=_lifted(lifters, user, in_zone))
-
-
-@router.get("/exercises/{exercise_id}")
-def read_exercise_ranking(
-    exercise_id: int, session: SessionDep, user: CurrentUser, settings: SettingsDep
-) -> ExerciseRankingRead:
-    """Everyone's tier in one ranked exercise."""
-    exercises = _ranked_exercises(session)
-    if exercise_id not in exercises:
-        raise not_found("Ranked exercise")
-    lifters = _lifters(session, settings.demo_email, exercises)
-    scores = {
-        lifter.id: lifter.percentiles[exercise_id].share
-        for lifter in lifters.values()
-        if exercise_id in lifter.percentiles
-    }
-    mine = lifters[user.id].percentiles.get(exercise_id)
-    me, entries = _board(lifters, user, scores, mine.source if mine else None)
-    return ExerciseRankingRead(
-        exercise=RankedExerciseRead(id=exercise_id, name=exercises[exercise_id].name), me=me, entries=entries
-    )
+    return MyRankingRead(needs_body_weight=body_weight_kg is None, zones=zones, lifts=lifts)

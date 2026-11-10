@@ -147,7 +147,7 @@ export function HomePage() {
         <OverloadCard exercises={overview.data.week_overload} />
       )}
 
-      {currentUser != null && <RankingCard user={currentUser} />}
+      <RankingCard />
 
       {overview.data !== undefined && <NextSession overview={overview.data} />}
 

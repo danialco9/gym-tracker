@@ -1,6 +1,5 @@
 import {
   ChevronRightIcon,
-  EyeIcon,
   LogOutIcon,
   MessageSquareIcon,
   TargetIcon,
@@ -52,7 +51,7 @@ function NicknameForm({ user, onDone }: { user: User; onDone: () => void }) {
       { nickname: trimmed },
       {
         onSuccess: () => {
-          toast.success(`Ahora sales en el ranking como ${trimmed}.`)
+          toast.success(`Apodo guardado: ${trimmed}.`)
           onDone()
         },
       },
@@ -75,7 +74,7 @@ function NicknameForm({ user, onDone }: { user: User; onDone: () => void }) {
         autoFocus
       />
       <p id="nickname-hint" className="text-muted-foreground text-xs">
-        De 3 a 20 letras o números, sin espacios (vale _ y .). Es lo único que ven los demás.
+        De 3 a 20 letras o números, sin espacios (vale _ y .). Así te saluda la app.
       </p>
       {update.error !== null && (
         <Alert variant="destructive">
@@ -91,52 +90,6 @@ function NicknameForm({ user, onDone }: { user: User; onDone: () => void }) {
         </Button>
       </div>
     </form>
-  )
-}
-
-/** Listed by default; switching it off hides the user from everyone else's lists. */
-function RankingVisibility({ user }: { user: User }) {
-  const update = useUpdateRankingProfile()
-  const shown = user.show_in_ranking
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={shown}
-      disabled={update.isPending}
-      onClick={() =>
-        update.mutate(
-          { show_in_ranking: !shown },
-          { onError: () => toast.error('No se pudo cambiar. Prueba otra vez en un rato.') },
-        )
-      }
-      className="hover:bg-accent flex w-full items-center justify-between gap-3 rounded-lg p-3 text-left transition-colors disabled:opacity-50"
-    >
-      <span className="flex min-w-0 items-center gap-3">
-        <EyeIcon className="text-primary size-5 shrink-0" aria-hidden />
-        <span className="min-w-0">
-          <span className="block font-medium">Aparecer en el ranking</span>
-          <span className="text-muted-foreground block text-sm">
-            {shown ? 'Los demás ven tu apodo y tu rango' : 'Oculto: solo tú ves tu rango'}
-          </span>
-        </span>
-      </span>
-      <span
-        className={cn(
-          'flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors',
-          shown ? 'bg-primary' : 'bg-muted',
-        )}
-        aria-hidden
-      >
-        <span
-          className={cn(
-            'bg-background size-5 rounded-full shadow transition-transform',
-            shown && 'translate-x-5',
-          )}
-        />
-      </span>
-    </button>
   )
 }
 
@@ -354,7 +307,7 @@ export function AccountPage() {
           <>
             <h2 className="flex items-center gap-3 p-3 font-medium">
               <UserPenIcon className="text-primary size-5 shrink-0" aria-hidden />
-              Apodo en el ranking
+              Apodo
             </h2>
             <NicknameForm user={user} onDone={close} />
           </>
@@ -369,14 +322,13 @@ export function AccountPage() {
               <span className="min-w-0">
                 <span className="block font-medium">Apodo</span>
                 <span className="text-muted-foreground block truncate text-sm">
-                  {user?.nickname ?? (user == null ? '' : `Sin elegir · sales como Atleta ${user.id}`)}
+                  {user?.nickname ?? (user == null ? '' : 'Sin elegir')}
                 </span>
               </span>
             </span>
             <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
           </button>
         )}
-        {user != null && <RankingVisibility user={user} />}
         {user != null && <SexChoice user={user} />}
         {open === 'feedback' ? (
           <>

@@ -89,14 +89,14 @@ describe('Account', () => {
     expect(window.localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull()
   })
 
-  it('picks a nickname for the ranking', async () => {
+  it('picks a nickname', async () => {
     const calls = mockApi({
       'GET /auth/me': { body: USER },
       'PATCH /auth/me': ({ body }) => ({ body: { ...USER, ...(body as object) } }),
     })
     const { user } = renderRoute('/cuenta')
 
-    await user.click(await screen.findByRole('button', { name: /Sin elegir · sales como Atleta 1/ }))
+    await user.click(await screen.findByRole('button', { name: /Apodo.*Sin elegir/ }))
     const input = screen.getByRole('textbox', { name: 'Tu apodo' })
     await user.type(input, 'Atleta 1')
     expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled()
@@ -122,20 +122,12 @@ describe('Account', () => {
     expect(await screen.findByText('Ese apodo ya está cogido. Prueba con otro.')).toBeInTheDocument()
   })
 
-  it('hides the user from the ranking and back', async () => {
-    const calls = mockApi({
-      'GET /auth/me': { body: USER },
-      'PATCH /auth/me': ({ body }) => ({ body: { ...USER, ...(body as object) } }),
-    })
-    const { user } = renderRoute('/cuenta')
+  it('has no switch to appear in the ranking: nobody is listed', async () => {
+    mockApi({ 'GET /auth/me': { body: USER } })
+    renderRoute('/cuenta')
 
-    const visibility = await screen.findByRole('switch', { name: /Aparecer en el ranking/ })
-    expect(visibility).toHaveAttribute('aria-checked', 'true')
-    await user.click(visibility)
-
-    expect(await screen.findByText('Oculto: solo tú ves tu rango')).toBeInTheDocument()
-    expect(visibility).toHaveAttribute('aria-checked', 'false')
-    expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ show_in_ranking: false })
+    expect(await screen.findByRole('button', { name: /Apodo/ })).toBeInTheDocument()
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   })
 
   it('picks who the user is compared with in the ranking', async () => {

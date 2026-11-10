@@ -344,11 +344,6 @@ def estimated_max(weight_kg: float, reps: int) -> float:
     return weight_kg * (1 + min(reps, MAX_ESTIMATED_REPS) / EPLEY_REPS_DIVISOR)
 
 
-class PercentileSource(StrEnum):
-    # How gym-goers lift, estimated from the published standards.
-    ESTIMATE = "estimate"
-
-
 # The share of gym-goers each column of a standards row is stronger than. The standards come from
 # lifters who log their lifts, more trained than the usual gym-goer, so each level counts one step
 # up: the lift that beats half of them (two years of training) beats 80 % of gym-goers, and the
