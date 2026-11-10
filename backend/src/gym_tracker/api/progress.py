@@ -9,6 +9,7 @@ from functools import partial
 import pandas as pd
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from gym_tracker.analysis import (
     GOAL_PLANS,
@@ -29,6 +30,7 @@ from gym_tracker.analysis import (
 )
 from gym_tracker.analysis.database import load_user_log
 from gym_tracker.analysis.mesocycle import in_deload_week
+from gym_tracker.analysis.recommendations import SINGLE_JOINT_LIFTS
 from gym_tracker.api.common import not_found, visible_to
 from gym_tracker.api.deps import (
     CurrentUser,
@@ -84,8 +86,20 @@ def _deload_days(user: User) -> Callable[[date], bool] | None:
 
 
 def _recommendations(
-    log: TrainingLog, today: date, in_deload: Callable[[date], bool] | None, goal: str | None
+    session: Session, log: TrainingLog, today: date, in_deload: Callable[[date], bool] | None, goal: str | None
 ) -> list[RecommendationRead]:
+    rep_ranges = rep_ranges_for(goal)
+    # The log names exercises by id, so the catalog's single-joint lifts are looked up by slug.
+    single_joint_ids = (
+        {
+            str(exercise_id)
+            for exercise_id in session.scalars(
+                select(Exercise.id).where(Exercise.user_id.is_(None), Exercise.slug.in_(SINGLE_JOINT_LIFTS))
+            )
+        }
+        if rep_ranges is not None
+        else set()
+    )
     return [
         RecommendationRead(
             exercise_id=int(item.exercise_id),
@@ -99,7 +113,9 @@ def _recommendations(
             suggested_sets=[PlannedSetRead(reps=s.reps, weight_kg=s.weight_kg) for s in item.suggested_sets],
             rep_range=IntRangeRead(min=item.rep_range[0], max=item.rep_range[1]) if item.rep_range else None,
         )
-        for item in recommend(log, today=today, in_deload=in_deload, rep_ranges=rep_ranges_for(goal))
+        for item in recommend(
+            log, today=today, in_deload=in_deload, rep_ranges=rep_ranges, single_joint_ids=single_joint_ids
+        )
     ]
 
 
@@ -208,7 +224,7 @@ def read_overview(
     bests = session_bests(work)
     return ProgressOverviewRead(
         activity=_activity(log, today),
-        recommendations=_recommendations(log, today, _deload_days(user), user.goal),
+        recommendations=_recommendations(session, log, today, _deload_days(user), user.goal),
         personal_records=_personal_records(log, work, bests) if not work.empty else [],
         weekly_volume=_weekly_volume(log, work, today),
         volume_advice=_volume_advice(log, today, user.goal),

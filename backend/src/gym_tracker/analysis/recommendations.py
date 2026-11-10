@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import StrEnum
@@ -87,6 +87,32 @@ _ISOLATION_MUSCLES: set[str] = {
     MuscleGroup.ADDUCTORS,
     MuscleGroup.ABDUCTORS,
 }
+# Catalog lifts that move one joint, or stay light, although a second muscle helps: flyes, rear
+# delts, pullovers... Heavy sets of few reps suit them as badly as a curl.
+SINGLE_JOINT_LIFTS: frozenset[str] = frozenset(
+    {
+        "pec-deck",
+        "cable-crossover",
+        "dumbbell-fly",
+        "incline-dumbbell-fly",
+        "decline-dumbbell-fly",
+        "flat-cable-fly",
+        "incline-cable-fly",
+        "dumbbell-pullover",
+        "barbell-pullover",
+        "back-extension",
+        "reverse-pec-deck",
+        "face-pull",
+        "rear-delt-fly",
+        "cable-rear-delt-fly",
+        "band-pull-apart",
+        "upright-row",
+        "dumbbell-upright-row",
+        "cable-upright-row",
+        "glute-kickback-machine",
+        "cable-pull-through",
+    }
+)
 _LOWER_BODY: set[str] = {MuscleGroup.QUADS, MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS}
 _DOUBLED_FOR_LOWER_BODY: set[str] = {Equipment.BARBELL, Equipment.SMITH_MACHINE, Equipment.MACHINE}
 
@@ -377,7 +403,9 @@ def recommend(
     rules: ProgressionRules = DEFAULT_RULES,
     today: date | None = None,
     in_deload: Callable[[date], bool] | None = None,
+    *,
     rep_ranges: RepRanges | None = None,
+    single_joint_ids: Collection[str] = SINGLE_JOINT_LIFTS,
 ) -> list[Recommendation]:
     """Suggest the next session for every exercise, based on its most recent one.
 
@@ -389,6 +417,8 @@ def recommend(
 
     ``rep_ranges`` are the reps the user's goal asks for; each exercise progresses inside the range
     of its kind (see ``decide_progression``). Without them only the load moves.
+    ``single_joint_ids`` are the exercises that take the single-joint range whatever muscles they
+    list; by default the catalog's, for a log that names exercises by their slug.
     """
     work = working_sets(log)
     if work.empty:
@@ -428,8 +458,12 @@ def recommend(
         rep_range = None
         if rep_ranges is not None and not deload_week:
             secondary = exercises.at[exercise_id, "secondary_muscles"] if known else None
-            compound = known and is_compound(
-                str(exercises.at[exercise_id, "muscle_group"]), secondary if isinstance(secondary, str) else None
+            compound = (
+                known
+                and exercise_id not in single_joint_ids
+                and is_compound(
+                    str(exercises.at[exercise_id, "muscle_group"]), secondary if isinstance(secondary, str) else None
+                )
             )
             rep_range = rep_ranges.compound if compound else rep_ranges.isolation
         progression = (

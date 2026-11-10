@@ -271,6 +271,21 @@ def test_recommendations_progress_in_the_rep_range_of_the_goal(
     assert (pulldown["action"], pulldown["reason"]) == ("hold", "targets_hit_hard")
 
 
+def test_a_light_lift_keeps_the_single_joint_range_of_the_goal(progress_client: TestClient, session: Session) -> None:
+    face_pull = catalog_exercise_id(session, "face-pull")
+    post(
+        progress_client,
+        "/api/workouts",
+        {"started_at": "2026-09-15T18:00:00+02:00", "sets": [bench_set(face_pull, 1, 12, 20, 8)]},
+    )
+    assert progress_client.patch("/api/auth/me", json={"goal": "build_strength"}).status_code == 200
+
+    [recommendation] = progress_client.get("/api/progress/overview").json()["recommendations"]
+
+    # It lists traps and back as helpers, but it is no lift for 6 heavy reps.
+    assert recommendation["rep_range"] == {"min": 8, "max": 12}
+
+
 def test_goal_plans_cover_every_goal(progress_client: TestClient) -> None:
     plans = {plan["goal"]: plan for plan in progress_client.get("/api/progress/goals").json()}
 

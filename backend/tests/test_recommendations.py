@@ -20,7 +20,8 @@ from gym_tracker.analysis import (
     volume_advice,
 )
 from gym_tracker.analysis.mesocycle import in_deload_week
-from gym_tracker.analysis.recommendations import is_compound
+from gym_tracker.analysis.recommendations import SINGLE_JOINT_LIFTS, is_compound
+from gym_tracker.catalog import CATALOG
 from tests.conftest import WriteLog
 
 STRAIGHT_PLAN = [PlannedSet(reps=10, weight_kg=60)] * 3
@@ -506,3 +507,20 @@ def test_recommend_gives_each_exercise_the_range_of_its_kind(write_log: WriteLog
     assert (raises.rep_range, raises.reason) == ((10, 15), Reason.WITHIN_RANGE)
     assert raises.suggested_sets == (PlannedSet(reps=13, weight_kg=10),)
     assert all(item.rep_range is None for item in recommend(load_training_log(data_dir)))
+
+
+def test_light_lifts_with_a_helper_muscle_take_the_single_joint_range(write_log: WriteLog) -> None:
+    # The face pull lists traps and back, but nobody pulls it for 6 heavy reps.
+    data_dir = write_log(
+        exercises="face-pull,Face pull,shoulders,traps;back,cable",
+        workouts="w1,2026-09-15,,",
+        workout_sets="w1,face-pull,1,12,20,8,false",
+    )
+    ranges = RepRanges(compound=(6, 8), isolation=(8, 12))
+
+    [by_slug] = recommend(load_training_log(data_dir), rep_ranges=ranges)
+    [by_id] = recommend(load_training_log(data_dir), rep_ranges=ranges, single_joint_ids=set())
+
+    assert by_slug.rep_range == (8, 12)
+    assert by_id.rep_range == (6, 8)
+    assert {exercise.slug for exercise in CATALOG} >= SINGLE_JOINT_LIFTS
