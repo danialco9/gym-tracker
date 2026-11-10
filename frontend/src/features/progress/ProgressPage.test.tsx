@@ -61,6 +61,7 @@ const OVERVIEW: ProgressOverview = {
       last_sets: Array.from({ length: 4 }, () => ({ reps: 8, weight_kg: 77.5, rpe: 8 })),
       target_sets: Array.from({ length: 4 }, () => ({ reps: 6, weight_kg: 80 })),
       suggested_sets: Array.from({ length: 4 }, () => ({ reps: 6, weight_kg: 80 })),
+      rep_range: null,
     },
     {
       exercise_id: 1,
@@ -72,6 +73,7 @@ const OVERVIEW: ProgressOverview = {
       last_sets: [6, 6, 4].map((reps) => ({ reps, weight_kg: 67.5, rpe: 9 })),
       target_sets: [],
       suggested_sets: [6, 6, 4].map((reps) => ({ reps, weight_kg: 67.5 })),
+      rep_range: null,
     },
     {
       exercise_id: 5,
@@ -95,6 +97,7 @@ const OVERVIEW: ProgressOverview = {
         { reps: 10, weight_kg: 117.5 },
         { reps: 8, weight_kg: 127.5 },
       ],
+      rep_range: null,
     },
   ],
   personal_records: [

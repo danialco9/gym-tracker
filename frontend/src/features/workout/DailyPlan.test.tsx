@@ -79,6 +79,7 @@ const OVERVIEW: ProgressOverview = {
       last_sets: [1, 2, 3].map(() => ({ reps: 8, weight_kg: 60, rpe: 7 })),
       target_sets: [1, 2, 3].map(() => ({ reps: 8, weight_kg: 60 })),
       suggested_sets: [1, 2, 3].map(() => ({ reps: 8, weight_kg: 65 })),
+      rep_range: null,
     },
   ],
   personal_records: [],

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from gym_tracker.analysis.recommendations import DEFAULT_VOLUME_RULES, VolumeRules
+from gym_tracker.analysis.recommendations import DEFAULT_VOLUME_RULES, RepRanges, VolumeRules
 from gym_tracker.enums import TrainingGoal
 
 
@@ -58,3 +58,11 @@ GOAL_PLANS: dict[TrainingGoal, GoalPlan] = {
 def volume_rules_for(goal: str | None) -> VolumeRules:
     """The weekly sets range for a goal, or the general one while the user has not picked any."""
     return DEFAULT_VOLUME_RULES if goal is None else GOAL_PLANS[TrainingGoal(goal)].volume
+
+
+def rep_ranges_for(goal: str | None) -> RepRanges | None:
+    """The reps a goal asks for per kind of exercise; none while the user has not picked a goal."""
+    if goal is None:
+        return None
+    plan = GOAL_PLANS[TrainingGoal(goal)]
+    return RepRanges(compound=plan.compound_reps, isolation=plan.isolation_reps)

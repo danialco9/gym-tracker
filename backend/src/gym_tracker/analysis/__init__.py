@@ -1,6 +1,6 @@
 """Training analytics: load the log, compute metrics and suggest progressions."""
 
-from gym_tracker.analysis.goals import GOAL_PLANS, GoalPlan, volume_rules_for
+from gym_tracker.analysis.goals import GOAL_PLANS, GoalPlan, rep_ranges_for, volume_rules_for
 from gym_tracker.analysis.loader import SCHEMAS, TrainingLog, load_training_log
 from gym_tracker.analysis.metrics import (
     detect_plateaus,
@@ -23,6 +23,7 @@ from gym_tracker.analysis.recommendations import (
     ProgressionRules,
     Reason,
     Recommendation,
+    RepRanges,
     VolumeAdvice,
     VolumeRules,
     VolumeStatus,
@@ -50,6 +51,7 @@ __all__ = [
     "ProgressionRules",
     "Reason",
     "Recommendation",
+    "RepRanges",
     "SetLoad",
     "Streak",
     "TrainingLog",
@@ -66,6 +68,7 @@ __all__ = [
     "log_streak",
     "personal_records",
     "recommend",
+    "rep_ranges_for",
     "session_bests",
     "training_streak",
     "volume_advice",

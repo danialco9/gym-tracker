@@ -388,6 +388,8 @@ class RecommendationRead(BaseModel):
     last_sets: list[PerformedSetRead]
     target_sets: list[PlannedSetRead]
     suggested_sets: list[PlannedSetRead]
+    # The rep range of the user's goal for this exercise; null without a goal.
+    rep_range: IntRangeRead | None = None
 
 
 class PersonalRecordRead(BaseModel):

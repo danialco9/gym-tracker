@@ -179,6 +179,9 @@ export type ProgressionReason =
   | 'without_plan'
   | 'jump_too_big'
   | 'deload_week'
+  | 'range_top'
+  | 'below_range'
+  | 'within_range'
 
 export interface PlannedSet {
   reps: number | null
@@ -197,6 +200,8 @@ export interface Recommendation {
   /** The routine plan; empty when the exercise was done outside one. */
   target_sets: PlannedSet[]
   suggested_sets: PlannedSet[]
+  /** The reps the user's goal asks for on this exercise; null without a goal. */
+  rep_range: { min: number; max: number } | null
 }
 
 export interface PersonalRecord {

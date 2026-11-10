@@ -132,6 +132,7 @@ def test_overview_summarizes_the_training_log(progress_client: TestClient, train
             "last_sets": [{"reps": 8, "weight_kg": 62.5, "rpe": 7.5}] * 3,
             "target_sets": [{"reps": 8, "weight_kg": None}] * 3,
             "suggested_sets": [{"reps": 8, "weight_kg": 65.0}] * 3,
+            "rep_range": None,
         },
         {
             "exercise_id": training_log["pulldown"],
@@ -143,6 +144,7 @@ def test_overview_summarizes_the_training_log(progress_client: TestClient, train
             "last_sets": [{"reps": 10, "weight_kg": 50.0, "rpe": 9.0}] * 2,
             "target_sets": [],
             "suggested_sets": [{"reps": 10, "weight_kg": 50.0}] * 2,
+            "rep_range": None,
         },
     ]
     assert overview["personal_records"] == [
@@ -253,6 +255,35 @@ def test_weekly_volume_advice_follows_the_training_goal(
     assert (advice["chest"]["min_hard_sets"], advice["chest"]["max_hard_sets"]) == (10, 14)
     week = {item["muscle_group"]: item for item in overview["week_sets"]}
     assert (week["chest"]["min_hard_sets"], week["chest"]["max_hard_sets"]) == (10, 14)
+
+
+def test_recommendations_progress_in_the_rep_range_of_the_goal(
+    progress_client: TestClient, training_log: dict[str, int]
+) -> None:
+    assert progress_client.patch("/api/auth/me", json={"goal": "build_strength"}).status_code == 200
+
+    bench, pulldown = progress_client.get("/api/progress/overview").json()["recommendations"]
+
+    # 3 x 8 with 62.5 kg is the top of the 6-8 of strength: more weight, back to 6 reps.
+    assert (bench["reason"], bench["rep_range"]) == ("range_top", {"min": 6, "max": 8})
+    assert bench["suggested_sets"] == [{"reps": 6, "weight_kg": 65.0}] * 3
+    # Past the top too, but at RIR 1 the weight is repeated first.
+    assert (pulldown["action"], pulldown["reason"]) == ("hold", "targets_hit_hard")
+
+
+def test_a_light_lift_keeps_the_single_joint_range_of_the_goal(progress_client: TestClient, session: Session) -> None:
+    face_pull = catalog_exercise_id(session, "face-pull")
+    post(
+        progress_client,
+        "/api/workouts",
+        {"started_at": "2026-09-15T18:00:00+02:00", "sets": [bench_set(face_pull, 1, 12, 20, 8)]},
+    )
+    assert progress_client.patch("/api/auth/me", json={"goal": "build_strength"}).status_code == 200
+
+    [recommendation] = progress_client.get("/api/progress/overview").json()["recommendations"]
+
+    # It lists traps and back as helpers, but it is no lift for 6 heavy reps.
+    assert recommendation["rep_range"] == {"min": 8, "max": 12}
 
 
 def test_goal_plans_cover_every_goal(progress_client: TestClient) -> None:

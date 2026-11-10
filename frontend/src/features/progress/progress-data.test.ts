@@ -28,6 +28,7 @@ function recommendation(
     last_sets: [{ reps: 8, weight_kg: 60, rpe: 8 }],
     target_sets: [{ reps: 8, weight_kg: null }],
     suggested_sets: [{ reps: 8, weight_kg: 62.5 }],
+    rep_range: null,
     ...changes,
   }
 }
@@ -82,6 +83,23 @@ describe('progress data', () => {
         }),
       ),
     ).toBe('Subir 2 kg sería un salto grande (un 33 % más): primero suma una repetición por serie.')
+  })
+
+  it('explains the steps inside the rep range of the goal', () => {
+    const inRange = (reason: Recommendation['reason']) =>
+      explainRecommendation(
+        recommendation('Press banca', 'increase_reps', { reason, rep_range: { min: 8, max: 12 } }),
+      )
+
+    expect(inRange('range_top')).toBe(
+      'Llegaste a 12 repeticiones en todas las series: sube el peso y vuelve a 8.',
+    )
+    expect(inRange('within_range')).toBe(
+      'Vas dentro del rango de 8–12: mismo peso y una repetición más por serie hasta llegar a 12.',
+    )
+    expect(inRange('below_range')).toBe(
+      'Aún no llegas a 8 repeticiones en todas las series: mantén el peso hasta conseguirlo.',
+    )
   })
 
   it('explains the weekly volume advice', () => {
