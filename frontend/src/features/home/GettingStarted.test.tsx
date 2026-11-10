@@ -43,7 +43,6 @@ test('shows on the home screen of an empty account', async () => {
     goal: null,
     nickname: null,
     sex: null,
-    show_in_ranking: true,
     created_at: '2026-09-24T10:00:00Z',
   }
   mockApi({

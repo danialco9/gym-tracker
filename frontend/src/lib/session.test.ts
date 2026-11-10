@@ -7,7 +7,6 @@ const user = {
   goal: 'build_muscle',
   nickname: 'Tigre',
   sex: null,
-  show_in_ranking: false,
   created_at: '2026-09-01T10:00:00+00:00',
 } as const
 
@@ -35,11 +34,17 @@ test('reads a user cached before goals existed as having none yet', () => {
   expect(loadCachedUser()).toEqual({ ...withoutGoal, goal: null })
 })
 
-test('reads a user cached before the ranking existed as unnamed and listed', () => {
-  const { nickname: _, show_in_ranking: __, ...beforeRanking } = user
-  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(beforeRanking))
+test('reads a user cached before nicknames existed as unnamed', () => {
+  const { nickname: _, ...beforeNicknames } = user
+  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(beforeNicknames))
 
-  expect(loadCachedUser()).toEqual({ ...beforeRanking, nickname: null, show_in_ranking: true })
+  expect(loadCachedUser()).toEqual({ ...beforeNicknames, nickname: null })
+})
+
+test('drops the ranking choice of a user cached while the ranking listed people', () => {
+  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ ...user, show_in_ranking: false }))
+
+  expect(loadCachedUser()).toEqual(user)
 })
 
 test('ignores anything that is not a user', () => {
