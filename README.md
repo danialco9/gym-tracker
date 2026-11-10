@@ -70,7 +70,7 @@ remove it like any other app (long press on the icon).
   anything missing can be added as your own exercise. When a machine is taken mid-workout,
   *Cambiar* offers the closest exercises for the same muscle and swaps it in place, with the weight
   you lifted on it last time; sets already done stay with the original.
-- **Training goal and today's plan.** Pick lose fat, build muscle or recomposition, and the app
+- **Training goal and today's plan.** Pick lose fat, build muscle, build strength or recomposition, and the app
   sets the rep ranges, effort (RIR, reps in reserve), rest and weekly volume to aim for. Opening a
   routine shows today's plan first: what to do with each exercise and why, and how the week's volume of its
   muscles compares with the goal. One tap starts the workout with the suggested weights.
@@ -279,7 +279,7 @@ A few decisions worth calling out:
 - [x] Smarter recommendations: per-equipment load steps, reasons, weekly volume advice
 - [x] Visual exercise picker: 209 exercises with drawings, filters, info sheet and custom exercises
 - [x] "Remember me" session that ends after a week of inactivity
-- [x] Training goal (lose fat, build muscle, recomposition) and today's plan per routine
+- [x] Training goal (lose fat, build muscle, build strength, recomposition) and today's plan per routine
 - [x] Focus mode and swipeable exercise cards for the live workout
 - [x] Daily training streak
 - [x] Strength ranking by percentile, per exercise and per body zone, against gym-goers at large

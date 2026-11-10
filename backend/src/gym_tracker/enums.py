@@ -36,6 +36,7 @@ class Equipment(StrEnum):
 class TrainingGoal(StrEnum):
     LOSE_FAT = "lose_fat"
     BUILD_MUSCLE = "build_muscle"
+    BUILD_STRENGTH = "build_strength"
     RECOMPOSITION = "recomposition"
 
 

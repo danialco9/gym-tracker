@@ -29,11 +29,20 @@ GOAL_PLANS: dict[TrainingGoal, GoalPlan] = {
         volume=VolumeRules(min_hard_sets=10, max_hard_sets=14),
     ),
     TrainingGoal.BUILD_MUSCLE: GoalPlan(
-        compound_reps=(6, 10),
-        isolation_reps=(8, 12),
+        compound_reps=(8, 12),
+        isolation_reps=(10, 15),
         rpe=(8.0, 9.0),
         rest_seconds=(120, 180),
         volume=VolumeRules(min_hard_sets=12, max_hard_sets=20),
+    ),
+    # Heavy sets on the big lifts with long rests, so every set is strong; fewer sets fit in a
+    # week. Small single-joint lifts stay lighter, as heavy loads on them are hard on the joints.
+    TrainingGoal.BUILD_STRENGTH: GoalPlan(
+        compound_reps=(6, 8),
+        isolation_reps=(8, 12),
+        rpe=(8.0, 9.0),
+        rest_seconds=(180, 300),
+        volume=VolumeRules(min_hard_sets=10, max_hard_sets=16),
     ),
     # Strength work on the big lifts plus lighter accessories, at a moderate volume.
     TrainingGoal.RECOMPOSITION: GoalPlan(

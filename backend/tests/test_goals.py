@@ -22,3 +22,12 @@ def test_volume_rules_follow_the_goal() -> None:
     assert volume_rules_for("lose_fat").max_hard_sets == 14
     # Unlike the general range, building muscle asks for at least 12 hard sets a week.
     assert volume_rules_for(TrainingGoal.BUILD_MUSCLE).min_hard_sets == 12
+
+
+def test_strength_asks_for_heavier_sets_than_muscle_on_the_big_lifts_only() -> None:
+    muscle, strength = GOAL_PLANS[TrainingGoal.BUILD_MUSCLE], GOAL_PLANS[TrainingGoal.BUILD_STRENGTH]
+
+    assert muscle.compound_reps == (8, 12)
+    assert strength.compound_reps == (6, 8)
+    assert strength.isolation_reps == (8, 12)
+    assert strength.rest_seconds[0] >= muscle.rest_seconds[1]

@@ -25,11 +25,19 @@ const PLANS: GoalPlan[] = [
   },
   {
     goal: 'build_muscle',
-    compound_reps: { min: 6, max: 10 },
-    isolation_reps: { min: 8, max: 12 },
+    compound_reps: { min: 8, max: 12 },
+    isolation_reps: { min: 10, max: 15 },
     rpe: { min: 8, max: 9 },
     rest_seconds: { min: 120, max: 180 },
     weekly_hard_sets: { min: 12, max: 20 },
+  },
+  {
+    goal: 'build_strength',
+    compound_reps: { min: 6, max: 8 },
+    isolation_reps: { min: 8, max: 12 },
+    rpe: { min: 8, max: 9 },
+    rest_seconds: { min: 180, max: 300 },
+    weekly_hard_sets: { min: 10, max: 16 },
   },
   {
     goal: 'recomposition',
@@ -88,6 +96,28 @@ describe('Goal', () => {
     expect(current).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByText('60–90 s')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar objetivo' })).toBeEnabled()
+  })
+
+  it('offers strength, with fewer repetitions and longer rests than muscle', async () => {
+    const calls = mockApi({
+      ...HOME,
+      'GET /auth/me': { body: { ...USER, goal: 'build_muscle' } },
+      'PATCH /auth/me': ({ body }) => ({ body: { ...USER, ...(body as object) } }),
+    })
+    const { user } = renderRoute('/objetivo')
+
+    expect(await screen.findByText('10–15 en aislamiento')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Ganar fuerza/ }))
+
+    expect(screen.getByText('6–8')).toBeInTheDocument()
+    expect(screen.getByText('8–12 en aislamiento')).toBeInTheDocument()
+    expect(screen.getByText('3–5 min')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Guardar objetivo' }))
+
+    await waitFor(() =>
+      expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ goal: 'build_strength' }),
+    )
   })
 
   it('saves training blocks with the goal, sending only what changed', async () => {

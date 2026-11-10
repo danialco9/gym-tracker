@@ -2,7 +2,8 @@ import type { Equipment, MuscleGroup, StrengthTier, TrainingGoal, Zone } from '.
 
 export const TRAINING_GOAL_LABELS: Record<TrainingGoal, { title: string; hint: string }> = {
   lose_fat: { title: 'Bajar grasa', hint: 'Perder peso sin perder músculo' },
-  build_muscle: { title: 'Ganar músculo', hint: 'Subir peso y volumen' },
+  build_muscle: { title: 'Ganar músculo', hint: 'Más volumen, de 8 a 12 repeticiones' },
+  build_strength: { title: 'Ganar fuerza', hint: 'Más peso, de 6 a 8 repeticiones' },
   recomposition: { title: 'Recomposición', hint: 'Menos grasa y más músculo a la vez' },
 }
 
