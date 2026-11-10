@@ -1,19 +1,16 @@
-import { ChevronRightIcon, ScaleIcon, UserPenIcon, UsersIcon } from 'lucide-react'
-import { type ReactNode, useId, useState } from 'react'
+import { ChevronRightIcon, ScaleIcon, UsersIcon } from 'lucide-react'
+import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
 import { useCurrentUser } from '@/features/auth/queries'
 import { BodyMap } from '@/features/ranking/BodyMap'
-import { useExerciseRanking, useMyRanking, useZoneRanking } from '@/features/ranking/queries'
+import { useMyRanking } from '@/features/ranking/queries'
 import { TierMedal } from '@/features/ranking/TierMedal'
 import { formatDecimal } from '@/lib/format'
 import { nextTier, STRENGTH_TIERS, ZONE_LABELS } from '@/lib/labels'
-import type { MyLift, MyRanking, RankingEntry, RankingMe, StrengthTier, Zone } from '@/lib/types'
+import type { MyLift, MyRanking, StrengthTier, Zone, ZoneStanding } from '@/lib/types'
 import { cn } from '@/lib/utils'
-
-const SELECT_CLASS =
-  'border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-lg border px-3 text-base outline-none focus-visible:ring-3'
 
 /** "Más fuerte que el 64 %": rounded down, so nobody reads 100 % while someone still lifts more. */
 function strongerThan(percentile: number): string {
@@ -135,15 +132,9 @@ function ZonePicker({
   )
 }
 
-function standing(me: RankingMe, total: number): string {
-  if (!me.show_in_ranking) {
-    return 'Estás oculto: los demás no te ven'
-  }
-  return me.position === null ? 'Aún no apareces en la lista' : `Puesto ${me.position} de ${total}`
-}
-
-function MyTier({ me, total, empty }: { me: RankingMe; total: number; empty: string }) {
-  if (me.tier === null || me.percentile === null) {
+/** The zone's tier and the share of gym-goers under it: the mean of the user's exercises in the zone. */
+function ZoneTier({ standing, empty }: { standing: ZoneStanding; empty: string }) {
+  if (standing.tier === null || standing.percentile === null) {
     return (
       <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">{empty}</p>
     )
@@ -151,16 +142,19 @@ function MyTier({ me, total, empty }: { me: RankingMe; total: number; empty: str
   return (
     <section className="bg-card ring-foreground/10 space-y-4 rounded-xl p-4 ring-1" aria-label="Tu rango">
       <div className="flex items-center gap-4">
-        <TierMedal tier={me.tier} className="size-16" />
+        <TierMedal tier={standing.tier} className="size-16" />
         <div className="min-w-0">
-          <p className="font-heading text-2xl font-semibold" style={{ color: STRENGTH_TIERS[me.tier].color }}>
-            {STRENGTH_TIERS[me.tier].label}
+          <p
+            className="font-heading text-2xl font-semibold"
+            style={{ color: STRENGTH_TIERS[standing.tier].color }}
+          >
+            {STRENGTH_TIERS[standing.tier].label}
           </p>
-          <p className="font-medium">{strongerThan(me.percentile)}</p>
-          <p className="text-muted-foreground text-sm">{standing(me, total)}</p>
+          <p className="font-medium">{strongerThan(standing.percentile)}</p>
+          <p className="text-muted-foreground text-sm">de la gente de tu peso que entrena</p>
         </div>
       </div>
-      <TierProgress tier={me.tier} progress={me.progress ?? 0} />
+      <TierProgress tier={standing.tier} progress={standing.progress ?? 0} />
     </section>
   )
 }
@@ -182,79 +176,24 @@ function LiftCard({ lift }: { lift: MyLift }) {
         </div>
       </div>
       <TierProgress tier={lift.tier} progress={lift.progress} />
-      <div className="text-muted-foreground space-y-0.5 text-xs">
-        <p className="tabular-nums">
-          Tu mejor:{' '}
-          {lift.weight_kg > 0 ? `${formatDecimal(lift.weight_kg)} kg × ${lift.reps}` : `${lift.reps} reps`}
-        </p>
-        {/* Says who you are measured against: app users once there are enough, an estimate until then. */}
-        <p>
-          {lift.source === 'app' ? 'Comparado con usuarios de la app' : 'Estimado: aún hay pocos usuarios'}
-        </p>
-      </div>
+      <p className="text-muted-foreground text-xs tabular-nums">
+        Tu mejor:{' '}
+        {lift.weight_kg > 0 ? `${formatDecimal(lift.weight_kg)} kg × ${lift.reps}` : `${lift.reps} reps`}
+      </p>
     </li>
   )
 }
 
-function Entries({ entries }: { entries: RankingEntry[] }) {
-  if (entries.length === 0) {
-    return (
-      <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-        Todavía no hay nadie en esta lista.
-      </p>
-    )
-  }
-  return (
-    <ol aria-label="Clasificación" className="bg-card ring-foreground/10 divide-y rounded-xl ring-1">
-      {entries.map((entry) => (
-        <li
-          key={entry.position}
-          className={cn('flex items-center gap-3 px-4 py-3', entry.is_me && 'bg-primary/10')}
-        >
-          <span className="text-muted-foreground w-6 shrink-0 text-right text-sm tabular-nums">
-            {entry.position}
-          </span>
-          <TierMedal tier={entry.tier} className="size-8" />
-          <span className="min-w-0 flex-1 truncate font-medium">
-            {entry.name}
-            {entry.is_me && <span className="text-primary"> (tú)</span>}
-          </span>
-          <span className="text-sm font-medium" style={{ color: STRENGTH_TIERS[entry.tier].color }}>
-            {STRENGTH_TIERS[entry.tier].label}
-          </span>
-        </li>
-      ))}
-    </ol>
-  )
-}
-
-function ExerciseEntries({ exerciseId }: { exerciseId: number }) {
-  const ranking = useExerciseRanking(exerciseId)
-  return (
-    <>
-      <QueryStatus query={ranking} loading="Cargando…" error="No se pudo cargar el ranking." />
-      {ranking.data !== undefined && <Entries entries={ranking.data.entries} />}
-    </>
-  )
-}
-
-/** The zone's standing, the user's exercises in it and the list of everyone, whole zone or one exercise. */
-function ZoneSection({ zone, lifts }: { zone: Zone; lifts: MyLift[] }) {
-  const selectId = useId()
-  const ranking = useZoneRanking(zone)
-  const [exerciseId, setExerciseId] = useState<number | null>(null)
-  const label = ZONE_LABELS[zone].label
+/** The zone's standing and the user's exercises in it. */
+function ZoneSection({ standing, lifts }: { standing: ZoneStanding; lifts: MyLift[] }) {
+  const label = ZONE_LABELS[standing.zone].label
 
   return (
     <div className="space-y-6">
-      <QueryStatus query={ranking} loading="Cargando…" error="No se pudo cargar el ranking." />
-      {ranking.data !== undefined && (
-        <MyTier
-          me={ranking.data.me}
-          total={ranking.data.entries.length}
-          empty={`Registra ejercicios de ${label.toLowerCase()} con peso para tener rango aquí.`}
-        />
-      )}
+      <ZoneTier
+        standing={standing}
+        empty={`Registra ejercicios de ${label.toLowerCase()} con peso para tener rango aquí.`}
+      />
 
       {lifts.length > 0 && (
         <section className="space-y-3">
@@ -264,39 +203,6 @@ function ZoneSection({ zone, lifts }: { zone: Zone; lifts: MyLift[] }) {
               <LiftCard key={lift.exercise.id} lift={lift} />
             ))}
           </ul>
-        </section>
-      )}
-
-      {ranking.data !== undefined && (
-        <section className="space-y-3">
-          <h2 className="eyebrow">Clasificación</h2>
-          {ranking.data.exercises.length > 0 && (
-            <div className="space-y-2">
-              <label htmlFor={selectId} className="sr-only">
-                Ver
-              </label>
-              <select
-                id={selectId}
-                className={SELECT_CLASS}
-                value={exerciseId ?? 'zone'}
-                onChange={(event) =>
-                  setExerciseId(event.target.value === 'zone' ? null : Number(event.target.value))
-                }
-              >
-                <option value="zone">Toda la zona: {label}</option>
-                {ranking.data.exercises.map((exercise) => (
-                  <option key={exercise.id} value={exercise.id}>
-                    {exercise.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {exerciseId === null ? (
-            <Entries entries={ranking.data.entries} />
-          ) : (
-            <ExerciseEntries exerciseId={exerciseId} />
-          )}
         </section>
       )}
     </div>
@@ -327,15 +233,6 @@ export function RankingPage() {
         hint="Elige hombres o mujeres para que tu rango sea justo"
       />
     )
-  } else if (user != null && user.nickname === null) {
-    prompt = (
-      <Prompt
-        to="/cuenta"
-        icon={UserPenIcon}
-        title="Elige tu apodo"
-        hint={`Ahora sales como Atleta ${user.id}`}
-      />
-    )
   }
 
   const selected = zone ?? (mine.data === undefined ? null : bestZone(mine.data))
@@ -345,7 +242,7 @@ export function RankingPage() {
       <PageHeader
         eyebrow="Ranking"
         title="Ranking de fuerza"
-        description="Te comparamos con gente que entrena según lo que levantas para tu peso. Los demás solo ven tu rango, nunca tus kilos."
+        description="Te comparamos con la gente de tu peso que entrena, no con otros usuarios. Tu rango y tus kilos solo los ves tú."
       />
       {prompt}
       <QueryStatus query={mine} loading="Cargando…" error="No se pudo cargar el ranking." />
@@ -360,8 +257,7 @@ export function RankingPage() {
           />
           <ZonePicker mine={mine.data} selected={selected} onSelect={setZone} />
           <ZoneSection
-            key={selected}
-            zone={selected}
+            standing={mine.data.zones.find((standing) => standing.zone === selected) ?? mine.data.zones[0]}
             lifts={mine.data.lifts.filter((lift) => lift.zone === selected)}
           />
         </>

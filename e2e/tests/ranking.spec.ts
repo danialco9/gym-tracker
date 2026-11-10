@@ -1,14 +1,8 @@
-import { randomUUID } from 'node:crypto'
 import { expect, test } from './fixtures'
 
 const TIERS = /Bronce|Plata|Oro|Platino|Diamante|Esmeralda|Rubí|Máster/
 
-test('appears in the strength ranking under a nickname, with a tier per zone and no weights', async ({
-  page,
-}) => {
-  // Unique per run, since nicknames are, and within the 3-20 letters, digits, "_" or "." allowed.
-  const nickname = `e2e_${randomUUID().slice(0, 8)}`
-
+test('gets a strength tier per zone against gym-goers, with nobody else listed', async ({ page }) => {
   // A workout with weight is the setup: the API saves it as the workout screen would.
   const exercises: { id: number; slug: string }[] = await (await page.request.get('/api/exercises')).json()
   const squat = exercises.find((exercise) => exercise.slug === 'back-squat')
@@ -36,12 +30,6 @@ test('appears in the strength ranking under a nickname, with a tier per zone and
   await page.getByRole('radio', { name: 'Hombres' }).click()
   await expect(page.getByRole('radio', { name: 'Hombres' })).toHaveAttribute('aria-checked', 'true')
 
-  // Until a nickname is chosen the list shows "Atleta N"; pick one there too.
-  await page.getByRole('button', { name: /Sin elegir · sales como Atleta/ }).click()
-  await page.getByRole('textbox', { name: 'Tu apodo' }).fill(nickname)
-  await page.getByRole('button', { name: 'Guardar' }).click()
-  await expect(page.getByRole('button', { name: new RegExp(nickname) })).toBeVisible()
-
   // The page opens on the best zone: the legs, the only one with a lift.
   await page.goto('/ranking')
   await expect(page.getByRole('radio', { name: /Pierna/ })).toHaveAttribute('aria-checked', 'true')
@@ -49,20 +37,7 @@ test('appears in the strength ranking under a nickname, with a tier per zone and
   await expect(page.getByRole('region', { name: 'Tu rango' })).toContainText(/Más fuerte que el \d+ %/)
   // The set behind it is shown to its owner only.
   await expect(page.getByText('Tu mejor: 100 kg × 5')).toBeVisible()
-  const me = page
-    .getByRole('list', { name: 'Clasificación' })
-    .getByRole('listitem')
-    .filter({ hasText: `${nickname} (tú)` })
-  await expect(me).toContainText(TIERS)
-  // Only the tier is public: never the kilos lifted nor the body weight.
-  await expect(me).not.toContainText(/kg/)
-
-  // The same, for one exercise on its own.
-  await page.getByLabel('Ver').selectOption({ label: 'Sentadilla con barra' })
-  await expect(
-    page
-      .getByRole('list', { name: 'Clasificación' })
-      .getByRole('listitem')
-      .filter({ hasText: `${nickname} (tú)` }),
-  ).toContainText(TIERS)
+  // Nobody is listed: the ranking is the user against gym-goers at large.
+  await expect(page.getByRole('list', { name: 'Clasificación' })).toHaveCount(0)
+  await expect(page.getByText(/Puesto \d+/)).toHaveCount(0)
 })

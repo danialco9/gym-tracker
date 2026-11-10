@@ -21,8 +21,8 @@ account with 12 weeks of simulated training. No sign-up needed.
 </p>
 
 > Personal project and portfolio piece. The interface is in Spanish; the code, commits and docs are
-> in English. Open to anyone: each account sees only its own data, and the ranking shows a
-> nickname and a tier, never weights.
+> in English. Open to anyone: each account sees only its own data, and the ranking
+> compares you with gym-goers at large, never with other users.
 
 ## Install it on your phone
 
@@ -83,8 +83,8 @@ remove it like any other app (long press on the icon).
   lifters compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
   body zone (chest, back, shoulders, arms, legs, core), painted on a body figure in the tier's
   colour. Each tier has a medal of its own, told apart by shape as well as colour: round, starred,
-  scalloped and seal medals, then gem cuts and a crown for Máster. The list shows only a nickname and a tier, and anyone can leave it from the account
-  screen.
+  scalloped and seal medals, then gem cuts and a crown for Máster. There is no list of people:
+  everyone sees only their own standing.
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
   RIR), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
   with keyboard support.
@@ -251,7 +251,7 @@ A few decisions worth calling out:
   standards of a similar lift, through a hand-set scale per exercise, because 1.5× body weight is
   little on a leg press but out of reach on a curl. A zone's tier is the mean
   percentile of its exercises. Sets above 12 reps count as 12, since Epley overrates long sets.
-  Weights, body weight and sex never leave the server; the demo account is never listed.
+  Nobody sees anyone else's tier, weights, body weight or sex.
 - **Typing and linting everywhere.** `mypy` on the backend and TypeScript `strict` on the frontend,
   both enforced in CI alongside the tests.
 
@@ -282,7 +282,7 @@ A few decisions worth calling out:
 - [x] Training goal (lose fat, build muscle, recomposition) and today's plan per routine
 - [x] Focus mode and swipeable exercise cards for the live workout
 - [x] Daily training streak
-- [x] Strength ranking by percentile, per exercise and per body zone, with nicknames and an opt-out
+- [x] Strength ranking by percentile, per exercise and per body zone, against gym-goers at large
 - [x] API moved to Vercel: no more minute-long wake-up, migrations run from GitHub Actions
 - [x] Animated exercise drawings in the live workout, and set and record animations
 - [x] Rest bar that leaves the workout usable, and an end-of-rest Web Push for a locked phone

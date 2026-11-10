@@ -318,36 +318,10 @@ export type Sex = 'male' | 'female'
 export type StrengthTier =
   'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond' | 'emerald' | 'ruby' | 'master'
 
-export interface RankingEntry {
-  position: number
-  /** The nickname, or "Atleta <id>" until the user picks one. */
-  name: string
-  tier: StrengthTier
-  is_me: boolean
-}
-
-export interface RankingMe {
-  /** Null without a body weight logged or a ranked lift. */
-  tier: StrengthTier | null
-  /** Progress towards the next tier, from 0 to 1. */
-  progress: number | null
-  /** The share of people who lift less, from 0 to 100. */
-  percentile: number | null
-  /** Where the percentile comes from; only for a single exercise. */
-  source: PercentileSource | null
-  /** Null when the user is not on the list. */
-  position: number | null
-  needs_body_weight: boolean
-  show_in_ranking: boolean
-}
-
 export interface RankedExercise {
   id: number
   name: string
 }
-
-/** The app's own users once enough of them do the exercise; an estimate of gym-goers until then. */
-export type PercentileSource = 'estimate' | 'app'
 
 export type Zone = 'chest' | 'back' | 'shoulders' | 'arms' | 'legs' | 'core'
 
@@ -365,8 +339,8 @@ export interface MyLift {
   zone: Zone
   tier: StrengthTier
   progress: number
+  /** The share of gym-goers of the same body weight and sex who lift less, from 0 to 100. */
   percentile: number
-  source: PercentileSource
   /** For pull-ups and dips, the weight added to the body. */
   weight_kg: number
   reps: number
@@ -374,22 +348,8 @@ export interface MyLift {
 
 export interface MyRanking {
   needs_body_weight: boolean
-  show_in_ranking: boolean
   /** Every zone, in a fixed order. */
   zones: ZoneStanding[]
   /** By zone, best first. */
   lifts: MyLift[]
-}
-
-export interface ZoneRanking {
-  zone: Zone
-  me: RankingMe
-  entries: RankingEntry[]
-  exercises: RankedExercise[]
-}
-
-export interface ExerciseRanking {
-  exercise: RankedExercise
-  me: RankingMe
-  entries: RankingEntry[]
 }
