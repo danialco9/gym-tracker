@@ -17,6 +17,7 @@ from gym_tracker.analysis import (
     log_streak,
     personal_records,
     recommend,
+    rep_ranges_for,
     session_bests,
     volume_advice,
     volume_rules_for,
@@ -83,7 +84,7 @@ def _deload_days(user: User) -> Callable[[date], bool] | None:
 
 
 def _recommendations(
-    log: TrainingLog, today: date, in_deload: Callable[[date], bool] | None
+    log: TrainingLog, today: date, in_deload: Callable[[date], bool] | None, goal: str | None
 ) -> list[RecommendationRead]:
     return [
         RecommendationRead(
@@ -96,8 +97,9 @@ def _recommendations(
             last_sets=[PerformedSetRead(reps=s.reps, weight_kg=s.weight_kg, rpe=s.rpe) for s in item.last_sets],
             target_sets=[PlannedSetRead(reps=s.reps, weight_kg=s.weight_kg) for s in item.target_sets],
             suggested_sets=[PlannedSetRead(reps=s.reps, weight_kg=s.weight_kg) for s in item.suggested_sets],
+            rep_range=IntRangeRead(min=item.rep_range[0], max=item.rep_range[1]) if item.rep_range else None,
         )
-        for item in recommend(log, today=today, in_deload=in_deload)
+        for item in recommend(log, today=today, in_deload=in_deload, rep_ranges=rep_ranges_for(goal))
     ]
 
 
@@ -206,7 +208,7 @@ def read_overview(
     bests = session_bests(work)
     return ProgressOverviewRead(
         activity=_activity(log, today),
-        recommendations=_recommendations(log, today, _deload_days(user)),
+        recommendations=_recommendations(log, today, _deload_days(user), user.goal),
         personal_records=_personal_records(log, work, bests) if not work.empty else [],
         weekly_volume=_weekly_volume(log, work, today),
         volume_advice=_volume_advice(log, today, user.goal),

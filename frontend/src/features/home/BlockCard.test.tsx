@@ -59,6 +59,7 @@ describe('Training block card', () => {
           last_sets: [{ reps: 8, weight_kg: 80, rpe: 8 }],
           target_sets: [],
           suggested_sets: [{ reps: 8, weight_kg: 80 }],
+          rep_range: null,
         },
       ],
       personal_records: [],

@@ -46,6 +46,7 @@ function shortfall(item: Recommendation): string {
 export function explainRecommendation(item: Recommendation): string {
   const rpe = hardestRpe(item)
   const step = formatKg(item.increment_kg)
+  const range = item.rep_range
   // The hardest set is the one with the fewest reps left, so its RIR is the floor.
   const withRir = rpe === null ? '' : ` con RIR ${formatRir(rpe)} o más`
   switch (item.reason) {
@@ -68,6 +69,16 @@ export function explainRecommendation(item: Recommendation): string {
     }
     case 'deload_week':
       return 'Semana de descarga: la mitad de series con el mismo peso, dejando 3 o 4 reps en reserva.'
+    case 'range_top':
+      return range === null
+        ? 'Llegaste a lo alto del rango en todas las series: sube el peso y baja las repeticiones.'
+        : `Llegaste a ${range.max} repeticiones en todas las series: sube el peso y vuelve a ${range.min}.`
+    case 'below_range':
+      return `Aún no llegas a ${range?.min ?? 'las'} repeticiones en todas las series: mantén el peso hasta conseguirlo.`
+    case 'within_range':
+      return range === null
+        ? 'Mismo peso y una repetición más por serie.'
+        : `Vas dentro del rango de ${range.min}–${range.max}: mismo peso y una repetición más por serie hasta llegar a ${range.max}.`
   }
 }
 

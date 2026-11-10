@@ -9,6 +9,7 @@ from gym_tracker.analysis import (
     PerformedSet,
     PlannedSet,
     Reason,
+    RepRanges,
     VolumeStatus,
     current_week_sets,
     decide_deload_week,
@@ -19,6 +20,7 @@ from gym_tracker.analysis import (
     volume_advice,
 )
 from gym_tracker.analysis.mesocycle import in_deload_week
+from gym_tracker.analysis.recommendations import is_compound
 from tests.conftest import WriteLog
 
 STRAIGHT_PLAN = [PlannedSet(reps=10, weight_kg=60)] * 3
@@ -372,3 +374,135 @@ def test_current_week_sets_start_from_zero(write_log: WriteLog) -> None:
     # The new week has no workouts yet; an empty log reads the same.
     assert {item.hard_sets for item in current_week_sets(log, today=date(2026, 9, 16))} == {0.0}
     assert {item.hard_sets for item in current_week_sets(load_training_log(write_log()), date(2026, 9, 16))} == {0.0}
+
+
+MUSCLE_RANGE = (8, 12)
+
+
+def in_range(
+    *sets: tuple[float, int],
+    rpe: float | None = 8.0,
+    plan: list[PlannedSet] | None = None,
+    increment_kg: float = 2.5,
+    rep_range: tuple[int, int] = MUSCLE_RANGE,
+) -> tuple[Action, Reason, list[tuple[int | None, float | None]]]:
+    progression = decide_progression(
+        performed=performed(*sets, rpe=rpe),
+        planned=plan or [],
+        stalled=False,
+        increment_kg=increment_kg,
+        rep_range=rep_range,
+    )
+    return progression.action, progression.reason, [(item.reps, item.weight_kg) for item in progression.suggested_sets]
+
+
+def test_the_top_of_the_range_on_every_set_earns_more_weight_and_fewer_reps() -> None:
+    # 3 x 12 with 60 kg is worth 84 kg for one rep, which is 8 reps with 65 kg.
+    plan = [PlannedSet(reps=12, weight_kg=60)] * 3
+
+    assert in_range((60, 12), (60, 12), (60, 12), plan=plan) == (
+        Action.INCREASE_LOAD,
+        Reason.RANGE_TOP,
+        [(8, 65.0)] * 3,
+    )
+    # For strength the same sets go down to 6 reps, with more weight still.
+    assert in_range((60, 12), (60, 12), (60, 12), plan=plan, rep_range=(6, 8))[2] == [(6, 70.0)] * 3
+
+
+def test_inside_the_range_every_set_adds_a_rep_with_the_same_weight() -> None:
+    assert in_range((65, 9), (65, 8), (65, 12)) == (
+        Action.INCREASE_REPS,
+        Reason.WITHIN_RANGE,
+        [(10, 65), (9, 65), (12, 65)],
+    )
+
+
+def test_under_the_range_the_weight_stays_until_its_bottom_is_reached() -> None:
+    assert in_range((65, 8), (65, 7), (65, 6)) == (
+        Action.INCREASE_REPS,
+        Reason.BELOW_RANGE,
+        [(8, 65), (8, 65), (8, 65)],
+    )
+
+
+def test_a_skipped_set_comes_before_progressing_in_the_range() -> None:
+    plan = [PlannedSet(reps=10)] * 3
+
+    action, reason, sets = in_range((60, 12), (60, 12), plan=plan)
+
+    assert (action, reason) == (Action.INCREASE_REPS, Reason.TARGETS_MISSED)
+    assert sets == [(12, 60)] * 3
+
+
+def test_the_top_of_the_range_with_too_much_effort_repeats_the_weight() -> None:
+    assert in_range((60, 12), (60, 12), rpe=9.5) == (Action.HOLD, Reason.TARGETS_HIT_HARD, [(12, 60)] * 2)
+
+
+def test_long_sets_count_as_twelve_reps_for_the_heavier_weight() -> None:
+    assert in_range((60, 20), (60, 20))[2] == [(8, 65.0)] * 2
+
+
+def test_light_weights_go_past_the_top_of_the_range_before_the_jump() -> None:
+    # 12 reps with 6 kg are worth 6.6 kg for 8: less than the next dumbbell.
+    assert in_range((6, 12), (6, 12), increment_kg=2.0) == (
+        Action.INCREASE_REPS,
+        Reason.JUMP_TOO_BIG,
+        [(13, 6), (13, 6)],
+    )
+    assert in_range((6, 14), (6, 14), increment_kg=2.0) == (Action.INCREASE_LOAD, Reason.RANGE_TOP, [(8, 8.0)] * 2)
+
+
+def test_a_plan_heavier_than_the_range_keeps_its_own_targets() -> None:
+    plan = [PlannedSet(reps=5, weight_kg=100)] * 2
+
+    assert in_range((100, 5), (100, 5), plan=plan) == (Action.INCREASE_LOAD, Reason.TARGETS_HIT, [(5, 102.5)] * 2)
+
+
+def test_a_plateau_deloads_whatever_the_range() -> None:
+    progression = decide_progression(
+        performed=performed((60, 12), (60, 12)), planned=[], stalled=True, rep_range=MUSCLE_RANGE
+    )
+
+    assert (progression.action, progression.reason) == (Action.DELOAD, Reason.PLATEAU)
+
+
+@pytest.mark.parametrize(
+    ("muscle_group", "secondary_muscles", "expected"),
+    [
+        ("chest", "triceps;shoulders", True),
+        ("triceps", "chest", True),
+        ("shoulders", None, False),
+        ("quads", "", False),
+        # A curl stays single-joint although the forearms help.
+        ("biceps", "forearms", False),
+        (None, None, False),
+    ],
+)
+def test_multi_joint_lifts_are_told_apart(
+    muscle_group: str | None, secondary_muscles: str | None, expected: bool
+) -> None:
+    assert is_compound(muscle_group, secondary_muscles) is expected
+
+
+def test_recommend_gives_each_exercise_the_range_of_its_kind(write_log: WriteLog) -> None:
+    data_dir = write_log(
+        exercises="""
+            bench-press,Press banca,chest,triceps;shoulders,barbell
+            lateral-raise,Elevaciones laterales,shoulders,,dumbbell
+        """,
+        workouts="w1,2026-09-15,,",
+        workout_sets="""
+            w1,bench-press,1,12,60,8,false
+            w1,bench-press,2,12,60,8,false
+            w1,lateral-raise,1,12,10,8,false
+        """,
+    )
+    ranges = RepRanges(compound=(8, 12), isolation=(10, 15))
+
+    bench, raises = recommend(load_training_log(data_dir), rep_ranges=ranges)
+
+    assert (bench.rep_range, bench.reason) == ((8, 12), Reason.RANGE_TOP)
+    assert bench.suggested_sets == (PlannedSet(reps=8, weight_kg=65.0),) * 2
+    assert (raises.rep_range, raises.reason) == ((10, 15), Reason.WITHIN_RANGE)
+    assert raises.suggested_sets == (PlannedSet(reps=13, weight_kg=10),)
+    assert all(item.rep_range is None for item in recommend(load_training_log(data_dir)))
