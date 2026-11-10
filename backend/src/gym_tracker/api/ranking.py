@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass, field
 
 from fastapi import APIRouter
@@ -12,14 +11,13 @@ from sqlalchemy.orm import Session
 from gym_tracker.analysis.strength import (
     BODYWEIGHT_LIFTS,
     MAX_ESTIMATED_REPS,
-    MIN_APP_LIFTERS,
     ZONES,
     PercentileSource,
+    Standard,
     Zone,
-    app_percentile,
     estimated_max,
     estimated_percentile,
-    master_ratio,
+    standard_for,
     tier_for,
     zone_score,
 )
@@ -48,13 +46,13 @@ class _RankedExercise:
     slug: str
     name: str
     zone: Zone
-    scale: float
+    standard: Standard
 
 
 @dataclass(frozen=True)
 class _Best:
-    # Estimated max relative to body weight.
-    ratio: float
+    # Estimated one-rep max, body included on bodyweight lifts.
+    max_kg: float
     weight_kg: float
     reps: int
 
@@ -69,8 +67,7 @@ class _Percentile:
 class _Lifter:
     id: int
     name: str
-    # Hidden lifters still get their own tier; they are only left off the list and out of the
-    # app's percentiles.
+    # Hidden lifters still get their own tier; they are only left off the list.
     listed: bool
     sex: Sex | None
     body_weight_kg: float | None
@@ -85,7 +82,7 @@ class _Lifter:
 
 
 def _ranked_exercises(session: Session) -> dict[int, _RankedExercise]:
-    """Catalog exercises with a scale; custom ones cannot be compared between users."""
+    """Catalog exercises with standards; custom ones have nothing to be compared with."""
     rows = session.execute(
         select(Exercise.id, Exercise.slug, Exercise.name, Exercise.muscle_group, Exercise.equipment).where(
             Exercise.user_id.is_(None)
@@ -94,9 +91,9 @@ def _ranked_exercises(session: Session) -> dict[int, _RankedExercise]:
     ranked = {}
     for id_, slug, name, muscle_group, equipment in rows:
         muscle = MuscleGroup(muscle_group)
-        scale = master_ratio(slug, muscle, Equipment(equipment) if equipment else None)
-        if scale is not None:
-            ranked[id_] = _RankedExercise(id_, slug, name, ZONES[muscle], scale)
+        standard = standard_for(slug, muscle, Equipment(equipment) if equipment else None)
+        if standard is not None:
+            ranked[id_] = _RankedExercise(id_, slug, name, ZONES[muscle], standard)
     return ranked
 
 
@@ -139,44 +136,24 @@ def _best_lifts(session: Session, demo_email: str, exercises: dict[int, _RankedE
         load = added + (lifter.body_weight_kg if exercises[exercise_id].slug in BODYWEIGHT_LIFTS else 0)
         if load <= 0:
             continue
-        ratio = estimated_max(load, set_reps) / lifter.body_weight_kg
+        max_kg = estimated_max(load, set_reps)
         best = lifter.best.get(exercise_id)
-        if best is None or ratio > best.ratio:
-            lifter.best[exercise_id] = _Best(ratio, added, set_reps)
+        if best is None or max_kg > best.max_kg:
+            lifter.best[exercise_id] = _Best(max_kg, added, set_reps)
     return lifters
 
 
 def _lifters(session: Session, demo_email: str, exercises: dict[int, _RankedExercise]) -> dict[int, _Lifter]:
-    """Everyone's best lifts with their percentiles.
-
-    A lift is compared with the other listed lifters of the same sex (everyone, when unknown) once
-    there are ``MIN_APP_LIFTERS`` of them; until then, with the estimate.
-    """
+    """Everyone's best lifts with their percentiles among gym-goers of their body weight and sex."""
     lifters = _best_lifts(session, demo_email, exercises)
-    # Sorted ratios per exercise and sex; None holds everyone.
-    pools: dict[tuple[int, Sex | None], list[float]] = defaultdict(list)
-    for lifter in lifters.values():
-        if lifter.listed:
-            for exercise_id, best in lifter.best.items():
-                pools[exercise_id, None].append(best.ratio)
-                if lifter.sex is not None:
-                    pools[exercise_id, lifter.sex].append(best.ratio)
-    for pool in pools.values():
-        pool.sort()
-
     for lifter in lifters.values():
         for exercise_id, best in lifter.best.items():
-            others = pools.get((exercise_id, lifter.sex), [])
-            if lifter.listed:
-                others = others.copy()
-                others.remove(best.ratio)
-            if len(others) >= MIN_APP_LIFTERS:
-                percentile = _Percentile(app_percentile(best.ratio, others), PercentileSource.APP)
-            else:
-                exercise = exercises[exercise_id]
-                share = estimated_percentile(best.ratio, exercise.scale, exercise.zone, lifter.sex)
-                percentile = _Percentile(share, PercentileSource.ESTIMATE)
-            lifter.percentiles[exercise_id] = percentile
+            # A best lift implies a body weight: lifts without one are skipped.
+            assert lifter.body_weight_kg is not None
+            share = estimated_percentile(
+                best.max_kg, lifter.body_weight_kg, exercises[exercise_id].standard, lifter.sex
+            )
+            lifter.percentiles[exercise_id] = _Percentile(share, PercentileSource.ESTIMATE)
     return lifters
 
 
