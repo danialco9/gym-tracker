@@ -78,9 +78,9 @@ remove it like any other app (long press on the icon).
 - **Weekly overload summary.** The home screen says how many exercises trained this week beat the
   session before ("4 de 6 ejercicios superan la última vez"), judged set by set as during the
   workout, and lists which ones beat it, matched it or need a push.
-- **Strength ranking.** For every exercise, the share of people you out-lift ("stronger than
-  64 %"), from your best estimated 1RM divided by your body weight, so light and heavy lifters
-  compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
+- **Strength ranking.** For every exercise, the share of gym-goers you out-lift ("stronger than
+  64 %"), from your best estimated 1RM against people of your own body weight, so light and heavy
+  lifters compete on equal terms. The percentile gives a tier from Bronze to Master, per exercise and per
   body zone (chest, back, shoulders, arms, legs, core), painted on a body figure in the tier's
   colour. Each tier has a medal of its own, told apart by shape as well as colour: round, starred,
   scalloped and seal medals, then gem cuts and a crown for Máster. The list shows only a nickname and a tier, and anyone can leave it from the account
@@ -242,11 +242,14 @@ A few decisions worth calling out:
   web request.
 - **Derived, never stored.** The streak and the ranking are recomputed from the workout history
   on every request, so editing or deleting a workout can never leave them out of step with the log.
-- **Fair strength percentiles.** Once 30 other users (of the same sex, if given) have done an
-  exercise, a lift is ranked against them; until then, against an estimate of gym-goers: a
-  log-normal spread per exercise around its own scale, because 1.5× body weight is little on a leg
-  press but out of reach on a curl, with lower medians for women, closer on the legs. Main lifts
-  are scaled by hand and the rest from muscle group and equipment. A zone's tier is the mean
+- **Fair strength percentiles.** A lift is never ranked against the app's own users, who are too
+  few to mean anything, but against gym-goers at large: the
+  [Strength Level](https://strengthlevel.com/strength-standards) standards of 19 main lifts, per
+  sex and body weight (both sexes mixed while the sex is not given). Those come from lifters who
+  log their lifts, so each level counts one step up: the typical gym-goer is their novice, with six
+  months of training. That shift is this project's own estimate. Every other exercise borrows the
+  standards of a similar lift, through a hand-set scale per exercise, because 1.5× body weight is
+  little on a leg press but out of reach on a curl. A zone's tier is the mean
   percentile of its exercises. Sets above 12 reps count as 12, since Epley overrates long sets.
   Weights, body weight and sex never leave the server; the demo account is never listed.
 - **Typing and linting everywhere.** `mypy` on the backend and TypeScript `strict` on the frontend,

@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from gym_tracker.analysis.strength import MIN_APP_LIFTERS, Zone, estimated_percentile
+from gym_tracker.analysis.strength import Standard, estimated_percentile
 from gym_tracker.config import Settings
 from gym_tracker.enums import Sex
 from gym_tracker.models import BodyMeasurement, User, Workout, WorkoutSet
@@ -14,8 +14,9 @@ from tests.api.conftest import catalog_exercise_id
 
 pytestmark = pytest.mark.usefixtures("catalog")
 
-# My bench press in the fixture: 5 x 100 kg at 80 kg of body weight, against a 2.0 scale.
-MY_BENCH_RATIO = 100 * (1 + 5 / 30) / 80
+# My bench press in the fixture: 5 x 100 kg at 80 kg of body weight.
+MY_BENCH_MAX = 100 * (1 + 5 / 30)
+BENCH = Standard("bench-press", 1.0)
 
 
 def add_lifter(
@@ -87,7 +88,7 @@ def test_a_zone_ranking_lists_tiers_without_kilos(auth_client: TestClient, lifte
         {"position": 1, "name": "Tigre", "tier": "master", "is_me": False},
         {"position": 2, "name": f"Atleta {lifters['me'].id}", "tier": "ruby", "is_me": True},
     ]
-    mine = estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, None)
+    mine = estimated_percentile(MY_BENCH_MAX, 80, BENCH, None)
     assert ranking["me"] == {
         "tier": "ruby",
         "progress": pytest.approx((mine - 0.94) / 0.04),
@@ -112,7 +113,7 @@ def test_an_exercise_ranking_scores_that_lift(
         (f"Atleta {lifters['me'].id}", "ruby"),
     ]
     # With no sex set, compared with men and women together.
-    mine = estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, None)
+    mine = estimated_percentile(MY_BENCH_MAX, 80, BENCH, None)
     assert ranking["me"]["tier"] == "ruby"
     assert ranking["me"]["progress"] == pytest.approx((mine - 0.94) / 0.04)
     assert ranking["me"]["percentile"] == pytest.approx(mine * 100, abs=0.05)
@@ -159,7 +160,7 @@ def test_warm_ups_and_long_sets_do_not_inflate_the_tier(auth_client: TestClient,
     )
     session.flush()
 
-    # 40 reps count as 12: 70 kg x 1.4 = 98 kg, 1.2x body weight, about the 89th percentile.
+    # 40 reps count as 12: 70 kg x 1.4 = 98 kg, which beats 80 % of men of 80 kg and more women.
     assert auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]["tier"] == "emerald"
 
 
@@ -177,7 +178,7 @@ def test_my_ranking_has_every_zone_and_my_lifts_with_their_sets(
 
     ranking = auth_client.get("/api/ranking/zones").json()
 
-    mine = estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, None)
+    mine = estimated_percentile(MY_BENCH_MAX, 80, BENCH, None)
     assert [zone["zone"] for zone in ranking["zones"]] == ["chest", "back", "shoulders", "arms", "legs", "core"]
     assert ranking["zones"][0] == {
         "zone": "chest",
@@ -202,11 +203,12 @@ def test_my_ranking_has_every_zone_and_my_lifts_with_their_sets(
 
 
 def test_a_zone_is_the_mean_of_its_exercises(auth_client: TestClient, session: Session, user: User) -> None:
-    # 60 kg x 5 on the leg press (scale 6.0) and on the squat (scale 2.75), at 80 kg.
+    # 60 kg x 5 on the leg press and on the squat, at 80 kg.
     add_lifter(session, user, body_weight=80, lifts=[("leg-press", 5, 60), ("back-squat", 5, 60)])
-    ratio = 60 * (1 + 5 / 30) / 80
+    max_kg = 60 * (1 + 5 / 30)
     expected = (
-        estimated_percentile(ratio, 6.0, Zone.LEGS, None) + estimated_percentile(ratio, 2.75, Zone.LEGS, None)
+        estimated_percentile(max_kg, 80, Standard("leg-press", 1.0), None)
+        + estimated_percentile(max_kg, 80, Standard("back-squat", 1.0), None)
     ) / 2
 
     legs = next(zone for zone in auth_client.get("/api/ranking/zones").json()["zones"] if zone["zone"] == "legs")
@@ -241,44 +243,36 @@ def test_a_lift_is_compared_with_the_same_sex(
 
     me = auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]
 
-    assert me["percentile"] == pytest.approx(
-        estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, Sex.MALE) * 100, abs=0.05
-    )
-    assert me["percentile"] < estimated_percentile(MY_BENCH_RATIO, 2.0, Zone.CHEST, None) * 100
+    assert me["percentile"] == pytest.approx(estimated_percentile(MY_BENCH_MAX, 80, BENCH, Sex.MALE) * 100, abs=0.05)
+    assert me["percentile"] < estimated_percentile(MY_BENCH_MAX, 80, BENCH, None) * 100
 
 
-def test_enough_app_lifters_replace_the_estimate(auth_client: TestClient, session: Session, user: User) -> None:
+def test_the_app_other_lifters_do_not_move_my_percentile(auth_client: TestClient, session: Session, user: User) -> None:
     bench = catalog_exercise_id(session, "bench-press")
     add_lifter(session, user, body_weight=80, lifts=[("bench-press", 1, 100)])
-    user.sex = "male"
-    # 30 other men at 80 kg, all benching less than my 100 kg; a hidden man and a woman benching
-    # more are not among the ones I am compared with.
-    for index in range(MIN_APP_LIFTERS):
-        other = add_lifter(
-            session, None, email=f"man{index}@example.com", body_weight=80, lifts=[("bench-press", 1, 61 + index)]
-        )
-        other.sex = "male"
-    hidden = add_lifter(session, None, email="hidden@example.com", body_weight=80, lifts=[("bench-press", 1, 200)])
-    hidden.show_in_ranking = False
-    hidden.sex = "male"
-    woman = add_lifter(session, None, email="woman@example.com", body_weight=80, lifts=[("bench-press", 1, 200)])
-    woman.sex = "female"
-    session.flush()
+    alone = auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]
 
-    me = auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]
-
-    assert me["source"] == "app"
-    assert me["percentile"] == 100
-    assert me["tier"] == "master"
-
-
-def test_too_few_app_lifters_keep_the_estimate(auth_client: TestClient, session: Session, user: User) -> None:
-    bench = catalog_exercise_id(session, "bench-press")
-    add_lifter(session, user, body_weight=80, lifts=[("bench-press", 1, 100)])
-    for index in range(MIN_APP_LIFTERS - 1):
+    # However many of the app's users bench less, I am still compared with gym-goers at large.
+    for index in range(40):
         add_lifter(session, None, email=f"man{index}@example.com", body_weight=80, lifts=[("bench-press", 1, 61)])
+    among_many = auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]
 
-    assert auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]["source"] == "estimate"
+    assert among_many["percentile"] == alone["percentile"]
+    assert among_many["source"] == "estimate"
+
+
+def test_the_same_lift_ranks_higher_at_a_lower_body_weight(
+    auth_client: TestClient, session: Session, user: User
+) -> None:
+    bench = catalog_exercise_id(session, "bench-press")
+    add_lifter(session, user, body_weight=80, lifts=[("bench-press", 1, 50)])
+    heavy = auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]["percentile"]
+
+    session.add(BodyMeasurement(user_id=user.id, measured_on=date(2026, 9, 10), weight_kg=Decimal(50)))
+    session.flush()
+    light = auth_client.get(f"/api/ranking/exercises/{bench}").json()["me"]["percentile"]
+
+    assert heavy < 50 < light
 
 
 def test_the_ranking_requires_authentication(client: TestClient) -> None:
