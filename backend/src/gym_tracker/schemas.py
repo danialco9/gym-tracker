@@ -121,7 +121,6 @@ class UserRead(ORMModel):
     goal: TrainingGoal | None
     sex: Sex | None
     nickname: str | None
-    show_in_ranking: bool
     block_weeks: int | None
     # Where this week falls in the training block; null without blocks.
     block: BlockWeekRead | None = None
@@ -135,15 +134,12 @@ class BlockWeekRead(BaseModel):
 
 
 class UserUpdate(PartialUpdate):
-    non_nullable_fields: ClassVar[frozenset[str]] = frozenset({"show_in_ranking"})
-
     # Null clears the goal, back to the general advice.
     goal: TrainingGoal | None = None
     # Null compares the user's lifts with everyone.
     sex: Sex | None = None
     # Letters, digits, "_" and "."; no spaces, so nobody can pose as an unnamed "Atleta 12".
     nickname: str | None = Field(default=None, pattern=NICKNAME_PATTERN)
-    show_in_ranking: bool | None = None
     # Weeks per training block, deload included. Sending it (even the same value) starts a new block
     # this week; null stops using blocks.
     block_weeks: int | None = Field(default=None, ge=MIN_BLOCK_WEEKS, le=MAX_BLOCK_WEEKS)

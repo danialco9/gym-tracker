@@ -40,9 +40,11 @@ class User(Base):
     goal: Mapped[str | None] = mapped_column(String(20))
     # A Sex, private: it only picks the population a lift is compared with. Null compares with all.
     sex: Mapped[str | None] = mapped_column(String(10))
-    # The public name in the ranking; null until the user picks one, never the email.
+    # The name the app greets the user by; null until they pick one, never the email.
     nickname: Mapped[str | None] = mapped_column(String(20))
-    show_in_ranking: Mapped[bool] = mapped_column(server_default=text("true"))
+    # Unused since the ranking lists nobody. Deferred so that no query reads it and the next
+    # migration can drop it while this code is still serving.
+    show_in_ranking: Mapped[bool] = mapped_column(server_default=text("true"), deferred=True)
     # Training blocks (analysis/mesocycle.py): their length in weeks and the Monday the first began.
     # Both null without blocks; they are set and cleared together.
     block_weeks: Mapped[int | None] = mapped_column(SmallInteger)

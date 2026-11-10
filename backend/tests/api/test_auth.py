@@ -118,7 +118,7 @@ def test_an_unknown_sex_is_rejected(auth_client: TestClient) -> None:
 def test_the_nickname_starts_empty_and_can_be_set_and_cleared(auth_client: TestClient) -> None:
     me = auth_client.get("/api/auth/me").json()
     assert me["nickname"] is None
-    assert me["show_in_ranking"] is True
+    assert "show_in_ranking" not in me
 
     response = auth_client.patch("/api/auth/me", json={"nickname": " Tigre_82 "})
     assert response.status_code == 200
@@ -141,12 +141,6 @@ def test_a_nickname_taken_in_any_case_is_a_conflict(auth_client: TestClient, ses
 
     assert response.status_code == 409
     assert auth_client.get("/api/auth/me").json()["goal"] is None
-
-
-def test_the_user_can_leave_and_rejoin_the_ranking(auth_client: TestClient) -> None:
-    assert auth_client.patch("/api/auth/me", json={"show_in_ranking": False}).json()["show_in_ranking"] is False
-    assert auth_client.patch("/api/auth/me", json={"show_in_ranking": True}).json()["show_in_ranking"] is True
-    assert auth_client.patch("/api/auth/me", json={"show_in_ranking": None}).status_code == 422
 
 
 def test_updating_the_account_requires_authentication(client: TestClient) -> None:
