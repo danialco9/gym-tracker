@@ -28,7 +28,7 @@ export type Equipment =
   | 'bodyweight'
   | 'band'
 
-export type TrainingGoal = 'lose_fat' | 'build_muscle' | 'recomposition'
+export type TrainingGoal = 'lose_fat' | 'build_muscle' | 'build_strength' | 'recomposition'
 
 export interface User {
   id: number

@@ -258,15 +258,16 @@ def test_weekly_volume_advice_follows_the_training_goal(
 def test_goal_plans_cover_every_goal(progress_client: TestClient) -> None:
     plans = {plan["goal"]: plan for plan in progress_client.get("/api/progress/goals").json()}
 
-    assert set(plans) == {"lose_fat", "build_muscle", "recomposition"}
+    assert set(plans) == {"lose_fat", "build_muscle", "build_strength", "recomposition"}
     assert plans["build_muscle"] == {
         "goal": "build_muscle",
-        "compound_reps": {"min": 6, "max": 10},
-        "isolation_reps": {"min": 8, "max": 12},
+        "compound_reps": {"min": 8, "max": 12},
+        "isolation_reps": {"min": 10, "max": 15},
         "rpe": {"min": 8.0, "max": 9.0},
         "rest_seconds": {"min": 120, "max": 180},
         "weekly_hard_sets": {"min": 12, "max": 20},
     }
+    assert plans["build_strength"]["compound_reps"] == {"min": 6, "max": 8}
 
 
 def test_streak_follows_the_training_log(progress_client: TestClient, training_log: dict[str, int]) -> None:

@@ -1,4 +1,4 @@
-import { ArrowDownIcon, ArrowDownUpIcon, ArrowUpIcon, type LucideIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowDownUpIcon, ArrowUpIcon, DumbbellIcon, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -25,6 +25,11 @@ const GOALS: { goal: TrainingGoal; icon: LucideIcon; tip: string }[] = [
     goal: 'build_muscle',
     icon: ArrowUpIcon,
     tip: 'Cuando completes todas las series en lo alto del rango, toca subir peso.',
+  },
+  {
+    goal: 'build_strength',
+    icon: DumbbellIcon,
+    tip: 'Descansa largo para que cada serie salga fuerte. Al llegar a 8 en todas, toca subir peso.',
   },
   {
     goal: 'recomposition',
