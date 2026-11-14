@@ -112,11 +112,13 @@ remove it like any other app (long press on the icon).
   ones the routine planned: everything hit with 2 or more reps in reserve adds load to every
   planned set (keeping the pyramid shape), missed reps suggest holding, and a detected plateau suggests a deload. The load
   step depends on the equipment (2 kg dumbbells, 2.5 kg barbell, doubled for heavy leg lifts), and
-  when it would be more than 10% of the weight, reps go up first. With a training goal
-  picked, the reps move too (double progression): one more rep per set until every set reaches
-  the top of the goal's range, then a heavier weight worked out from the estimated max that
-  brings the reps back to its bottom (3 × 12 with 60 kg becomes 3 × 8 with 65 kg, or 3 × 6 with
-  70 kg for strength). Multi-joint and single-joint lifts each use their own range. Every suggestion says why, and
+  when it would be more than 10% of the weight, reps go up first, never past 12. With a training
+  goal picked, the reps move too (double progression): one more rep per set until every set
+  reaches 12, then a heavier weight worked out from the estimated max that brings the reps back
+  to the bottom of the range, 6 on multi-joint lifts and 8 on single-joint ones (3 × 12 with
+  60 kg becomes 3 × 6 with 70 kg). When even the next dumbbell is worth fewer reps than that, it
+  is taken anyway, from as many reps as it allows and never fewer than 6, and they climb back one
+  at a time. No suggestion asks for more than 12 reps: past that a set mostly adds fatigue. Every suggestion says why, and
   only exercises trained in the last four weeks get one. It also flags main muscles trained below
   10 or above 20 hard sets a week, counting a set as half for its secondary muscles.
 - **Training blocks.** Optionally, train in 4–6 week blocks whose last week is a deload: the home

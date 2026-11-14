@@ -16,23 +16,23 @@ const USER: User = {
 const PLANS: GoalPlan[] = [
   {
     goal: 'lose_fat',
-    compound_reps: { min: 6, max: 10 },
-    isolation_reps: { min: 10, max: 15 },
+    compound_reps: { min: 6, max: 12 },
+    isolation_reps: { min: 8, max: 12 },
     rpe: { min: 7, max: 8 },
     rest_seconds: { min: 60, max: 90 },
     weekly_hard_sets: { min: 10, max: 14 },
   },
   {
     goal: 'build_muscle',
-    compound_reps: { min: 8, max: 12 },
-    isolation_reps: { min: 10, max: 15 },
+    compound_reps: { min: 6, max: 12 },
+    isolation_reps: { min: 8, max: 12 },
     rpe: { min: 8, max: 9 },
     rest_seconds: { min: 120, max: 180 },
     weekly_hard_sets: { min: 12, max: 20 },
   },
   {
     goal: 'build_strength',
-    compound_reps: { min: 6, max: 8 },
+    compound_reps: { min: 6, max: 12 },
     isolation_reps: { min: 8, max: 12 },
     rpe: { min: 8, max: 9 },
     rest_seconds: { min: 180, max: 300 },
@@ -40,8 +40,8 @@ const PLANS: GoalPlan[] = [
   },
   {
     goal: 'recomposition',
-    compound_reps: { min: 4, max: 8 },
-    isolation_reps: { min: 10, max: 15 },
+    compound_reps: { min: 6, max: 12 },
+    isolation_reps: { min: 8, max: 12 },
     rpe: { min: 7.5, max: 8.5 },
     rest_seconds: { min: 90, max: 150 },
     weekly_hard_sets: { min: 10, max: 16 },
@@ -97,7 +97,7 @@ describe('Goal', () => {
     expect(screen.getByRole('button', { name: 'Guardar objetivo' })).toBeEnabled()
   })
 
-  it('offers strength, with fewer repetitions and longer rests than muscle', async () => {
+  it('offers strength, with the same repetitions and longer rests than muscle', async () => {
     const calls = mockApi({
       ...HOME,
       'GET /auth/me': { body: { ...USER, goal: 'build_muscle' } },
@@ -105,10 +105,10 @@ describe('Goal', () => {
     })
     const { user } = renderRoute('/objetivo')
 
-    expect(await screen.findByText('10–15 en aislamiento')).toBeInTheDocument()
+    expect(await screen.findByText('2–3 min')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Ganar fuerza/ }))
 
-    expect(screen.getByText('6–8')).toBeInTheDocument()
+    expect(screen.getByText('6–12')).toBeInTheDocument()
     expect(screen.getByText('8–12 en aislamiento')).toBeInTheDocument()
     expect(screen.getByText('3–5 min')).toBeInTheDocument()
 

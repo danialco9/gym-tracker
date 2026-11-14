@@ -18,36 +18,42 @@ class GoalPlan:
     volume: VolumeRules
 
 
+# Every goal works the same rep ranges, by double progression up to 12 reps at most: a new weight
+# brings the reps down to 6-8 on the big lifts and to 8 on single-joint ones, and they climb back
+# to 12 before the weight goes up again. Past 12 reps a set still builds muscle when taken close
+# to failure, but it mostly adds fatigue and does less for strength. The goals differ in effort,
+# rest and weekly volume.
+COMPOUND_REPS = (6, 12)
+ISOLATION_REPS = (8, 12)
+
 GOAL_PLANS: dict[TrainingGoal, GoalPlan] = {
-    # Heavy loads keep the muscle while eating less; a deficit recovers worse, so the volume
-    # ceiling is lower and sets stop further from failure.
+    # A deficit recovers worse, so the volume ceiling is lower and sets stop further from failure.
     TrainingGoal.LOSE_FAT: GoalPlan(
-        compound_reps=(6, 10),
-        isolation_reps=(10, 15),
+        compound_reps=COMPOUND_REPS,
+        isolation_reps=ISOLATION_REPS,
         rpe=(7.0, 8.0),
         rest_seconds=(60, 90),
         volume=VolumeRules(min_hard_sets=10, max_hard_sets=14),
     ),
     TrainingGoal.BUILD_MUSCLE: GoalPlan(
-        compound_reps=(8, 12),
-        isolation_reps=(10, 15),
+        compound_reps=COMPOUND_REPS,
+        isolation_reps=ISOLATION_REPS,
         rpe=(8.0, 9.0),
         rest_seconds=(120, 180),
         volume=VolumeRules(min_hard_sets=12, max_hard_sets=20),
     ),
-    # Heavy sets on the big lifts with long rests, so every set is strong; fewer sets fit in a
-    # week. Small single-joint lifts stay lighter, as heavy loads on them are hard on the joints.
+    # Long rests, so every set is strong; fewer sets fit in a week.
     TrainingGoal.BUILD_STRENGTH: GoalPlan(
-        compound_reps=(6, 8),
-        isolation_reps=(8, 12),
+        compound_reps=COMPOUND_REPS,
+        isolation_reps=ISOLATION_REPS,
         rpe=(8.0, 9.0),
         rest_seconds=(180, 300),
         volume=VolumeRules(min_hard_sets=10, max_hard_sets=16),
     ),
-    # Strength work on the big lifts plus lighter accessories, at a moderate volume.
+    # A moderate effort and volume.
     TrainingGoal.RECOMPOSITION: GoalPlan(
-        compound_reps=(4, 8),
-        isolation_reps=(10, 15),
+        compound_reps=COMPOUND_REPS,
+        isolation_reps=ISOLATION_REPS,
         rpe=(7.5, 8.5),
         rest_seconds=(90, 150),
         volume=VolumeRules(min_hard_sets=10, max_hard_sets=16),

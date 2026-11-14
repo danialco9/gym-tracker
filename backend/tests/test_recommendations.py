@@ -131,32 +131,44 @@ def test_load_increment_depends_on_the_equipment(
 
 def test_a_jump_too_big_for_the_weight_asks_for_reps_first() -> None:
     # 2 kg more on 6 kg dumbbells is +33%: nobody hits the same reps after that.
-    plan = [PlannedSet(reps=12, weight_kg=6)] * 3
+    plan = [PlannedSet(reps=10, weight_kg=6)] * 3
 
     first = decide_progression(
-        performed=performed((6, 12), (6, 12), (6, 12), rpe=7), planned=plan, stalled=False, increment_kg=2.0
+        performed=performed((6, 10), (6, 10), (6, 10), rpe=7), planned=plan, stalled=False, increment_kg=2.0
     )
     assert (first.action, first.reason) == (Action.INCREASE_REPS, Reason.JUMP_TOO_BIG)
-    assert first.suggested_sets == (PlannedSet(13, 6),) * 3
+    assert first.suggested_sets == (PlannedSet(11, 6),) * 3
 
     # Two reps over the target on every set earn the jump.
     earned = decide_progression(
-        performed=performed((6, 14), (6, 14), (6, 14), rpe=7), planned=plan, stalled=False, increment_kg=2.0
+        performed=performed((6, 12), (6, 12), (6, 12), rpe=7), planned=plan, stalled=False, increment_kg=2.0
     )
     assert (earned.action, earned.reason) == (Action.INCREASE_LOAD, Reason.TARGETS_HIT)
-    assert earned.suggested_sets == (PlannedSet(12, 8),) * 3
+    assert earned.suggested_sets == (PlannedSet(10, 8),) * 3
+
+
+def test_reps_first_never_go_past_twelve() -> None:
+    # 12 reps planned leave no room over the target: the jump is taken at once.
+    plan = [PlannedSet(reps=12, weight_kg=6)] * 2
+
+    progression = decide_progression(
+        performed=performed((6, 12), (6, 12), rpe=7), planned=plan, stalled=False, increment_kg=2.0
+    )
+
+    assert progression.action is Action.INCREASE_LOAD
+    assert progression.suggested_sets == (PlannedSet(12, 8),) * 2
 
 
 def test_reps_first_never_asks_for_fewer_reps_than_were_done() -> None:
-    plan = [PlannedSet(reps=12, weight_kg=6)] * 2
+    plan = [PlannedSet(reps=10, weight_kg=6)] * 2
 
-    # The first set went past the ceiling (14), the second is still below it.
+    # The first set went past the ceiling (12), the second is still below it.
     progression = decide_progression(
-        performed=performed((6, 16), (6, 12), rpe=7), planned=plan, stalled=False, increment_kg=2.0
+        performed=performed((6, 16), (6, 10), rpe=7), planned=plan, stalled=False, increment_kg=2.0
     )
 
     assert progression.reason is Reason.JUMP_TOO_BIG
-    assert [item.reps for item in progression.suggested_sets] == [16, 13]
+    assert [item.reps for item in progression.suggested_sets] == [16, 11]
 
 
 def test_a_jump_within_ten_percent_is_taken_at_once() -> None:
@@ -406,8 +418,12 @@ def test_the_top_of_the_range_on_every_set_earns_more_weight_and_fewer_reps() ->
         Reason.RANGE_TOP,
         [(8, 65.0)] * 3,
     )
-    # For strength the same sets go down to 6 reps, with more weight still.
-    assert in_range((60, 12), (60, 12), (60, 12), plan=plan, rep_range=(6, 8))[2] == [(6, 70.0)] * 3
+    # A range that starts at 6 brings the same sets down to 6 reps, with more weight still.
+    assert in_range((60, 12), (60, 12), (60, 12), plan=plan, rep_range=(6, 12))[2] == [(6, 70.0)] * 3
+
+
+def test_no_range_climbs_past_twelve_reps() -> None:
+    assert in_range((60, 12), (60, 12), rep_range=(10, 15))[:2] == (Action.INCREASE_LOAD, Reason.RANGE_TOP)
 
 
 def test_inside_the_range_every_set_adds_a_rep_with_the_same_weight() -> None:
@@ -418,11 +434,11 @@ def test_inside_the_range_every_set_adds_a_rep_with_the_same_weight() -> None:
     )
 
 
-def test_under_the_range_the_weight_stays_until_its_bottom_is_reached() -> None:
-    assert in_range((65, 8), (65, 7), (65, 6)) == (
+def test_under_the_range_the_weight_stays_and_the_reps_climb_one_at_a_time() -> None:
+    assert in_range((65, 8), (65, 7), (65, 5)) == (
         Action.INCREASE_REPS,
         Reason.BELOW_RANGE,
-        [(8, 65), (8, 65), (8, 65)],
+        [(8, 65), (8, 65), (6, 65)],
     )
 
 
@@ -443,14 +459,16 @@ def test_long_sets_count_as_twelve_reps_for_the_heavier_weight() -> None:
     assert in_range((60, 20), (60, 20))[2] == [(8, 65.0)] * 2
 
 
-def test_light_weights_go_past_the_top_of_the_range_before_the_jump() -> None:
-    # 12 reps with 6 kg are worth 6.6 kg for 8: less than the next dumbbell.
-    assert in_range((6, 12), (6, 12), increment_kg=2.0) == (
-        Action.INCREASE_REPS,
-        Reason.JUMP_TOO_BIG,
-        [(13, 6), (13, 6)],
-    )
-    assert in_range((6, 14), (6, 14), increment_kg=2.0) == (Action.INCREASE_LOAD, Reason.RANGE_TOP, [(8, 8.0)] * 2)
+def test_light_weights_take_the_next_step_anyway_from_six_reps() -> None:
+    # 12 reps with 6 kg are worth 6.6 kg for 8: less than the next dumbbell, so 6 reps with 8 kg.
+    assert in_range((6, 12), (6, 12), increment_kg=2.0) == (Action.INCREASE_LOAD, Reason.RANGE_TOP, [(6, 8.0)] * 2)
+    # From there the reps climb back into the range, one at a time.
+    assert in_range((8, 6), (8, 5), increment_kg=2.0) == (Action.INCREASE_REPS, Reason.BELOW_RANGE, [(7, 8), (6, 8)])
+
+
+def test_a_step_worth_a_few_reps_less_brings_them_between_six_and_the_bottom() -> None:
+    # 12 reps with 20 kg are worth 22.1 kg for 8, short of 22.5 kg: with it, 7 reps.
+    assert in_range((20, 12), increment_kg=2.5) == (Action.INCREASE_LOAD, Reason.RANGE_TOP, [(7, 22.5)])
 
 
 def test_a_plan_heavier_than_the_range_keeps_its_own_targets() -> None:
@@ -498,14 +516,15 @@ def test_recommend_gives_each_exercise_the_range_of_its_kind(write_log: WriteLog
             w1,lateral-raise,1,12,10,8,false
         """,
     )
-    ranges = RepRanges(compound=(8, 12), isolation=(10, 15))
+    ranges = RepRanges(compound=(6, 12), isolation=(8, 12))
 
     bench, raises = recommend(load_training_log(data_dir), rep_ranges=ranges)
 
-    assert (bench.rep_range, bench.reason) == ((8, 12), Reason.RANGE_TOP)
-    assert bench.suggested_sets == (PlannedSet(reps=8, weight_kg=65.0),) * 2
-    assert (raises.rep_range, raises.reason) == ((10, 15), Reason.WITHIN_RANGE)
-    assert raises.suggested_sets == (PlannedSet(reps=13, weight_kg=10),)
+    assert (bench.rep_range, bench.reason) == ((6, 12), Reason.RANGE_TOP)
+    assert bench.suggested_sets == (PlannedSet(reps=6, weight_kg=70.0),) * 2
+    # The next dumbbell is worth fewer than 8 reps: as many as it allows, 6 at least.
+    assert (raises.rep_range, raises.reason) == ((8, 12), Reason.RANGE_TOP)
+    assert raises.suggested_sets == (PlannedSet(reps=6, weight_kg=12.0),)
     assert all(item.rep_range is None for item in recommend(load_training_log(data_dir)))
 
 

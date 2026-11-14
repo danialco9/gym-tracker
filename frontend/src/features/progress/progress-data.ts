@@ -69,12 +69,16 @@ export function explainRecommendation(item: Recommendation): string {
     }
     case 'deload_week':
       return 'Semana de descarga: la mitad de series con el mismo peso, dejando 3 o 4 reps en reserva.'
-    case 'range_top':
-      return range === null
-        ? 'Llegaste a lo alto del rango en todas las series: sube el peso y baja las repeticiones.'
-        : `Llegaste a ${range.max} repeticiones en todas las series: sube el peso y vuelve a ${range.min}.`
+    case 'range_top': {
+      if (range === null) {
+        return 'Llegaste a lo alto del rango en todas las series: sube el peso y baja las repeticiones.'
+      }
+      // The new weight may allow fewer reps than the bottom of the range (light dumbbells).
+      const restart = Math.min(...item.suggested_sets.map((set) => set.reps ?? range.min))
+      return `Llegaste a ${range.max} repeticiones en todas las series: sube el peso, baja a ${restart} y vuelve a subir hasta ${range.max}.`
+    }
     case 'below_range':
-      return `Aún no llegas a ${range?.min ?? 'las'} repeticiones en todas las series: mantén el peso hasta conseguirlo.`
+      return `Aún no llegas a ${range?.min ?? 'las'} repeticiones en todas las series: mantén el peso y suma una repetición por serie hasta llegar.`
     case 'within_range':
       return range === null
         ? 'Mismo peso y una repetición más por serie.'

@@ -264,11 +264,14 @@ def test_recommendations_progress_in_the_rep_range_of_the_goal(
 
     bench, pulldown = progress_client.get("/api/progress/overview").json()["recommendations"]
 
-    # 3 x 8 with 62.5 kg is the top of the 6-8 of strength: more weight, back to 6 reps.
-    assert (bench["reason"], bench["rep_range"]) == ("range_top", {"min": 6, "max": 8})
-    assert bench["suggested_sets"] == [{"reps": 6, "weight_kg": 65.0}] * 3
-    # Past the top too, but at RIR 1 the weight is repeated first.
-    assert (pulldown["action"], pulldown["reason"]) == ("hold", "targets_hit_hard")
+    # 3 x 8 with 62.5 kg is inside the 6-12 of the big lifts: one more rep with the same weight.
+    assert (bench["reason"], bench["rep_range"]) == ("within_range", {"min": 6, "max": 12})
+    assert bench["suggested_sets"] == [{"reps": 9, "weight_kg": 62.5}] * 3
+    # Inside it too, even at RIR 1: the effort only holds the weight back at the top.
+    assert (pulldown["reason"], pulldown["suggested_sets"]) == (
+        "within_range",
+        [{"reps": 11, "weight_kg": 50.0}] * 2,
+    )
 
 
 def test_a_light_lift_keeps_the_single_joint_range_of_the_goal(progress_client: TestClient, session: Session) -> None:
@@ -292,13 +295,15 @@ def test_goal_plans_cover_every_goal(progress_client: TestClient) -> None:
     assert set(plans) == {"lose_fat", "build_muscle", "build_strength", "recomposition"}
     assert plans["build_muscle"] == {
         "goal": "build_muscle",
-        "compound_reps": {"min": 8, "max": 12},
-        "isolation_reps": {"min": 10, "max": 15},
+        "compound_reps": {"min": 6, "max": 12},
+        "isolation_reps": {"min": 8, "max": 12},
         "rpe": {"min": 8.0, "max": 9.0},
         "rest_seconds": {"min": 120, "max": 180},
         "weekly_hard_sets": {"min": 12, "max": 20},
     }
-    assert plans["build_strength"]["compound_reps"] == {"min": 6, "max": 8}
+    # No goal climbs past 12 reps.
+    assert {plan["compound_reps"]["max"] for plan in plans.values()} == {12}
+    assert {plan["isolation_reps"]["max"] for plan in plans.values()} == {12}
 
 
 def test_streak_follows_the_training_log(progress_client: TestClient, training_log: dict[str, int]) -> None:

@@ -54,10 +54,14 @@ class ProgressionRules:
     plateau_window: int = 3
     # A jump above this share of the working weight is too big to take at once: reps go first.
     max_relative_jump: float = 0.10
-    # Reps over the target on every set that earn the jump anyway (10 -> 12, then more weight).
+    # Reps over the target on every set that earn the jump anyway (10 -> 12, then more weight),
+    # never past ``max_reps``.
     rep_ceiling_margin: int = 2
-    # The same ceiling for sets without target reps.
-    rep_ceiling_without_plan: int = 15
+    # No suggestion asks for more reps than this: past 12 a set mostly adds fatigue.
+    max_reps: int = 12
+    # The fewest reps a heavier weight is suggested for, when even one step costs more reps than
+    # that (light dumbbells): the reps then climb back from there with the same weight.
+    min_reps_after_jump: int = 6
     # Exercises not trained for longer than this are left out of the suggestions.
     max_age_days: int = 28
     # Reps past this say little about the heavier weight a set is worth, so they count as this.
@@ -201,20 +205,21 @@ def _progress_in_range(
 ) -> Progression:
     """Double progression: reps climb to the top of the range, then the weight does and they restart.
 
-    ``complete`` says whether every planned set was done.
+    The top is never past ``max_reps``. The new weight is the one each set is worth at the bottom
+    of the range, and at least one step more; when one step is already worth fewer reps than the
+    bottom (light dumbbells), the reps go down to what it allows, never under
+    ``min_reps_after_jump``, and climb back from there. ``complete`` says whether every planned set
+    was done.
     """
-    low, high = rep_range
-    ceiling = high + rules.rep_ceiling_margin
-    # The weight each set is worth at the bottom of the range, by Epley, down to the increment.
-    heavier = [
-        math.floor(weight * (1 + min(done, rules.max_estimated_reps) / 30) / (1 + low / 30) / increment + 1e-9)
-        * increment
-        for weight, done in zip(weights, done_reps, strict=True)
+    low, high = rep_range[0], min(rep_range[1], rules.max_reps)
+    # The weight each set lifts for one rep, by Epley; long sets count as ``max_estimated_reps``.
+    one_rep = [
+        weight * (1 + min(done, rules.max_estimated_reps) / 30) for weight, done in zip(weights, done_reps, strict=True)
     ]
     new_weights, new_reps = list(weights), list(done_reps)
     if any(done < low for done in done_reps):
         action, reason = Action.INCREASE_REPS, Reason.BELOW_RANGE
-        new_reps = [max(done, low) for done in done_reps]
+        new_reps = [done + 1 if done < low else done for done in done_reps]
     elif not complete:
         action, reason = Action.INCREASE_REPS, Reason.TARGETS_MISSED
     elif any(done < high for done in done_reps):
@@ -222,16 +227,17 @@ def _progress_in_range(
         new_reps = [done + 1 if done < high else done for done in done_reps]
     elif max_rpe is not None and max_rpe > rules.max_rpe_to_progress:
         action, reason = Action.HOLD, Reason.TARGETS_HIT_HARD
-    elif all(new >= weight + increment for new, weight in zip(heavier, weights, strict=True)):
-        action, reason = Action.INCREASE_LOAD, Reason.RANGE_TOP
-        new_weights, new_reps = heavier, [low] * len(weights)
-    elif any(done < ceiling for done in done_reps):
-        # The smallest step is more than the reps earned (light dumbbells): a few reps over the top first.
-        action, reason = Action.INCREASE_REPS, Reason.JUMP_TOO_BIG
-        new_reps = [done + 1 if done < ceiling else done for done in done_reps]
     else:
         action, reason = Action.INCREASE_LOAD, Reason.RANGE_TOP
-        new_weights, new_reps = [weight + increment for weight in weights], [low] * len(weights)
+        # Worth ``low`` reps, down to the increment, and at least one increment more.
+        new_weights = [
+            max(weight + increment, math.floor(best / (1 + low / 30) / increment + 1e-9) * increment)
+            for weight, best in zip(weights, one_rep, strict=True)
+        ]
+        new_reps = [
+            min(low, max(rules.min_reps_after_jump, math.floor(30 * (best / new - 1) + 1e-9)))
+            for new, best in zip(new_weights, one_rep, strict=True)
+        ]
     return Progression(
         action,
         reason,
@@ -262,12 +268,12 @@ def decide_progression(
 
     When adding load would be a jump above ``max_relative_jump`` of the working weight (2 kg on a
     6 kg dumbbell), one more rep per set comes first, until every set is ``rep_ceiling_margin``
-    reps over its target; then the jump is earned.
+    reps over its target, or at ``max_reps``; then the jump is earned.
 
     With a ``rep_range`` (the one the user's goal asks for) the reps move too, as double
     progression: one more rep per set with the same weight until every set reaches the top of the
     range, and then a heavier weight that brings the reps back to its bottom (3 x 12 with 60 kg
-    becomes 3 x 8 with 65 kg). A routine that plans fewer reps than the range was written heavy on
+    becomes 3 x 6 with 70 kg). A routine that plans fewer reps than the range was written heavy on
     purpose, so it keeps following its own targets.
     """
     if not performed:
@@ -293,7 +299,7 @@ def decide_progression(
     def load_up(reason: Reason) -> Progression:
         if increment > rules.max_relative_jump * max(weights):
             ceilings = [
-                target + rules.rep_ceiling_margin if target is not None else rules.rep_ceiling_without_plan
+                rules.max_reps if target is None else min(target + rules.rep_ceiling_margin, rules.max_reps)
                 for target in target_reps
             ]
             if not all(done >= ceiling for done, ceiling in zip(done_reps, ceilings, strict=True)):
