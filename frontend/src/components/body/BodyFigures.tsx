@@ -27,47 +27,83 @@ interface FigureProps {
   onSelect?: (shape: BodyShape) => void
 }
 
+/** Brushed silver for the muscles with nothing to show yet. */
+const NEUTRAL = '#8a929d'
+/** The parts that are no muscle (head, neck, knees): dark, outlined by the white silhouette. */
+const BARE = '#16191e'
+/** The white of the silhouette and of the seams between muscles. */
+const SEAM = '#f4f6fa'
+
 function Figure({ shapes, caption, lookOf, onSelect }: FigureProps) {
   const id = useId()
   const looks = shapes.map((shape) =>
     shape.muscle === null ? null : lookOf({ ...shape, muscle: shape.muscle }),
   )
-  const colors = [...new Set(looks.flatMap((look) => (look?.color ? [look.color] : [])))]
+  const colorOf = (index: number) => (shapes[index].muscle === null ? null : (looks[index]?.color ?? NEUTRAL))
+  const colors = [...new Set(shapes.flatMap((_, index) => colorOf(index) ?? []))]
   const gradient = (color: string) => `${id}-${colors.indexOf(color)}`
 
   return (
     <figure className="flex min-w-0 flex-1 flex-col items-center gap-3">
       <svg viewBox="-2 -2 104 208" className="h-auto w-full overflow-visible" aria-hidden>
         <defs>
+          {/* Diagonal bands of light across the whole figure, so the muscles read as polished metal. */}
           {colors.map((color) => (
-            <linearGradient key={color} id={gradient(color)} x1="0" y1="0" x2="0.35" y2="1">
-              <stop offset="0%" stopColor={shade(color, 0.35)} />
-              <stop offset="55%" stopColor={color} />
-              <stop offset="100%" stopColor={shade(color, -0.25)} />
+            <linearGradient
+              key={color}
+              id={gradient(color)}
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1="0"
+              x2="16"
+              y2="12"
+              spreadMethod="repeat"
+            >
+              <stop offset="0%" stopColor={shade(color, -0.18)} />
+              <stop offset="38%" stopColor={color} />
+              <stop offset="50%" stopColor={shade(color, 0.55)} />
+              <stop offset="62%" stopColor={color} />
+              <stop offset="100%" stopColor={shade(color, -0.18)} />
             </linearGradient>
           ))}
         </defs>
+        {/*
+         * The silhouette: every shape outlined in white with a thick stroke, which closes the gaps between
+         * them. The muscles drawn on top leave those gaps as white seams, and the stroke as an outline.
+         * Inside it is dark, so a dimmed muscle fades into the dark rather than into the white.
+         */}
+        <g style={{ filter: 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.45))' }}>
+          {shapes.map((shape, index) => (
+            <polygon
+              key={index}
+              points={shape.points}
+              fill={BARE}
+              stroke={SEAM}
+              strokeWidth={2.6}
+              strokeLinejoin="round"
+            />
+          ))}
+        </g>
         {shapes.map((shape, index) => {
           const look = looks[index]
-          const color = look?.color ?? null
+          const color = colorOf(index)
           const selectable = look?.selectable === true && onSelect !== undefined
+          const glows = look?.color != null && !look.dimmed
           return (
             <polygon
               key={index}
               points={shape.points}
               data-zone={shapeZone(shape) ?? undefined}
               data-muscle={shape.muscle ?? undefined}
-              fill={color === null ? undefined : `url(#${gradient(color)})`}
-              style={
-                color === null || look?.dimmed ? undefined : { filter: `drop-shadow(0 0 1.6px ${color}99)` }
-              }
+              fill={color === null ? BARE : `url(#${gradient(color)})`}
+              style={glows ? { filter: `drop-shadow(0 0 1.4px ${look.color}aa)` } : undefined}
               className={cn(
-                'stroke-card transition-opacity duration-300',
-                look === null ? 'fill-muted-foreground/20' : color === null && 'fill-muted-foreground/35',
+                'transition-opacity duration-300',
                 look?.dimmed && 'opacity-35',
                 selectable && 'cursor-pointer',
               )}
-              strokeWidth={0.6}
+              stroke={SEAM}
+              strokeWidth={0.7}
               strokeLinejoin="round"
               onClick={selectable ? () => onSelect(shape) : undefined}
             />
