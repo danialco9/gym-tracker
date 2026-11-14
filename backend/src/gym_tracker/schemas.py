@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import ClassVar, Self
+from typing import Annotated, ClassVar, Self
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
@@ -12,7 +12,8 @@ from gym_tracker.analysis.mesocycle import MAX_BLOCK_WEEKS, MIN_BLOCK_WEEKS
 from gym_tracker.analysis.overload import OverloadVerdict
 from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
 from gym_tracker.analysis.strength import StrengthTier, Zone
-from gym_tracker.enums import Equipment, MuscleGroup, Sex, TrainingGoal
+from gym_tracker.enums import Equipment, MuscleGroup, PlanKind, Sex, TrainingGoal
+from gym_tracker.presets import MAX_TRAINING_DAYS
 from gym_tracker.push import MAX_REST_SECONDS, is_push_service
 from gym_tracker.slugs import SLUG_PATTERN
 from gym_tracker.users import MIN_PASSWORD_LENGTH
@@ -546,3 +547,97 @@ class MyRankingRead(BaseModel):
     zones: list[ZoneStandingRead]
     # By zone, best first.
     lifts: list[MyLiftRead]
+
+
+# Week plan
+
+Weekday = Annotated[int, Field(ge=0, le=6)]
+
+
+def _distinct_weekdays(weekdays: list[int]) -> list[int]:
+    if len(set(weekdays)) != len(weekdays):
+        raise ValueError("Each weekday can only appear once")
+    return weekdays
+
+
+class PlannedDayIn(InputModel):
+    # Monday is 0.
+    weekday: Weekday
+    # None plans a free workout.
+    routine_id: int | None = None
+
+
+class PlannedDayRead(ORMModel):
+    weekday: int
+    routine_id: int | None
+
+
+class UsualWeekIn(InputModel):
+    """The training days of the usual week; the weekdays left out rest."""
+
+    days: list[PlannedDayIn] = Field(max_length=7)
+
+    @field_validator("days")
+    @classmethod
+    def distinct_days(cls, days: list[PlannedDayIn]) -> list[PlannedDayIn]:
+        _distinct_weekdays([day.weekday for day in days])
+        return days
+
+
+class PresetWeekIn(InputModel):
+    """The weekdays someone trains, to lay the ready-made split on them."""
+
+    weekdays: list[Weekday] = Field(min_length=1, max_length=MAX_TRAINING_DAYS)
+
+    @field_validator("weekdays")
+    @classmethod
+    def distinct_weekdays(cls, weekdays: list[int]) -> list[int]:
+        return _distinct_weekdays(weekdays)
+
+
+class PlanChangeIn(InputModel):
+    kind: PlanKind
+    # Required for a routine, and only for one.
+    routine_id: int | None = None
+
+    @model_validator(mode="after")
+    def routine_matches_kind(self) -> Self:
+        if (self.kind == PlanKind.ROUTINE) != (self.routine_id is not None):
+            raise ValueError("A routine id is needed for a routine, and only for one")
+        return self
+
+
+class PlanMoveIn(InputModel):
+    """Move what one date holds to another: the first one becomes a rest day."""
+
+    from_date: date
+    to_date: date
+
+    @model_validator(mode="after")
+    def different_dates(self) -> Self:
+        if self.from_date == self.to_date:
+            raise ValueError("The dates must differ")
+        return self
+
+
+class PlannedRoutineRead(BaseModel):
+    id: int
+    name: str
+    exercise_count: int
+
+
+class PlanDayRead(BaseModel):
+    on_date: date
+    kind: PlanKind
+    routine: PlannedRoutineRead | None
+    # Whether a change for this date replaced what the usual week holds.
+    changed: bool
+    # Whether any workout was logged on this date.
+    trained: bool
+
+
+class WeekPlanRead(BaseModel):
+    # The Monday of the week.
+    start: date
+    today: date
+    days: list[PlanDayRead]

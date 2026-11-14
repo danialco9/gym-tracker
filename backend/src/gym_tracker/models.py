@@ -1,4 +1,5 @@
-"""Database models for users, exercises, routines, workouts, body measurements, feedback and push."""
+"""Database models for users, exercises, routines, workouts, body measurements, feedback, push and the
+week plan."""
 
 from __future__ import annotations
 
@@ -232,3 +233,41 @@ class PushSubscription(Base):
     # so the request still waiting on the old one wakes up to find it gone and sends nothing.
     rest_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PlannedDay(Base):
+    """A training day of the user's usual week: a routine, or a free workout when it has none.
+
+    Days without a row are rest days.
+    """
+
+    __tablename__ = "planned_days"
+    __table_args__ = (
+        UniqueConstraint("user_id", "weekday"),
+        CheckConstraint("weekday BETWEEN 0 AND 6", name="weekday_range"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # Monday is 0, as in Python's ``date.weekday()``.
+    weekday: Mapped[int] = mapped_column(SmallInteger)
+    # Deleting the routine leaves the day as a free workout.
+    routine_id: Mapped[int | None] = mapped_column(ForeignKey("routines.id", ondelete="SET NULL"), index=True)
+
+
+class PlanChange(Base):
+    """What one date holds instead of the usual week: another routine, a free workout or rest."""
+
+    __tablename__ = "plan_changes"
+    __table_args__ = (
+        UniqueConstraint("user_id", "on_date"),
+        CheckConstraint("(kind = 'routine') = (routine_id IS NOT NULL)", name="routine_matches_kind"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    on_date: Mapped[date] = mapped_column(Date)
+    # A PlanKind.
+    kind: Mapped[str] = mapped_column(String(10))
+    # Deleting the routine drops the change, and the date follows the usual week again.
+    routine_id: Mapped[int | None] = mapped_column(ForeignKey("routines.id", ondelete="CASCADE"), index=True)
