@@ -24,10 +24,15 @@ def test_volume_rules_follow_the_goal() -> None:
     assert volume_rules_for(TrainingGoal.BUILD_MUSCLE).min_hard_sets == 12
 
 
-def test_strength_asks_for_heavier_sets_than_muscle_on_the_big_lifts_only() -> None:
+@pytest.mark.parametrize("goal", list(TrainingGoal))
+def test_every_goal_climbs_to_twelve_reps_at_most(goal: TrainingGoal) -> None:
+    plan = GOAL_PLANS[goal]
+
+    assert plan.compound_reps == (6, 12)
+    assert plan.isolation_reps == (8, 12)
+
+
+def test_strength_rests_longer_than_muscle() -> None:
     muscle, strength = GOAL_PLANS[TrainingGoal.BUILD_MUSCLE], GOAL_PLANS[TrainingGoal.BUILD_STRENGTH]
 
-    assert muscle.compound_reps == (8, 12)
-    assert strength.compound_reps == (6, 8)
-    assert strength.isolation_reps == (8, 12)
     assert strength.rest_seconds[0] >= muscle.rest_seconds[1]

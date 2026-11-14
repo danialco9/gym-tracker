@@ -86,19 +86,27 @@ describe('progress data', () => {
   })
 
   it('explains the steps inside the rep range of the goal', () => {
-    const inRange = (reason: Recommendation['reason']) =>
+    const inRange = (reason: Recommendation['reason'], changes: Partial<Recommendation> = {}) =>
       explainRecommendation(
-        recommendation('Press banca', 'increase_reps', { reason, rep_range: { min: 8, max: 12 } }),
+        recommendation('Press banca', 'increase_reps', {
+          reason,
+          rep_range: { min: 8, max: 12 },
+          ...changes,
+        }),
       )
 
     expect(inRange('range_top')).toBe(
-      'Llegaste a 12 repeticiones en todas las series: sube el peso y vuelve a 8.',
+      'Llegaste a 12 repeticiones en todas las series: sube el peso, baja a 8 y vuelve a subir hasta 12.',
+    )
+    // The next dumbbell is worth fewer reps than the bottom of the range.
+    expect(inRange('range_top', { suggested_sets: [{ reps: 6, weight_kg: 12 }] })).toBe(
+      'Llegaste a 12 repeticiones en todas las series: sube el peso, baja a 6 y vuelve a subir hasta 12.',
     )
     expect(inRange('within_range')).toBe(
       'Vas dentro del rango de 8–12: mismo peso y una repetición más por serie hasta llegar a 12.',
     )
     expect(inRange('below_range')).toBe(
-      'Aún no llegas a 8 repeticiones en todas las series: mantén el peso hasta conseguirlo.',
+      'Aún no llegas a 8 repeticiones en todas las series: mantén el peso y suma una repetición por serie hasta llegar.',
     )
   })
 
