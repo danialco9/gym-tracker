@@ -45,3 +45,12 @@ class Sex(StrEnum):
 
     MALE = "male"
     FEMALE = "female"
+
+
+class PlanKind(StrEnum):
+    """What a day of the week plan holds."""
+
+    ROUTINE = "routine"
+    # A workout without a routine: the user picks the exercises on the day.
+    FREE = "free"
+    REST = "rest"
