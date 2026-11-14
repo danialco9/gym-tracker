@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import date, datetime, time, timedelta
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
+from pydantic import ValidationError
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from gym_tracker.api.common import UNPROCESSABLE
 from gym_tracker.api.deps import CurrentUser, SessionDep, SettingsDep, TodayDep
+from gym_tracker.catalog import CATALOG
 from gym_tracker.config import Settings
 from gym_tracker.enums import PlanKind
 from gym_tracker.models import Exercise, PlanChange, PlannedDay, Routine, RoutineExercise, RoutineSet, User, Workout
@@ -22,6 +25,7 @@ from gym_tracker.schemas import (
     PlanMoveIn,
     PlannedDayRead,
     PlannedRoutineRead,
+    PresetDayRead,
     PresetWeekIn,
     UsualWeekIn,
     WeekPlanRead,
@@ -201,6 +205,27 @@ def _preset_routine(session: Session, user: User, preset: PresetRoutine, catalog
     )
     session.add(routine)
     return routine
+
+
+_CATALOG_NAMES = {exercise.slug: exercise.name for exercise in CATALOG}
+
+
+@router.get("/presets")
+def preview_presets(user: CurrentUser, weekdays: Annotated[list[int], Query()]) -> list[PresetDayRead]:
+    """What the ready-made split would put on those weekdays, without saving anything."""
+    del user  # Only signed-in users see it, though it is the same for everyone.
+    try:
+        payload = PresetWeekIn(weekdays=weekdays)
+    except ValidationError as error:
+        raise HTTPException(UNPROCESSABLE, detail=error.errors(include_url=False, include_context=False)) from error
+    return [
+        PresetDayRead(
+            weekday=weekday,
+            name=preset.name,
+            exercises=[_CATALOG_NAMES[item.slug] for item in preset.exercises],
+        )
+        for weekday, preset in preset_week(payload.weekdays)
+    ]
 
 
 @router.post("/presets", status_code=status.HTTP_201_CREATED)
