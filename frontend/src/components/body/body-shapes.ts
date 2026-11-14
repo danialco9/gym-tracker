@@ -11,6 +11,8 @@ import type { MuscleGroup, Zone } from '@/lib/types'
 export interface BodyShape {
   muscle: MuscleGroup | null
   points: string
+  /** A part painted light rather than dark: the neck and the knees. Only for shapes with no muscle. */
+  light?: boolean
 }
 
 /** The ranked zone each muscle group belongs to, as the API groups them. */
@@ -52,8 +54,16 @@ export const FRONT_SHAPES: BodyShape[] = [
   { muscle: 'biceps', points: '71.4,49.4 70.2,54.7 76.3,66.1 81.6,71.8 82.9,69 78.8,55.5' }, // biceps
   { muscle: 'triceps', points: '69.4,55.5 69.4,61.6 75.9,72.7 77.6,70.2 75.5,67.3' }, // triceps
   { muscle: 'triceps', points: '22.4,69.4 29.8,55.5 29.8,60.8 22.9,73.1' }, // triceps
-  { muscle: null, points: '55.5,23.7 50.6,33.5 50.6,39.2 61.6,40 70.6,44.9 69.4,36.7 63.3,35.1 58.4,30.6' }, // neck
-  { muscle: null, points: '29,44.9 30.2,37.1 36.3,35.1 41.2,30.2 44.5,24.5 49,33.9 48.6,39.2 38,39.6' }, // neck
+  {
+    muscle: null,
+    points: '55.5,23.7 50.6,33.5 50.6,39.2 61.6,40 70.6,44.9 69.4,36.7 63.3,35.1 58.4,30.6',
+    light: true,
+  }, // neck
+  {
+    muscle: null,
+    points: '29,44.9 30.2,37.1 36.3,35.1 41.2,30.2 44.5,24.5 49,33.9 48.6,39.2 38,39.6',
+    light: true,
+  }, // neck
   { muscle: 'shoulders', points: '78.4,53.1 79.6,47.8 79.2,41.2 75.9,38 71,36.3 72.2,42.9 71.4,47.3' }, // front_deltoids
   { muscle: 'shoulders', points: '28.2,47.3 21.2,53.1 20,47.8 20.4,40.8 24.5,37.1 28.6,37.1 26.9,43.3' }, // front_deltoids
   {
@@ -84,8 +94,9 @@ export const FRONT_SHAPES: BodyShape[] = [
   {
     muscle: null,
     points: '33.9,140 34.7,143.3 35.5,147.3 36.3,151 35.1,156.7 29.8,156.7 27.3,152.7 27.3,147.3 30.2,144.1',
+    light: true,
   }, // knees
-  { muscle: null, points: '65.7,140 72.2,147.8 72.2,152.2 69.8,157.1 64.9,156.7 62.9,151' }, // knees
+  { muscle: null, points: '65.7,140 72.2,147.8 72.2,152.2 69.8,157.1 64.9,156.7 62.9,151', light: true }, // knees
   {
     muscle: 'calves',
     points: '71.4,160.4 73.5,153.5 76.7,161.2 79.6,167.8 78.4,187.8 79.6,195.5 74.7,195.5',
@@ -147,8 +158,8 @@ export const BACK_SHAPES: BodyShape[] = [
   }, // hamstring
   { muscle: 'hamstrings', points: '38.7,125.5 44.3,146 40.4,166.8 36.2,152.8 37,135.3' }, // hamstring
   { muscle: 'hamstrings', points: '61.7,125.5 63.4,136.2 64.3,153.2 60,166.8 56.2,146.4' }, // hamstring
-  { muscle: null, points: '34.5,153.2 31.1,159.1 33.6,166.4 37.4,162.6' }, // knees
-  { muscle: null, points: '66.4,153.6 63,163 66.8,166.4 69.4,159.1' }, // knees
+  { muscle: null, points: '34.5,153.2 31.1,159.1 33.6,166.4 37.4,162.6', light: true }, // knees
+  { muscle: null, points: '66.4,153.6 63,163 66.8,166.4 69.4,159.1', light: true }, // knees
   {
     muscle: 'calves',
     points: '29.4,160.4 28.5,167.2 24.7,179.6 23.8,192.8 25.5,197 28.5,193.2 29.8,180 31.9,171.1 31.9,166.8',
@@ -162,6 +173,7 @@ export const BACK_SHAPES: BodyShape[] = [
     muscle: 'calves',
     points: '70.6,160.4 72.3,168.5 75.7,179.1 76.6,192.8 74.5,196.6 72.3,193.6 70.6,179.6 68.1,168.1',
   }, // calves
-  { muscle: 'calves', points: '28.5,195.7 30.2,195.7 33.6,201.7 30.6,220 28.5,213.6 26.8,198.3' }, // left_soleus
-  { muscle: 'calves', points: '69.8,195.7 71.9,195.7 73.6,198.3 71.9,213.2 70.2,219.6 67.2,202.1' }, // right_soleus
+  // The soleus shapes end at the ankle, above the feet, instead of in a point.
+  { muscle: 'calves', points: '28.5,195.7 30.2,195.7 33.6,201.7 32.6,209.6 28.2,209.6 26.8,198.3' }, // left_soleus
+  { muscle: 'calves', points: '69.8,195.7 71.9,195.7 73.6,198.3 72.2,209.6 67.8,209.6 67.2,202.1' }, // right_soleus
 ]
