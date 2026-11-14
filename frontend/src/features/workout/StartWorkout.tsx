@@ -1,6 +1,6 @@
 import { ChevronRightIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,17 @@ interface StartWorkoutProps {
 export function StartWorkout({ onStart, onStartDictated }: StartWorkoutProps) {
   const routines = useRoutines()
   // A routine opens today's plan first: one decision per screen, then the workout.
-  const [chosen, setChosen] = useState<Routine | null>(null)
+  const [picked, setPicked] = useState<Routine | null>(null)
+  // `?rutina=` comes from the week plan's "Empezar", straight to that routine's plan.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const linked = routines.data?.find((routine) => String(routine.id) === searchParams.get('rutina'))
+  const chosen = picked ?? linked ?? null
+  const setChosen = (routine: Routine | null) => {
+    setPicked(routine)
+    if (routine === null && searchParams.has('rutina')) {
+      setSearchParams({}, { replace: true })
+    }
+  }
 
   // Without routines the free workout is the way in, so it keeps the main colour.
   const hasRoutines = (routines.data?.length ?? 0) > 0

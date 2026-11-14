@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { planKeys } from '@/features/plan/queries'
 import { progressKeys } from '@/features/progress/queries'
 import { queryKeys } from '@/features/workout/queries'
 import { apiFetch } from '@/lib/api'
@@ -22,6 +23,8 @@ export function useUpdateRoutine(routineId: number | undefined) {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.routines }),
         queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+        // The week plan shows routine names and exercise counts.
+        queryClient.invalidateQueries({ queryKey: planKeys.all }),
       ]),
   })
 }
@@ -36,6 +39,8 @@ export function useDeleteRoutine() {
         queryClient.invalidateQueries({ queryKey: queryKeys.routines }),
         queryClient.invalidateQueries({ queryKey: queryKeys.workouts }),
         queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+        // Its days in the week plan turn into free workouts.
+        queryClient.invalidateQueries({ queryKey: planKeys.all }),
       ]),
   })
 }

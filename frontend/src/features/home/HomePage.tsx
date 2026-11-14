@@ -10,6 +10,7 @@ import { GettingStarted } from '@/features/home/GettingStarted'
 import { OverloadCard } from '@/features/home/OverloadCard'
 import { RankingCard } from '@/features/home/RankingCard'
 import { StreakCard } from '@/features/home/StreakCard'
+import { WeekCard } from '@/features/plan/WeekCard'
 import { useProgressOverview, useStreak } from '@/features/progress/queries'
 import { loadDraft } from '@/features/workout/draft'
 import { PendingWorkouts } from '@/features/workout/PendingWorkouts'
@@ -123,6 +124,8 @@ export function HomePage() {
           </Link>
         </div>
       </section>
+
+      <WeekCard />
 
       <PendingWorkouts />
 

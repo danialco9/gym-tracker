@@ -357,3 +357,38 @@ export interface MyRanking {
   /** By zone, best first. */
   lifts: MyLift[]
 }
+
+/** What a day of the week plan holds; a free workout has no routine. */
+export type PlanKind = 'routine' | 'free' | 'rest'
+
+export interface PlannedRoutine {
+  id: number
+  name: string
+  exercise_count: number
+}
+
+export interface PlanDay {
+  /** `YYYY-MM-DD`. */
+  on_date: string
+  kind: PlanKind
+  routine: PlannedRoutine | null
+  /** Whether a change for this date replaced what the usual week holds. */
+  changed: boolean
+  /** Whether any workout was logged on this date. */
+  trained: boolean
+}
+
+export interface WeekPlan {
+  /** The Monday of the week, `YYYY-MM-DD`. */
+  start: string
+  today: string
+  /** Monday to Sunday. */
+  days: PlanDay[]
+}
+
+/** A training day of the usual week (Monday is 0); weekdays left out rest. */
+export interface PlannedDay {
+  weekday: number
+  /** Null for a free workout. */
+  routine_id: number | null
+}
