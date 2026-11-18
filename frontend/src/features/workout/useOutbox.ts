@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 import { useCurrentUser } from '@/features/auth/queries'
+import { planKeys } from '@/features/plan/queries'
 import { progressKeys } from '@/features/progress/queries'
 import { plural } from '@/lib/format'
 import { useOnline } from '@/lib/online'
@@ -42,6 +43,8 @@ export function useOutboxSync(): void {
           queryClient.invalidateQueries({ queryKey: queryKeys.workouts }),
           queryClient.invalidateQueries({ queryKey: queryKeys.exercises }),
           queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+          // The week plan marks the days trained.
+          queryClient.invalidateQueries({ queryKey: planKeys.all }),
         ])
       }
       if (rejected > 0) {
