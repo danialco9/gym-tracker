@@ -23,6 +23,14 @@ from gym_tracker.analysis.recommendations import SINGLE_JOINT_LIFTS, Action, Rea
 from gym_tracker.analysis.recommendations import is_compound as is_multi_joint
 from gym_tracker.analysis.strength import StrengthTier, Zone
 from gym_tracker.enums import Equipment, MuscleGroup, PlanKind, Sex, TrainingGoal
+from gym_tracker.plates import (
+    DEFAULT_BAR_KG,
+    DEFAULT_PLATES_KG,
+    MAX_BAR_KG,
+    MIN_BAR_KG,
+    PLATE_SIZES_KG,
+    normalize_plates,
+)
 from gym_tracker.presets import MAX_TRAINING_DAYS
 from gym_tracker.push import MAX_REST_SECONDS, is_push_service
 from gym_tracker.slugs import SLUG_PATTERN
@@ -135,7 +143,20 @@ class UserRead(ORMModel):
     block_weeks: int | None
     # Where this week falls in the training block; null without blocks.
     block: BlockWeekRead | None = None
+    # The bar and plates of the user's gym, the defaults until changed (plates.py).
+    bar_kg: float
+    plates_kg: list[float]
     created_at: datetime
+
+    @field_validator("bar_kg", mode="before")
+    @classmethod
+    def default_bar(cls, value: object) -> object:
+        return DEFAULT_BAR_KG if value is None else value
+
+    @field_validator("plates_kg", mode="before")
+    @classmethod
+    def default_plates(cls, value: object) -> object:
+        return list(DEFAULT_PLATES_KG) if value is None else value
 
 
 class BlockWeekRead(BaseModel):
@@ -156,6 +177,15 @@ class UserUpdate(PartialUpdate):
     # Weeks per training block, deload included. Sending it (even the same value) starts a new block
     # this week; null stops using blocks.
     block_weeks: int | None = Field(default=None, ge=MIN_BLOCK_WEEKS, le=MAX_BLOCK_WEEKS)
+    # Null goes back to the defaults.
+    bar_kg: float | None = Field(default=None, ge=MIN_BAR_KG, le=MAX_BAR_KG)
+    # Known sizes only, kept once each and heaviest first.
+    plates_kg: list[float] | None = Field(default=None, max_length=len(PLATE_SIZES_KG) * 2)
+
+    @field_validator("plates_kg")
+    @classmethod
+    def known_plates(cls, value: list[float] | None) -> list[float] | None:
+        return None if value is None else normalize_plates(value)
 
 
 class HealthRead(BaseModel):

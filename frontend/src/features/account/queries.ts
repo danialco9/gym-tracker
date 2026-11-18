@@ -23,6 +23,20 @@ export function useSendFeedback() {
  */
 export type RankingProfile = Partial<Pick<User, 'nickname' | 'sex'>>
 
+/** The bar and plates of the user's gym, for the plate calculator. */
+export type GymChanges = Pick<User, 'bar_kg' | 'plates_kg'>
+
+export function useUpdateGym() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (changes: GymChanges) => apiFetch<User>('/auth/me', { method: 'PATCH', body: changes }),
+    onSuccess: (user) => {
+      saveCachedUser(user)
+      queryClient.setQueryData(currentUserQueryKey, user)
+    },
+  })
+}
+
 export function useUpdateRankingProfile() {
   const queryClient = useQueryClient()
   return useMutation({

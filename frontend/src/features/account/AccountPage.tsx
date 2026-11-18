@@ -1,5 +1,6 @@
 import {
   ChevronRightIcon,
+  DumbbellIcon,
   LogOutIcon,
   MessageSquareIcon,
   TargetIcon,
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { GymForm } from '@/features/account/GymForm'
 import { useSendFeedback, useUpdateRankingProfile } from '@/features/account/queries'
 import { useSignOut } from '@/features/account/useSignOut'
 import { tooManyAttemptsMessage } from '@/features/auth/errors'
@@ -24,13 +26,14 @@ import { clearOutbox } from '@/features/workout/outbox'
 import { ApiError } from '@/lib/api'
 import { TRAINING_GOAL_LABELS } from '@/lib/labels'
 import type { Sex, User } from '@/lib/types'
+import { describeGym, gymOf } from '@/lib/plates'
 import { cn } from '@/lib/utils'
 
 const MAX_FEEDBACK_LENGTH = 2000
 // The server's rule: letters, digits, "_" and ".", no spaces.
 const NICKNAME_PATTERN = /^[\p{L}\p{N}_.]{3,20}$/u
 
-type Open = 'feedback' | 'nickname' | 'delete' | null
+type Open = 'feedback' | 'nickname' | 'gym' | 'delete' | null
 
 function nicknameErrorMessage(error: Error): string {
   if (error instanceof ApiError && error.status === 409) {
@@ -330,6 +333,32 @@ export function AccountPage() {
           </button>
         )}
         {user != null && <SexChoice user={user} />}
+        {open === 'gym' && user != null ? (
+          <>
+            <h2 className="flex items-center gap-3 p-3 font-medium">
+              <DumbbellIcon className="text-primary size-5 shrink-0" aria-hidden />
+              Barra y discos
+            </h2>
+            <GymForm user={user} onDone={close} />
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen('gym')}
+            className="hover:bg-accent flex w-full items-center justify-between gap-3 rounded-lg p-3 text-left transition-colors"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <DumbbellIcon className="text-primary size-5 shrink-0" aria-hidden />
+              <span className="min-w-0">
+                <span className="block font-medium">Barra y discos</span>
+                <span className="text-muted-foreground block truncate text-sm">
+                  {user == null ? '' : describeGym(gymOf(user))}
+                </span>
+              </span>
+            </span>
+            <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+          </button>
+        )}
         {open === 'feedback' ? (
           <>
             <h2 className="flex items-center gap-3 p-3 font-medium">
