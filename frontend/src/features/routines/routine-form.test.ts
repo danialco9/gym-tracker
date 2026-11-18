@@ -29,6 +29,7 @@ const legDay: Routine = {
         secondary_muscles: [],
         equipment: 'barbell',
         is_custom: false,
+        is_compound: false,
       },
     },
   ],

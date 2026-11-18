@@ -15,6 +15,7 @@ function exercise(id: number, slug: string, name: string, extra: Partial<Exercis
     secondary_muscles: [],
     equipment: 'barbell',
     is_custom: false,
+    is_compound: false,
     ...extra,
   }
 }
@@ -159,6 +160,7 @@ describe('ExercisePicker', () => {
       muscle_group: 'back',
       equipment: 'machine',
       is_custom: true,
+      is_compound: false,
     })
     const { user, onSelect, calls } = renderPicker([], { 'POST /exercises': { status: 201, body: created } })
     await screen.findByRole('region', { name: 'Todos los ejercicios' })

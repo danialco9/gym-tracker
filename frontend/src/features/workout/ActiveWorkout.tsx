@@ -19,6 +19,7 @@ import {
   draftReducer,
   nextPendingSet,
   toWorkoutPayload,
+  workingSetNumber,
   type DraftAction,
   type WorkoutDraft,
 } from './draft'
@@ -30,7 +31,7 @@ import { lastSessionQuery, useExercises, useSaveWorkout } from './queries'
 import { useRestNotification, useRestPushSetting } from './rest-push'
 import { RestBar } from './RestBar'
 import { SwapExerciseSheet } from './SwapExerciseSheet'
-import { DEFAULT_REST_SECONDS, useRestTimer } from './useRestTimer'
+import { DEFAULT_REST_SECONDS, WARMUP_REST_SECONDS, useRestTimer } from './useRestTimer'
 
 interface ActiveWorkoutProps {
   draft: WorkoutDraft
@@ -70,7 +71,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   useRestNotification(
     timer.endsAt,
     next &&
-      `${next.entry.name} · serie ${next.number} · ${next.set.reps} × ${formatDecimal(next.set.weightKg)} kg`,
+      `${next.entry.name} · ${next.set.isWarmup ? 'calentamiento' : `serie ${next.number}`} · ${next.set.reps} × ${formatDecimal(next.set.weightKg)} kg`,
     restPush.status,
   )
   const showRest = (timer.isRunning || timer.ready) && next !== null
@@ -80,7 +81,11 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
     setCurrentEntryId(entryId)
     const after = draftReducer(draft, { type: 'toggleDone', entryId, setId })
     if (after !== null && nextPendingSet(after) !== null) {
-      timer.start(restSeconds)
+      const warmup = draft.exercises
+        .find((entry) => entry.id === entryId)
+        ?.sets.find((set) => set.id === setId)?.isWarmup
+      // A warm-up barely tires: a short breather is enough before the next set.
+      timer.start(warmup === true ? WARMUP_REST_SECONDS : restSeconds)
     }
   }
 
@@ -167,7 +172,10 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
     }
     const set = entry.sets[index]
     dispatch({ type: 'removeSet', entryId, setId })
-    toast(`Serie ${index + 1} de ${entry.name} quitada`, {
+    const removed = set.isWarmup
+      ? `Calentamiento de ${entry.name} quitado`
+      : `Serie ${workingSetNumber(entry.sets, index)} de ${entry.name} quitada`
+    toast(removed, {
       action: { label: 'Deshacer', onClick: () => dispatch({ type: 'restoreSet', entryId, set, index }) },
     })
   }
@@ -341,6 +349,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
           next={{
             exerciseName: next.entry.name,
             number: next.number,
+            isWarmup: next.set.isWarmup,
             reps: next.set.reps,
             weightKg: next.set.weightKg,
           }}

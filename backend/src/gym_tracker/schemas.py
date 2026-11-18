@@ -6,11 +6,21 @@ from datetime import date, datetime
 from typing import Annotated, ClassVar, Self
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 from gym_tracker.analysis.mesocycle import MAX_BLOCK_WEEKS, MIN_BLOCK_WEEKS
 from gym_tracker.analysis.overload import OverloadVerdict
-from gym_tracker.analysis.recommendations import Action, Reason, VolumeStatus
+from gym_tracker.analysis.recommendations import SINGLE_JOINT_LIFTS, Action, Reason, VolumeStatus
+from gym_tracker.analysis.recommendations import is_compound as is_multi_joint
 from gym_tracker.analysis.strength import StrengthTier, Zone
 from gym_tracker.enums import Equipment, MuscleGroup, PlanKind, Sex, TrainingGoal
 from gym_tracker.presets import MAX_TRAINING_DAYS
@@ -181,6 +191,14 @@ class ExerciseRead(ORMModel):
     secondary_muscles: list[MuscleGroup]
     equipment: Equipment | None
     is_custom: bool
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_compound(self) -> bool:
+        """A multi-joint lift, by the same rule as the rep ranges: the app warms these up."""
+        return self.slug not in SINGLE_JOINT_LIFTS and is_multi_joint(
+            self.muscle_group, ";".join(self.secondary_muscles) or None
+        )
 
 
 # Routines

@@ -84,6 +84,8 @@ export interface Exercise {
   secondary_muscles: MuscleGroup[]
   equipment: Equipment | null
   is_custom: boolean
+  /** A multi-joint lift (squat, bench press, row...), which the workout warms up. */
+  is_compound: boolean
 }
 
 export interface RoutineSet {

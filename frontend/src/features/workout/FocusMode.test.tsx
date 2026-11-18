@@ -63,6 +63,7 @@ const BENCH_PRESS: Exercise = {
   secondary_muscles: ['triceps'],
   equipment: 'barbell',
   is_custom: false,
+  is_compound: false,
 }
 
 // Only the records matter here: the best squat so far is 77.5 kg x 8 (98.2 kg estimated).

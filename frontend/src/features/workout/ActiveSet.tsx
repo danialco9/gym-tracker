@@ -40,14 +40,18 @@ export function ActiveSet({
   onRemove,
 }: ActiveSetProps) {
   const rpeLabelId = useId()
+  // A warm-up goes by its name: the working sets are the ones numbered.
+  const name = set.isWarmup ? 'calentamiento' : `serie ${number}`
   // Opened already when the set carries an effort, e.g. coming back to correct it.
   const [rpeOpen, setRpeOpen] = useState(set.rpe !== null)
 
   return (
     <div className="border-primary/50 bg-primary/5 space-y-3 rounded-lg border p-2">
       <div className="flex items-center justify-between">
-        <span className="eyebrow text-foreground">Serie {number}</span>
-        <Button variant="ghost" size="icon-sm" aria-label={`Eliminar serie ${number}`} onClick={onRemove}>
+        <span className={cn('eyebrow', set.isWarmup ? 'text-muted-foreground' : 'text-foreground')}>
+          {set.isWarmup ? 'Calentamiento' : `Serie ${number}`}
+        </span>
+        <Button variant="ghost" size="icon-sm" aria-label={`Eliminar ${name}`} onClick={onRemove}>
           <Trash2Icon />
         </Button>
       </div>
@@ -134,12 +138,7 @@ export function ActiveSet({
             <ArrowLeftIcon />
           </Button>
         )}
-        <Button
-          size="lg"
-          className="h-12 flex-1 text-base"
-          aria-label={`Completar serie ${number}`}
-          onClick={onDone}
-        >
+        <Button size="lg" className="h-12 flex-1 text-base" aria-label={`Completar ${name}`} onClick={onDone}>
           <CheckIcon />
           Hecho
         </Button>

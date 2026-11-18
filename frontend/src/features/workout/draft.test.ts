@@ -8,6 +8,7 @@ import {
   nextPendingSet,
   saveDraft,
   toWorkoutPayload,
+  workingSetNumber,
   type DraftAction,
   type WorkoutDraft,
 } from './draft'
@@ -38,6 +39,7 @@ const legDay: Routine = {
         secondary_muscles: ['glutes'],
         equipment: 'barbell',
         is_custom: false,
+        is_compound: false,
       },
     },
   ],
@@ -228,6 +230,85 @@ describe('draftReducer', () => {
 
     draft = apply(draft, { type: 'markDone', entryId: entry.id, setIds: pending, done: false })
     expect(draft.exercises[0].sets.map((set) => set.done)).toEqual([true, false, false])
+  })
+})
+
+describe('warm-ups', () => {
+  const [squatItem] = legDay.exercises
+  const compound = (id: number, name: string, weightKg: number, muscle: 'quads' | 'chest') => ({
+    ...squatItem,
+    id,
+    sets: squatItem.sets.map((set) => ({ ...set, target_weight_kg: weightKg })),
+    exercise: { ...squatItem.exercise, id: id * 10, name, muscle_group: muscle, is_compound: true },
+  })
+  // A squat at 60 kg, a leg press after it for the same quads, and a light bench press.
+  const warmedUpDay: Routine = {
+    ...legDay,
+    exercises: [
+      compound(1, 'Sentadilla', 60, 'quads'),
+      compound(2, 'Prensa', 120, 'quads'),
+      compound(3, 'Press banca', 17.5, 'chest'),
+      // Not multi-joint: never warmed up.
+      { ...squatItem, id: 4, exercise: { ...squatItem.exercise, id: 40, muscle_group: 'chest' } },
+    ],
+  }
+  const warmups = (entry: WorkoutDraft['exercises'][number]) =>
+    entry.sets.filter((set) => set.isWarmup).map((set) => [set.reps, set.weightKg])
+
+  it('warms up the first multi-joint lift of each muscle, ahead of its working sets', () => {
+    const [squat, press, bench, other] = start(warmedUpDay).exercises
+
+    expect(squat.sets.map((set) => [set.isWarmup, set.reps, set.weightKg])).toEqual([
+      [true, 10, 25],
+      [true, 5, 35],
+      [true, 3, 47.5],
+      [false, 8, 60],
+      [false, 8, 60],
+      [false, 8, 60],
+    ])
+    // The squat already warmed up the quads; the bench is too light to need it; the last is single-joint.
+    expect([press, bench, other].map(warmups)).toEqual([[], [], []])
+    // The targets stay the working sets'.
+    expect(squat.targets).toHaveLength(3)
+  })
+
+  it('numbers only the working sets', () => {
+    let draft = start(warmedUpDay)
+    const squat = draft.exercises[0]
+    expect(squat.sets.map((_, index) => workingSetNumber(squat.sets, index))).toEqual([0, 0, 0, 1, 2, 3])
+
+    draft = apply(draft, {
+      type: 'markDone',
+      entryId: squat.id,
+      setIds: squat.sets.slice(0, 3).map((set) => set.id),
+      done: true,
+    })
+    expect(nextPendingSet(draft)).toMatchObject({ number: 1, set: { isWarmup: false } })
+  })
+
+  it('leaves the warm-ups still to do behind when swapping the exercise', () => {
+    let draft = start(warmedUpDay)
+    const squat = draft.exercises[0]
+    draft = apply(draft, { type: 'toggleDone', entryId: squat.id, setId: squat.sets[0].id })
+
+    const swapped = apply(draft, {
+      type: 'swapExercise',
+      entryId: squat.id,
+      exercise: { id: 12, name: 'Hack squat' },
+      replacementId: 'hack',
+      weightsKg: [100],
+    })
+
+    const [original, replacement] = swapped.exercises
+    // The warm-up done stays; no working set was done, so no target goes with it.
+    expect(original.sets.map((set) => set.isWarmup)).toEqual([true])
+    expect(original.targets).toEqual([])
+    expect(replacement.sets.map((set) => [set.isWarmup, set.weightKg])).toEqual([
+      [false, 100],
+      [false, 100],
+      [false, 100],
+    ])
+    expect(replacement.targets).toHaveLength(3)
   })
 })
 

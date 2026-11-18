@@ -88,6 +88,10 @@ remove it like any other app (long press on the icon).
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
   RIR), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
   with keyboard support.
+- **Warm-ups worked out for you.** Starting a routine, the first multi-joint lift of each muscle
+  comes with its warm-up ahead of the working sets: 40 % × 10, 60 % × 5 and 80 % × 3 of the first
+  working weight, rounded to 2.5 kg and never under the empty bar. They rest a short minute, go by
+  "C" instead of a number, and never count as volume or records.
 - **Logging a workout in plain language.** Type (or dictate with the phone keyboard) `prensa 4x10
   120, press banca 12,10,8 a 60 rir 2` and the server reads it into sets, matched against your
   exercise catalog. It never saves on its own: the reading prefills the workout screen for you to
@@ -304,6 +308,7 @@ A few decisions worth calling out:
 - [x] Volume that climbs through the block: a rising weekly target, and a set more where it falls short
 - [x] Swap an exercise when the machine is taken, for the closest ones of the same muscle
 - [x] Double progression in the rep range of the goal: more weight and fewer reps at the top of the range
+- [x] Warm-up sets worked out from the first working set (40 %, 60 % and 80 %) on the multi-joint lifts
 
 ## Ideas for the future
 
@@ -311,7 +316,6 @@ Not promised, roughly in order of value for the effort.
 
 **Hypertrophy and progressive overload**
 
-- [ ] Warm-up sets worked out from the first working set (for example 40 %, 60 % and 80 %).
 - [ ] Plate calculator: which plates to load on each side of the bar for the weight on screen.
 
 **In the gym**
