@@ -464,6 +464,8 @@ class MuscleWeekRead(BaseModel):
     max_hard_sets: int
     # This week's aim: the minimum, or a step on the way to the maximum when training in blocks.
     target_hard_sets: int
+    # The whole week before: below a target that climbed, today's plan adds a set.
+    last_week_hard_sets: float
 
 
 class SetLoadRead(BaseModel):

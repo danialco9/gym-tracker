@@ -8,6 +8,7 @@ const chest = (hardSets: number, target = 12): MuscleWeek => ({
   min_hard_sets: 12,
   max_hard_sets: 20,
   target_hard_sets: target,
+  last_week_hard_sets: 0,
 })
 
 describe('weekVolumeStatus', () => {

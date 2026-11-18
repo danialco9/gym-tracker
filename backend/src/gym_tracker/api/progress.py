@@ -145,6 +145,7 @@ def _week_sets(log: TrainingLog, today: date, user: User) -> list[MuscleWeekRead
             min_hard_sets=rules.min_hard_sets,
             max_hard_sets=rules.max_hard_sets,
             target_hard_sets=target,
+            last_week_hard_sets=item.last_week_hard_sets,
         )
         for item in current_week_sets(log, today, rules)
     ]

@@ -127,6 +127,7 @@ remove it like any other app (long press on the icon).
   out of the next recommendations, so a light week never reads as missed reps or a plateau. A new
   block starts on its own after the deload. The weekly target of sets per muscle climbs through the
   block, from the minimum of the goal's range in the first week to its maximum before the deload.
+  When last week fell short of it, today's plan adds a set to the first exercise of that muscle.
 
 ## Architecture
 
@@ -300,6 +301,7 @@ A few decisions worth calling out:
 - [x] Weekly overload summary on the home screen: how many exercises beat last time, and which
 - [x] Effort as reps in reserve (RIR) instead of RPE, while logging, in goals, routines, recommendations and dictation
 - [x] Training blocks (mesocycles) of 4–6 weeks that end in a deload week with half the sets
+- [x] Volume that climbs through the block: a rising weekly target, and a set more where it falls short
 - [x] Swap an exercise when the machine is taken, for the closest ones of the same muscle
 - [x] Double progression in the rep range of the goal: more weight and fewer reps at the top of the range
 
@@ -309,7 +311,6 @@ Not promised, roughly in order of value for the effort.
 
 **Hypertrophy and progressive overload**
 
-- [ ] Ramp the volume across a training block: a set more each week up to the deload.
 - [ ] Warm-up sets worked out from the first working set (for example 40 %, 60 % and 80 %).
 - [ ] Plate calculator: which plates to load on each side of the bar for the weight on screen.
 

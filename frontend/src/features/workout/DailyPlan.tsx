@@ -1,4 +1,11 @@
-import { BatteryChargingIcon, ChevronLeftIcon, ListChecksIcon, PlayIcon, TargetIcon } from 'lucide-react'
+import {
+  BatteryChargingIcon,
+  ChevronLeftIcon,
+  ListChecksIcon,
+  PlayIcon,
+  TargetIcon,
+  TrendingUpIcon,
+} from 'lucide-react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
@@ -18,22 +25,31 @@ import { formatSetPlan } from '@/lib/set-plan'
 import type { PlannedSet, Recommendation, Routine, RoutineExercise } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { deloadSets } from './draft'
+import { rampExercises, withExtraSet } from './ramp'
 
 const toPlan = (sets: PlannedSet[]) => sets.map((set) => ({ reps: set.reps, weightKg: set.weight_kg }))
+
+/** The routine's own sets, in the shape of a suggestion. */
+const routineSets = (item: RoutineExercise): PlannedSet[] =>
+  item.sets.map((set) => ({ reps: set.target_reps, weight_kg: set.target_weight_kg }))
 
 interface PlanRowProps {
   item: RoutineExercise
   recommendation?: Recommendation
   deloadWeek: boolean
+  /** One more set this week, as the block's target of sets climbs. */
+  extraSet: boolean
 }
 
-function PlanRow({ item, recommendation, deloadWeek }: PlanRowProps) {
+function PlanRow({ item, recommendation, deloadWeek, extraSet }: PlanRowProps) {
   const Icon = recommendation === undefined ? ListChecksIcon : ACTION_ICONS[recommendation.action]
-  const routineSets = item.sets.map((set) => ({ reps: set.target_reps, weightKg: set.target_weight_kg }))
-  const plan =
+  const sets =
     recommendation === undefined
-      ? formatSetPlan(deloadWeek ? deloadSets(routineSets) : routineSets)
-      : formatSetPlan(toPlan(recommendation.suggested_sets))
+      ? deloadWeek
+        ? deloadSets(routineSets(item))
+        : routineSets(item)
+      : recommendation.suggested_sets
+  const plan = formatSetPlan(toPlan(extraSet ? withExtraSet(sets) : sets))
   return (
     <li className="flex gap-3 py-3">
       <span
@@ -56,6 +72,7 @@ function PlanRow({ item, recommendation, deloadWeek }: PlanRowProps) {
             : recommendation === undefined
               ? 'Según tu rutina'
               : ACTION_TITLES[recommendation.action]}
+          {extraSet && <span className="text-primary font-medium"> · +1 serie esta semana</span>}
         </span>
         {plan !== null && <span className="block text-sm font-semibold tabular-nums">{plan}</span>}
         {recommendation !== undefined && !deloadWeek && (
@@ -90,12 +107,15 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
   )
   const muscles = new Set(routine.exercises.map((item) => item.exercise.muscle_group))
   const volume = overview.data?.volume_advice.filter((advice) => muscles.has(advice.muscle_group)) ?? []
+  const ramped = rampExercises(routine.exercises, overview.data?.week_sets ?? [], currentUser?.block)
 
   const start = () => {
     const suggestions = new Map<number, PlannedSet[]>()
     for (const item of routine.exercises) {
       const recommendation = recommendations.get(item.exercise.id)
-      if (recommendation !== undefined) {
+      if (ramped.has(item.exercise.id)) {
+        suggestions.set(item.exercise.id, withExtraSet(recommendation?.suggested_sets ?? routineSets(item)))
+      } else if (recommendation !== undefined) {
         suggestions.set(item.exercise.id, recommendation.suggested_sets)
       }
     }
@@ -143,6 +163,19 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
         </p>
       )}
 
+      {ramped.size > 0 && (
+        <p className="ring-primary/40 flex gap-3 rounded-xl p-4 text-sm ring-1">
+          <TrendingUpIcon className="text-primary size-5 shrink-0" aria-hidden />
+          <span>
+            <span className="block font-medium">Esta semana sube el volumen</span>
+            <span className="text-muted-foreground block">
+              La meta pasa a {overview.data?.week_sets[0]?.target_hard_sets} series por músculo, así que
+              algunos ejercicios llevan una serie más.
+            </span>
+          </span>
+        </p>
+      )}
+
       <QueryStatus
         query={overview}
         loading="Preparando el plan…"
@@ -162,6 +195,7 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
               item={item}
               recommendation={recommendations.get(item.exercise.id)}
               deloadWeek={deloadWeek}
+              extraSet={ramped.has(item.exercise.id)}
             />
           ))}
         </ul>

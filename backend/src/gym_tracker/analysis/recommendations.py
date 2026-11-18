@@ -605,18 +605,31 @@ def volume_advice(log: TrainingLog, today: date, rules: VolumeRules = DEFAULT_VO
 class MuscleWeekSets:
     muscle_group: str
     hard_sets: float
+    # The whole week before, to tell whether the routine as it is reaches a target that has climbed.
+    last_week_hard_sets: float = 0.0
 
 
 def current_week_sets(log: TrainingLog, today: date, rules: VolumeRules = DEFAULT_VOLUME_RULES) -> list[MuscleWeekSets]:
-    """Hard sets of each main muscle so far this week (from Monday), counted as ``volume_advice`` does.
+    """Hard sets of each main muscle so far this week (from Monday) and in the whole week before,
+    counted as ``volume_advice`` does.
 
     Unlike the advice, it judges nothing: it is the live count the week's target is filled with.
     """
     work = working_sets(log)
     current_week = today - timedelta(days=today.weekday())
-    totals = (
-        _sets_per_muscle(work.loc[_week_starts(work) == current_week], log.exercises, rules.secondary_share)
-        if not work.empty
-        else pd.Series(dtype=float)
-    )
-    return [MuscleWeekSets(str(muscle), round(float(totals.get(muscle, 0)), 1)) for muscle in MAIN_MUSCLES]
+
+    def totals_of(week: date) -> pd.Series:
+        if work.empty:
+            return pd.Series(dtype=float)
+        return _sets_per_muscle(work.loc[_week_starts(work) == week], log.exercises, rules.secondary_share)
+
+    this_week = totals_of(current_week)
+    last_week = totals_of(current_week - timedelta(weeks=1))
+    return [
+        MuscleWeekSets(
+            str(muscle),
+            round(float(this_week.get(muscle, 0)), 1),
+            round(float(last_week.get(muscle, 0)), 1),
+        )
+        for muscle in MAIN_MUSCLES
+    ]

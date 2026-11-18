@@ -377,6 +377,11 @@ def test_current_week_sets_count_only_this_week(write_log: WriteLog) -> None:
     assert week["chest"] == 12.0
     assert week["triceps"] == 6.0
     assert week["back"] == 0.0
+    # The week before is counted whole, apart.
+    last_week = {
+        item.muscle_group: item.last_week_hard_sets for item in current_week_sets(log, today=date(2026, 9, 16))
+    }
+    assert (last_week["chest"], last_week["triceps"], last_week["back"]) == (12.0, 6.0, 0.0)
     # Every main muscle and nothing else, so the app can paint the whole body.
     assert set(week) == {"chest", "back", "shoulders", "biceps", "triceps", "quads", "hamstrings", "glutes"}
 
