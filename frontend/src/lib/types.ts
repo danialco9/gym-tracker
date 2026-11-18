@@ -52,6 +52,11 @@ export interface BlockWeek {
   weeks: number
   /** The last week of every block: lighter, to recover. */
   is_deload: boolean
+  /**
+   * Hard sets each main muscle aims for this week, climbing through the block. Optional because a
+   * session saved on the phone by an earlier version does not carry it.
+   */
+  target_hard_sets?: number
 }
 
 interface Range {
@@ -254,6 +259,8 @@ export interface MuscleWeek {
   hard_sets: number
   min_hard_sets: number
   max_hard_sets: number
+  /** This week's aim: the minimum, or a step on the way to the maximum when training in blocks. */
+  target_hard_sets: number
 }
 
 export interface SetLoad {

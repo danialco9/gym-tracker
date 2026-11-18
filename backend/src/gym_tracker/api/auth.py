@@ -7,7 +7,8 @@ from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, status
 
-from gym_tracker.analysis.mesocycle import block_week, week_start
+from gym_tracker.analysis import volume_rules_for
+from gym_tracker.analysis.mesocycle import current_block_week, week_set_target, week_start
 from gym_tracker.api.common import commit_or_conflict
 from gym_tracker.api.deps import (
     ACCESS_TOKEN_COOKIE,
@@ -191,9 +192,15 @@ def logout(response: Response, settings: SettingsDep) -> None:
 
 def _user_read(user: User, today: date) -> UserRead:
     read = UserRead.model_validate(user)
-    if user.block_weeks is not None and user.block_started_on is not None:
-        week = block_week(user.block_started_on, user.block_weeks, today)
-        read.block = BlockWeekRead(week=week.week, weeks=week.weeks, is_deload=week.is_deload)
+    week = current_block_week(user.block_started_on, user.block_weeks, today)
+    if week is not None:
+        rules = volume_rules_for(user.goal)
+        read.block = BlockWeekRead(
+            week=week.week,
+            weeks=week.weeks,
+            is_deload=week.is_deload,
+            target_hard_sets=week_set_target(week, rules.min_hard_sets, rules.max_hard_sets),
+        )
     return read
 
 

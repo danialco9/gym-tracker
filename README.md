@@ -125,7 +125,8 @@ remove it like any other app (long press on the icon).
   screen shows the week of the block, and in the deload week today's plan halves the sets at the
   same weights with 3–4 reps in reserve, without touching the routine. Deload sessions are left
   out of the next recommendations, so a light week never reads as missed reps or a plateau. A new
-  block starts on its own after the deload.
+  block starts on its own after the deload. The weekly target of sets per muscle climbs through the
+  block, from the minimum of the goal's range in the first week to its maximum before the deload.
 
 ## Architecture
 

@@ -29,7 +29,7 @@ from gym_tracker.analysis import (
     working_sets,
 )
 from gym_tracker.analysis.database import load_user_log
-from gym_tracker.analysis.mesocycle import in_deload_week
+from gym_tracker.analysis.mesocycle import current_block_week, in_deload_week, week_set_target
 from gym_tracker.analysis.recommendations import SINGLE_JOINT_LIFTS
 from gym_tracker.api.common import not_found, visible_to
 from gym_tracker.api.deps import (
@@ -134,14 +134,17 @@ def _volume_advice(log: TrainingLog, today: date, goal: str | None) -> list[Volu
     ]
 
 
-def _week_sets(log: TrainingLog, today: date, goal: str | None) -> list[MuscleWeekRead]:
-    rules = volume_rules_for(goal)
+def _week_sets(log: TrainingLog, today: date, user: User) -> list[MuscleWeekRead]:
+    rules = volume_rules_for(user.goal)
+    block = current_block_week(user.block_started_on, user.block_weeks, today)
+    target = week_set_target(block, rules.min_hard_sets, rules.max_hard_sets)
     return [
         MuscleWeekRead(
             muscle_group=item.muscle_group,
             hard_sets=item.hard_sets,
             min_hard_sets=rules.min_hard_sets,
             max_hard_sets=rules.max_hard_sets,
+            target_hard_sets=target,
         )
         for item in current_week_sets(log, today, rules)
     ]
@@ -228,7 +231,7 @@ def read_overview(
         personal_records=_personal_records(log, work, bests) if not work.empty else [],
         weekly_volume=_weekly_volume(log, work, today),
         volume_advice=_volume_advice(log, today, user.goal),
-        week_sets=_week_sets(log, today, user.goal),
+        week_sets=_week_sets(log, today, user),
         week_overload=_week_overload(log, today),
         body_weight=_body_weight(log),
     )

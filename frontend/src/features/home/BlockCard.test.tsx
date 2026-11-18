@@ -24,6 +24,11 @@ describe('Training block card', () => {
     expect(screen.getByText('Descarga la semana que viene')).toBeInTheDocument()
   })
 
+  it("says the week's target of sets per muscle", () => {
+    render(<BlockCard block={{ week: 2, weeks: 5, is_deload: false, target_hard_sets: 15 }} />)
+    expect(screen.getByText('Meta: 15 series por músculo · Descarga en 3 semanas')).toBeInTheDocument()
+  })
+
   it('turns into the reminder to train lighter in the deload week', () => {
     render(<BlockCard block={{ week: 5, weeks: 5, is_deload: true }} />)
 

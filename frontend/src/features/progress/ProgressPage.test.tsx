@@ -40,6 +40,7 @@ const weekSets = (done: Partial<Record<MuscleGroup, number>> = {}) =>
     hard_sets: done[muscle] ?? 0,
     min_hard_sets: 10,
     max_hard_sets: 20,
+    target_hard_sets: 10,
   }))
 
 const OVERVIEW: ProgressOverview = {
@@ -232,13 +233,13 @@ describe('Progress', () => {
     // This week's count is the body's alone: no second table with other numbers.
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
 
-    // The body: tapping a muscle tells how far it is from the week's minimum.
+    // The body: tapping a muscle tells how far it is from the week's target.
     expect(
-      screen.getByRole('img', { name: /^Series de esta semana\. Pecho: 6 series de 10–20/ }),
+      screen.getByRole('img', { name: /^Series de esta semana\. Pecho: 6 de 10 series esta semana/ }),
     ).toBeInTheDocument()
     await user.click(document.querySelector('[data-muscle="chest"]')!)
     expect(screen.getByRole('status')).toHaveTextContent(
-      'Pecho: 6 series de 10–20. Te faltan 4 series esta semana.',
+      'Pecho: 6 de 10 series esta semana. Te faltan 4 series.',
     )
 
     await user.click(screen.getByRole('tab', { name: 'Peso' }))

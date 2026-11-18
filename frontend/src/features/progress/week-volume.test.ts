@@ -2,19 +2,26 @@ import { describe, expect, it } from 'vitest'
 import type { MuscleWeek } from '@/lib/types'
 import { WEEK_VOLUME_COLORS, weekVolumeColor, weekVolumeStatus } from './week-volume'
 
-const chest = (hardSets: number): MuscleWeek => ({
+const chest = (hardSets: number, target = 12): MuscleWeek => ({
   muscle_group: 'chest',
   hard_sets: hardSets,
   min_hard_sets: 12,
   max_hard_sets: 20,
+  target_hard_sets: target,
 })
 
 describe('weekVolumeStatus', () => {
-  it('is low under the minimum, optimal in range and high past the maximum', () => {
+  it('is low under the target, optimal up to the maximum and high past it', () => {
     expect(weekVolumeStatus(chest(11.5))).toBe('low')
     expect(weekVolumeStatus(chest(12))).toBe('optimal')
     expect(weekVolumeStatus(chest(20))).toBe('optimal')
     expect(weekVolumeStatus(chest(20.5))).toBe('high')
+  })
+
+  it("measures against the week's target as it climbs through a block", () => {
+    expect(weekVolumeStatus(chest(14, 16))).toBe('low')
+    expect(weekVolumeStatus(chest(16, 16))).toBe('optimal')
+    expect(weekVolumeColor(chest(14, 16))).not.toBe(WEEK_VOLUME_COLORS.optimal)
   })
 })
 
