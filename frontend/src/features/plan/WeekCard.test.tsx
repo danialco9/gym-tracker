@@ -74,9 +74,12 @@ describe('Week plan on the home screen', () => {
     showHome()
 
     const week = await screen.findByRole('region', { name: 'Tu semana' })
-    expect(
-      await within(week).findByRole('button', { name: 'Lunes, 9 de noviembre, Torso, entrenado' }),
-    ).toBeInTheDocument()
+    const trained = await within(week).findByRole('button', {
+      name: 'Lunes, 9 de noviembre, Torso, entrenado',
+    })
+    // A trained day reads as done instead of naming the routine.
+    expect(trained).toHaveTextContent('Hecho')
+    expect(trained).not.toHaveTextContent('Torso')
     expect(
       within(week).getByRole('button', {
         name: 'Miércoles, 11 de noviembre, Entreno libre, cambiado solo este día',

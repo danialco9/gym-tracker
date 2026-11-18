@@ -39,7 +39,9 @@ function DayCell({ day, isToday, onOpen }: { day: PlanDay; isToday: boolean; onO
         onClick={onOpen}
         className={cn(
           'flex h-full w-full flex-col items-center gap-1 rounded-lg px-0.5 py-2 transition-colors',
-          isToday ? 'bg-primary/15 ring-primary ring-2' : 'hover:bg-accent',
+          // A trained day reads as done at a glance: the whole cell turns green.
+          day.trained ? 'bg-primary/20' : isToday && 'bg-primary/15',
+          isToday ? 'ring-primary ring-2' : day.trained ? 'ring-primary/40 ring-1' : 'hover:bg-accent',
         )}
       >
         <span className="text-muted-foreground text-[0.65rem] font-medium">{weekday}</span>
@@ -61,10 +63,14 @@ function DayCell({ day, isToday, onOpen }: { day: PlanDay; isToday: boolean; onO
         <span
           className={cn(
             'w-full truncate text-center text-[0.65rem] leading-tight',
-            day.kind === 'rest' ? 'text-muted-foreground/70' : 'font-medium',
+            day.trained
+              ? 'text-primary font-semibold'
+              : day.kind === 'rest'
+                ? 'text-muted-foreground/70'
+                : 'font-medium',
           )}
         >
-          {shortLabel(day)}
+          {day.trained ? 'Hecho' : shortLabel(day)}
         </span>
       </button>
     </li>
