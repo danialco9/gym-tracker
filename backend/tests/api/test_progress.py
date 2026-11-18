@@ -110,6 +110,7 @@ def test_overview_without_data(progress_client: TestClient) -> None:
         "min_hard_sets": 10,
         "max_hard_sets": 20,
         "target_hard_sets": 10,
+        "last_week_hard_sets": 0.0,
     }
 
 

@@ -261,6 +261,8 @@ export interface MuscleWeek {
   max_hard_sets: number
   /** This week's aim: the minimum, or a step on the way to the maximum when training in blocks. */
   target_hard_sets: number
+  /** The whole week before: below a target that climbed, today's plan adds a set. */
+  last_week_hard_sets: number
 }
 
 export interface SetLoad {

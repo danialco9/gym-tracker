@@ -41,6 +41,7 @@ const weekSets = (done: Partial<Record<MuscleGroup, number>> = {}) =>
     min_hard_sets: 10,
     max_hard_sets: 20,
     target_hard_sets: 10,
+    last_week_hard_sets: 0,
   }))
 
 const OVERVIEW: ProgressOverview = {

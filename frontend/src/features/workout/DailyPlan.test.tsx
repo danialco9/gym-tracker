@@ -195,6 +195,49 @@ describe("Today's plan", () => {
     expect(screen.getByText('Objetivo: 1 × 12 · 30 kg')).toBeInTheDocument()
   })
 
+  it("adds a set where the block's climbing target asks for more", async () => {
+    const week = (muscle: 'quads' | 'hamstrings', lastWeek: number) => ({
+      muscle_group: muscle,
+      hard_sets: 0,
+      min_hard_sets: 12,
+      max_hard_sets: 20,
+      target_hard_sets: 15,
+      last_week_hard_sets: lastWeek,
+    })
+    mockApi({
+      'GET /auth/me': {
+        body: {
+          ...USER,
+          block_weeks: 5,
+          block: { week: 2, weeks: 5, is_deload: false, target_hard_sets: 15 },
+        },
+      },
+      'GET /routines': { body: [LEG_DAY] },
+      'GET /progress/overview': {
+        // Quads fell short of this week's 15 sets; hamstrings already did enough.
+        body: { ...OVERVIEW, week_sets: [week('quads', 8), week('hamstrings', 16)] },
+      },
+      'GET /progress/goals': { body: GOAL_PLANS },
+    })
+    const { user } = renderRoute('/entrenar')
+
+    await user.click(await screen.findByRole('button', { name: /Pierna/ }))
+
+    expect(await screen.findByText('Esta semana sube el volumen')).toBeInTheDocument()
+    const exercises = screen.getByRole('list', { name: 'Ejercicios de hoy' })
+    const squat = within(exercises).getByText('Sentadilla con barra').closest('li')!
+    expect(within(squat).getByText('4 × 8 · 65 kg')).toBeInTheDocument()
+    expect(within(squat).getByText(/\+1 serie esta semana/)).toBeInTheDocument()
+    const curl = within(exercises).getByText('Curl femoral tumbado').closest('li')!
+    expect(within(curl).getByText('2 × 12 · 30 kg')).toBeInTheDocument()
+    expect(within(curl).queryByText(/\+1 serie/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Empezar con este plan' }))
+
+    // The workout starts with four squat sets.
+    expect(await screen.findByText('0/4')).toBeInTheDocument()
+  })
+
   it('goes back to the routines', async () => {
     mockApi({
       'GET /auth/me': { body: USER },
