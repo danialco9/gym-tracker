@@ -35,10 +35,13 @@ def _get_routine(session: Session, routine_id: int, user: User) -> Routine:
 
 
 def _routine_exercises(payload: RoutineIn) -> list[RoutineExercise]:
+    last = len(payload.exercises)
     return [
         RoutineExercise(
             position=position,
             exercise_id=item.exercise_id,
+            # The last exercise has nothing after it to pair with.
+            superset_with_next=item.superset_with_next and position < last,
             sets=[
                 RoutineSet(set_number=set_number, **planned.model_dump())
                 for set_number, planned in enumerate(item.sets, start=1)

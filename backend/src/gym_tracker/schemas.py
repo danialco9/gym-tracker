@@ -243,6 +243,8 @@ class RoutineSetIn(InputModel):
 class RoutineExerciseIn(InputModel):
     exercise_id: int
     sets: list[RoutineSetIn] = Field(default_factory=list, max_length=20)
+    # A superset with the next exercise; ignored on the last one, which has none.
+    superset_with_next: bool = False
 
 
 class RoutineIn(InputModel):
@@ -263,6 +265,7 @@ class RoutineExerciseRead(ORMModel):
     position: int
     exercise: ExerciseRead
     sets: list[RoutineSetRead]
+    superset_with_next: bool
 
 
 class RoutineRead(ORMModel):

@@ -43,6 +43,21 @@ def test_create_and_list_routine(auth_client: TestClient, session: Session) -> N
     assert [item["name"] for item in auth_client.get("/api/routines").json()] == ["Pierna"]
 
 
+def test_exercises_pair_up_in_supersets(auth_client: TestClient, session: Session) -> None:
+    payload = leg_day(session)
+    exercises = payload["exercises"]
+    assert isinstance(exercises, list)
+    # Both ask for it, but the leg press is the last: there is nothing after it to pair with.
+    payload["exercises"] = [{**item, "superset_with_next": True} for item in exercises]
+
+    routine = auth_client.post("/api/routines", json=payload).json()
+
+    assert [item["superset_with_next"] for item in routine["exercises"]] == [True, False]
+    # Routines that never mention it have none.
+    plain = auth_client.put(f"/api/routines/{routine['id']}", json=leg_day(session)).json()
+    assert [item["superset_with_next"] for item in plain["exercises"]] == [False, False]
+
+
 def test_replace_routine_exercises(auth_client: TestClient, session: Session) -> None:
     routine_id = auth_client.post("/api/routines", json=leg_day(session)).json()["id"]
     payload = {

@@ -106,6 +106,8 @@ export interface RoutineExercise {
   position: number
   exercise: Exercise
   sets: RoutineSet[]
+  /** Done in a superset with the next exercise: their sets alternate, resting after the round. */
+  superset_with_next: boolean
 }
 
 export interface Routine {
@@ -121,6 +123,7 @@ export type RoutineSetIn = Omit<RoutineSet, 'set_number'>
 export interface RoutineExerciseIn {
   exercise_id: number
   sets: RoutineSetIn[]
+  superset_with_next: boolean
 }
 
 export interface RoutineIn {
