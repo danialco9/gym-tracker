@@ -100,6 +100,13 @@ export const routes: RouteObject[] = [
                       import('@/features/goal/GoalPage').then((module) => ({ Component: module.GoalPage })),
                   },
                   {
+                    path: 'semana',
+                    lazy: () =>
+                      import('@/features/plan/PlanSetupPage').then((module) => ({
+                        Component: module.PlanSetupPage,
+                      })),
+                  },
+                  {
                     path: 'ranking',
                     lazy: () =>
                       import('@/features/ranking/RankingPage').then((module) => ({

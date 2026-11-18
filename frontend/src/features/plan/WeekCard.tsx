@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, PlayIcon } from 'lucide-react'
+import { CalendarCogIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, PlayIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { QueryStatus } from '@/components/QueryStatus'
@@ -124,9 +124,15 @@ function Week({ week, onOpen }: { week: WeekPlan; onOpen: (day: PlanDay) => void
         ))}
       </ol>
       {empty ? (
-        <p className="text-muted-foreground text-sm">
-          Toca un día para elegir qué entrenas. Puedes dejarlo para todas las semanas.
-        </p>
+        <div className="space-y-3">
+          <p className="text-muted-foreground text-sm">
+            Elige qué días entrenas y te preparo las rutinas, o toca un día para asignarlo tú.
+          </p>
+          <Link to="/semana" className={cn(buttonVariants({ size: 'lg' }), 'h-11 w-full text-base')}>
+            <CalendarCogIcon />
+            Planificar mi semana
+          </Link>
+        </div>
       ) : (
         today && <Today day={today} />
       )}
@@ -161,6 +167,13 @@ export function WeekCard() {
                 Hoy
               </Button>
             )}
+            <Link
+              to="/semana"
+              aria-label="Planificar la semana"
+              className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+            >
+              <CalendarCogIcon />
+            </Link>
             <Button
               variant="ghost"
               size="icon-sm"

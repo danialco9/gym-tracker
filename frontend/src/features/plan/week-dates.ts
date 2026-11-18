@@ -54,3 +54,8 @@ export function formatLongDay(isoDate: string): string {
   const text = longDay.format(parse(isoDate))
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
+
+/** Whether two of the days follow each other, Sunday into Monday included. */
+export function hasBackToBackDays(weekdays: number[]): boolean {
+  return weekdays.some((weekday) => weekdays.includes((weekday + 1) % 7))
+}

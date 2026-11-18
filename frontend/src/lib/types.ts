@@ -392,3 +392,10 @@ export interface PlannedDay {
   /** Null for a free workout. */
   routine_id: number | null
 }
+
+/** One day of the ready-made split, before it is applied. */
+export interface PresetDay {
+  weekday: number
+  name: string
+  exercises: string[]
+}

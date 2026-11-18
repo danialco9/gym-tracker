@@ -595,6 +595,15 @@ class PresetWeekIn(InputModel):
         return _distinct_weekdays(weekdays)
 
 
+class PresetDayRead(BaseModel):
+    """One day of the ready-made split, before it is applied."""
+
+    weekday: int
+    name: str
+    # The exercise names, in order.
+    exercises: list[str]
+
+
 class PlanChangeIn(InputModel):
     kind: PlanKind
     # Required for a routine, and only for one.

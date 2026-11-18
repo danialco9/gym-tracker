@@ -104,7 +104,10 @@ describe('Week plan on the home screen', () => {
   it('invites to plan the week while it is empty', async () => {
     showHome({ ...WEEK, days: WEEK.days.map((day) => rest(day.on_date)) })
 
-    expect(await screen.findByText(/Toca un día para elegir qué entrenas/)).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Planificar mi semana' })).toHaveAttribute(
+      'href',
+      '/semana',
+    )
     expect(screen.queryByRole('link', { name: 'Empezar' })).not.toBeInTheDocument()
   })
 

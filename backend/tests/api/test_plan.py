@@ -102,6 +102,21 @@ def test_the_week_marks_the_days_with_a_workout(plan_client: TestClient) -> None
     assert [day["trained"] for day in week["days"]] == [True, False, True, False, False, False, False]
 
 
+def test_the_ready_made_split_can_be_previewed_without_saving(plan_client: TestClient) -> None:
+    response = plan_client.get("/api/plan/presets", params={"weekdays": [4, 0, 2]})
+
+    assert response.status_code == 200
+    preview = response.json()
+    assert [(day["weekday"], day["name"]) for day in preview] == [
+        (0, "Cuerpo completo A"),
+        (2, "Cuerpo completo B"),
+        (4, "Cuerpo completo C"),
+    ]
+    assert preview[0]["exercises"][0] == "Sentadilla con barra"
+    assert plan_client.get("/api/routines").json() == []
+    assert plan_client.get("/api/plan/presets", params={"weekdays": list(range(7))}).status_code == 422
+
+
 def test_the_ready_made_split_becomes_the_usual_week(plan_client: TestClient) -> None:
     response = plan_client.post("/api/plan/presets", json={"weekdays": [0, 1, 3, 4]})
 
