@@ -31,6 +31,9 @@ const draftExerciseSchema = z.object({
   // The routine's planned sets, shown as the target. Drafts saved before per-set plans have none.
   targets: z.array(plannedSetSchema).default([]),
   sets: z.array(draftSetSchema),
+  // Exercises next to each other with the same id are a superset: their sets alternate, with the
+  // rest after the round. None for an exercise on its own, and in drafts saved before supersets.
+  superset: z.string().optional(),
 })
 
 const workoutDraftSchema = z.object({
@@ -145,6 +148,23 @@ function warmedUpIds(routine: Routine): Set<number> {
   return ids
 }
 
+/**
+ * The superset id of each routine exercise, by position: the same for the exercises joined to the
+ * next one and the one that closes the run, undefined for the rest.
+ */
+function supersetIds(routine: Routine): (string | undefined)[] {
+  const ids: (string | undefined)[] = []
+  routine.exercises.forEach((item, index) => {
+    const joinedToPrevious = index > 0 && routine.exercises[index - 1]!.superset_with_next
+    if (joinedToPrevious) {
+      ids.push(ids[index - 1])
+    } else {
+      ids.push(item.superset_with_next && index < routine.exercises.length - 1 ? newId() : undefined)
+    }
+  })
+  return ids
+}
+
 function entryFromRoutine(
   item: RoutineExercise,
   suggested: PlannedSet[] = [],
@@ -193,6 +213,8 @@ function swapEntry(
     id: action.replacementId,
     exerciseId: action.exercise.id,
     name: action.exercise.name,
+    // It takes the exercise's place in its superset, too.
+    ...(entry.superset === undefined ? {} : { superset: entry.superset }),
     // The plan's reps still apply to the sets left; its weights were for the other exercise.
     targets: entry.targets.slice(workingDone).map((target) => ({ reps: target.reps, weightKg: null })),
     // Warm-ups still to do were weighed for the other exercise, so they stay behind.
@@ -236,6 +258,7 @@ function updateSet(
 export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): WorkoutDraft | null {
   if (action.type === 'start') {
     const warmedUp = action.routine === undefined ? new Set<number>() : warmedUpIds(action.routine)
+    const supersets = action.routine === undefined ? [] : supersetIds(action.routine)
     return {
       clientId: newId(),
       routineId: action.routine?.id ?? null,
@@ -243,14 +266,15 @@ export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): W
       startedAt: action.startedAt,
       notes: '',
       exercises:
-        action.routine?.exercises.map((item) =>
-          entryFromRoutine(
+        action.routine?.exercises.map((item, index) => ({
+          ...entryFromRoutine(
             item,
             action.suggestions?.get(item.exercise.id),
             action.deload,
             warmedUp.has(item.id),
           ),
-        ) ?? [],
+          ...(supersets[index] === undefined ? {} : { superset: supersets[index] }),
+        })) ?? [],
     }
   }
   if (action.type === 'startDictated') {
@@ -366,18 +390,51 @@ export function nextPendingSet(
 ): { entry: DraftExercise; set: DraftSet; number: number } | null {
   // The routine order is only a suggestion: when a machine is taken, the workout goes on from the
   // exercise in hand, then the ones after it, and wraps round to those skipped.
-  const start = Math.max(
-    0,
-    draft.exercises.findIndex((entry) => entry.id === fromEntryId),
-  )
+  const found = draft.exercises.findIndex((entry) => entry.id === fromEntryId)
+  const start = Math.max(0, found)
   const ordered = [...draft.exercises.slice(start), ...draft.exercises.slice(0, start)]
-  for (const entry of ordered) {
+  // Coming from a superset, its round goes first: the exercises after this one, then back to its
+  // start. With no exercise in hand yet, the workout simply begins at the top.
+  const { after, from } = found === -1 ? { after: [], from: [] } : supersetRound(draft.exercises, found)
+  const round = [...after, ...from]
+  for (const entry of [...round, ...ordered.filter((other) => !round.includes(other))]) {
     const index = entry.sets.findIndex((set) => !set.done)
     if (index !== -1) {
       return { entry, set: entry.sets[index], number: workingSetNumber(entry.sets, index) }
     }
   }
   return null
+}
+
+/**
+ * The superset of the exercise at ``index``: the ones ``after`` it, which finish this round, and those
+ * ``from`` the start of the superset up to it included, which begin the next. Both empty for an
+ * exercise on its own.
+ */
+function supersetRound(
+  exercises: readonly DraftExercise[],
+  index: number,
+): { after: DraftExercise[]; from: DraftExercise[] } {
+  const superset = exercises[index]?.superset
+  if (superset === undefined) {
+    return { after: [], from: [] }
+  }
+  let first = index
+  while (first > 0 && exercises[first - 1]!.superset === superset) first--
+  let last = index
+  while (last < exercises.length - 1 && exercises[last + 1]!.superset === superset) last++
+  return { after: exercises.slice(index + 1, last + 1), from: exercises.slice(first, index + 1) }
+}
+
+/**
+ * The exercise to go to with no rest after logging a set of ``entryId``: the next one of its superset
+ * still with sets to do, in this same round. Null when the round is over (or there is no superset),
+ * which is when the rest comes.
+ */
+export function continuesRound(draft: WorkoutDraft, entryId: string): DraftExercise | null {
+  const index = draft.exercises.findIndex((entry) => entry.id === entryId)
+  const { after } = supersetRound(draft.exercises, index)
+  return after.find((entry) => entry.sets.some((set) => !set.done)) ?? null
 }
 
 /** The number a set goes by: working sets count from 1, warm-ups ahead of them do not count. */

@@ -95,6 +95,9 @@ remove it like any other app (long press on the icon).
 - **Plate calculator.** On a barbell lift the open set says what to load on each side, *Por lado:
   25 + 5*, with the fewest plates, using the bar and plates of your own gym (set in your account).
   A weight the plates cannot make offers the closest ones that can.
+- **Supersets and circuits.** In a routine, join two exercises (or more, for a circuit) with the
+  button between them. In the workout their sets alternate: logging one moves straight on to the
+  next exercise of the round, and the rest comes only once the round is done.
 - **Logging a workout in plain language.** Type (or dictate with the phone keyboard) `prensa 4x10
   120, press banca 12,10,8 a 60 rir 2` and the server reads it into sets, matched against your
   exercise catalog. It never saves on its own: the reading prefills the workout screen for you to
@@ -313,6 +316,7 @@ A few decisions worth calling out:
 - [x] Double progression in the rep range of the goal: more weight and fewer reps at the top of the range
 - [x] Warm-up sets worked out from the first working set (40 %, 60 % and 80 %) on the multi-joint lifts
 - [x] Plate calculator: what to load on each side of the bar, with the bar and plates of your gym
+- [x] Supersets and circuits: exercises that alternate, with the rest only after the round
 
 ## Ideas for the future
 
@@ -320,7 +324,6 @@ Not promised, roughly in order of value for the effort.
 
 **In the gym**
 
-- [ ] Supersets and circuits: two exercises that alternate, with the rest only after the pair.
 - [ ] Install guide inside the app: on an iPhone in Safari, explain how to add it to the home
   screen, which is also what unlocks the end-of-rest notification.
 

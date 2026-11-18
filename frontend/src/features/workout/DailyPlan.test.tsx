@@ -297,6 +297,36 @@ describe("Today's plan", () => {
     expect(screen.getByText('Por lado: 20 + 5 + 2,5 · barra 15 kg')).toBeInTheDocument()
   })
 
+  it('alternates a superset, resting only after the round', async () => {
+    const [squat, curl] = LEG_DAY.exercises
+    const routine: Routine = { ...LEG_DAY, exercises: [{ ...squat, superset_with_next: true }, curl] }
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /routines': { body: [routine] },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /progress/goals': { body: GOAL_PLANS },
+    })
+    const { user } = renderRoute('/entrenar')
+
+    await user.click(await screen.findByRole('button', { name: /Pierna/ }))
+    await user.click(await screen.findByRole('button', { name: 'Empezar con este plan' }))
+
+    expect(await screen.findByText('Superserie con Curl femoral tumbado')).toBeInTheDocument()
+    expect(screen.getByText('Superserie con Sentadilla con barra')).toBeInTheDocument()
+
+    // The squat's first set: straight on to the curl, no rest.
+    const [squatDone, curlDone] = screen.getAllByRole('button', { name: 'Completar serie 1' })
+    await user.click(squatDone)
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument()
+
+    // The curl closes the round: now the rest, with the squat next.
+    await user.click(curlDone)
+    expect(screen.getByRole('timer')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Descanso' })).toHaveTextContent(
+      'Sentadilla con barra · serie 2',
+    )
+  })
+
   it('goes back to the routines', async () => {
     mockApi({
       'GET /auth/me': { body: USER },
