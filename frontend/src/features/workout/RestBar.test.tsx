@@ -4,7 +4,12 @@ import { describe, expect, it, vi } from 'vitest'
 import type { RestPushStatus } from './rest-push'
 import { RestBar } from './RestBar'
 
-function renderScreen(notification: RestPushStatus, onEnableNotification = vi.fn(), ready = false) {
+function renderScreen(
+  notification: RestPushStatus,
+  onEnableNotification = vi.fn(),
+  ready = false,
+  installable = false,
+) {
   render(
     <RestBar
       remaining={60}
@@ -15,12 +20,27 @@ function renderScreen(notification: RestPushStatus, onEnableNotification = vi.fn
       onSkip={vi.fn()}
       notification={notification}
       onEnableNotification={onEnableNotification}
+      installable={installable}
     />,
   )
   return onEnableNotification
 }
 
 describe('End-of-rest notification', () => {
+  it('on an iPhone without the app installed, says how to install it instead', async () => {
+    renderScreen('unsupported', vi.fn(), false, true)
+
+    await userEvent.click(screen.getByRole('button', { name: /Instálala para que te avise/ }))
+
+    expect(await screen.findByRole('heading', { name: 'Instala la app en tu iPhone' })).toBeInTheDocument()
+    expect(screen.getByText(/Añadir a pantalla de inicio/)).toBeInTheDocument()
+  })
+
+  it('says nothing about installing where it would not help', () => {
+    renderScreen('unsupported')
+    expect(screen.queryByRole('button', { name: /Instálala/ })).not.toBeInTheDocument()
+  })
+
   it('is offered while off, and turned on with a tap', async () => {
     const onEnable = renderScreen('off')
 

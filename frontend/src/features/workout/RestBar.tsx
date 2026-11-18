@@ -1,4 +1,6 @@
-import { BellIcon, BellRingIcon, XIcon } from 'lucide-react'
+import { BellIcon, BellRingIcon, SmartphoneIcon, XIcon } from 'lucide-react'
+import { useState } from 'react'
+import { InstallGuideSheet } from '@/components/InstallGuideSheet'
 import { Button } from '@/components/ui/button'
 import { formatDecimal, formatSeconds } from '@/lib/format'
 import { ProgressRing } from './ProgressRing'
@@ -27,6 +29,8 @@ interface RestBarProps {
   /** Whether this phone is told when the rest is over, even locked. */
   notification: RestPushStatus
   onEnableNotification: () => void
+  /** An iPhone where the app is not installed, which only notifies once it is. */
+  installable: boolean
 }
 
 /**
@@ -42,7 +46,9 @@ export function RestBar({
   onSkip,
   notification,
   onEnableNotification,
+  installable,
 }: RestBarProps) {
+  const [guideOpen, setGuideOpen] = useState(false)
   const offersNotification = notification === 'off' || notification === 'on'
   return (
     <section
@@ -129,7 +135,19 @@ export function RestBar({
             )}
           </div>
         )}
+        {/* An iPhone gives a web page no notifications until it is installed: say how. */}
+        {!ready && notification === 'unsupported' && installable && (
+          <Button
+            variant="ghost"
+            className="text-muted-foreground h-9 w-full text-sm"
+            onClick={() => setGuideOpen(true)}
+          >
+            <SmartphoneIcon />
+            Instálala para que te avise al acabar
+          </Button>
+        )}
       </div>
+      <InstallGuideSheet open={guideOpen} onOpenChange={setGuideOpen} />
     </section>
   )
 }

@@ -112,7 +112,8 @@ remove it like any other app (long press on the icon).
   finished with no coverage waits in a queue on the phone and is sent on its own when the
   connection returns; it carries a client id, so a retry after a lost answer is never saved twice.
   A locked phone freezes the page, so the end of a rest can also arrive as a Web Push sent by the
-  API ("Avisarme" on the rest bar).
+  API ("Avisarme" on the rest bar). An iPhone only allows that once the app is on its home screen,
+  so there a card on the home screen and a line on the rest bar open a three-step install guide.
 - **Body measurements.** Quick weight entry plus an optional full set of measurements, with history
   and a weight trend chart.
 - **Progress dashboard.** Estimated 1RM per exercise, weekly hard sets by muscle group, personal
@@ -317,15 +318,11 @@ A few decisions worth calling out:
 - [x] Warm-up sets worked out from the first working set (40 %, 60 % and 80 %) on the multi-joint lifts
 - [x] Plate calculator: what to load on each side of the bar, with the bar and plates of your gym
 - [x] Supersets and circuits: exercises that alternate, with the rest only after the round
+- [x] Install guide on the iPhone, which is also what unlocks the end-of-rest notification there
 
 ## Ideas for the future
 
 Not promised, roughly in order of value for the effort.
-
-**In the gym**
-
-- [ ] Install guide inside the app: on an iPhone in Safari, explain how to add it to the home
-  screen, which is also what unlocks the end-of-rest notification.
 
 **History and data**
 

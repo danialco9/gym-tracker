@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
 import { BlockCard } from '@/features/home/BlockCard'
 import { GettingStarted } from '@/features/home/GettingStarted'
+import { InstallCard } from '@/features/home/InstallCard'
 import { OverloadCard } from '@/features/home/OverloadCard'
 import { RankingCard } from '@/features/home/RankingCard'
 import { StreakCard } from '@/features/home/StreakCard'
@@ -128,6 +129,8 @@ export function HomePage() {
       <WeekCard />
 
       <PendingWorkouts />
+
+      <InstallCard />
 
       {currentUser != null && currentUser.goal === null && <GoalPrompt />}
 

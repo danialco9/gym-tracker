@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCurrentUser } from '@/features/auth/queries'
 import { ApiError } from '@/lib/api'
 import { formatDecimal, formatTime, plural } from '@/lib/format'
+import { needsIosInstall } from '@/lib/install'
 import { gymOf } from '@/lib/plates'
 import { randomId } from '@/lib/id'
 import type { Exercise } from '@/lib/types'
@@ -397,6 +398,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
           onEnableNotification={() => {
             restPush.enable().catch(() => toast.error('No se pudieron activar los avisos. Prueba otra vez.'))
           }}
+          installable={needsIosInstall()}
         />
       )}
     </div>
