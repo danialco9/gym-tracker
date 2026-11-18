@@ -5,6 +5,7 @@ import { rampExercises, withExtraSet } from './ramp'
 const exercise = (id: number, muscle: MuscleGroup): RoutineExercise => ({
   id,
   position: id,
+  superset_with_next: false,
   sets: [],
   exercise: {
     id,

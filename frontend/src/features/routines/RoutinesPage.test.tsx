@@ -46,6 +46,7 @@ function legDay(overrides: Partial<Routine> = {}): Routine {
       {
         id: 1,
         position: 1,
+        superset_with_next: false,
         exercise: SQUAT,
         sets: [
           { set_number: 1, target_reps: 10, target_weight_kg: 60, target_rpe: null },
@@ -115,6 +116,15 @@ describe('Routines', () => {
     await user.type(squatCard.getByLabelText('Serie 3: Reps'), '6')
     await user.type(squatCard.getByLabelText('Serie 3: RIR (reps en reserva)'), '1')
 
+    // The squat and the press, in a superset: one toggle between them, none after the last.
+    const superset = screen.getByRole('button', {
+      name: 'Superserie de Sentadilla con barra con Prensa de piernas',
+    })
+    expect(superset).toHaveAttribute('aria-pressed', 'false')
+    await user.click(superset)
+    expect(superset).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByRole('button', { name: /^Superserie de/ })).toHaveLength(1)
+
     await user.click(screen.getByRole('button', { name: 'Guardar rutina' }))
 
     expect(await screen.findByRole('link', { name: /Pierna/ })).toBeInTheDocument()
@@ -130,8 +140,9 @@ describe('Routines', () => {
             { target_reps: 8, target_weight_kg: 72.5, target_rpe: null },
             { target_reps: 6, target_weight_kg: 72.5, target_rpe: 9 },
           ],
+          superset_with_next: true,
         },
-        { exercise_id: 5, sets: [emptySet, emptySet, emptySet] },
+        { exercise_id: 5, sets: [emptySet, emptySet, emptySet], superset_with_next: false },
       ],
     })
   }, 15_000)

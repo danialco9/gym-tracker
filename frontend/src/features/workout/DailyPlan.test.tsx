@@ -22,6 +22,7 @@ const LEG_DAY: Routine = {
     {
       id: 1,
       position: 1,
+      superset_with_next: false,
       sets: [1, 2, 3].map((setNumber) => ({
         set_number: setNumber,
         target_reps: 8,
@@ -42,6 +43,7 @@ const LEG_DAY: Routine = {
     {
       id: 2,
       position: 2,
+      superset_with_next: false,
       sets: [1, 2].map((setNumber) => ({
         set_number: setNumber,
         target_reps: 12,

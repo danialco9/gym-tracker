@@ -13,7 +13,7 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChevronLeftIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Link, useBlocker, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -35,6 +35,7 @@ import {
   type RoutineFormValues,
 } from './routine-form'
 import { RoutineExerciseFields } from './RoutineExerciseFields'
+import { SupersetToggle } from './SupersetToggle'
 
 function saveErrorMessage(error: Error): string {
   if (error instanceof ApiError && error.status === 409) {
@@ -103,6 +104,7 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
     register,
     control,
     getValues,
+    setValue,
     handleSubmit,
     formState: { errors, isDirty },
   } = useForm<RoutineFormValues>({
@@ -110,6 +112,8 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
     defaultValues: routine ? routineToForm(routine) : emptyRoutineForm,
   })
   const { fields, append, remove, move } = useFieldArray({ control, name: 'exercises' })
+  // The field array keeps the values it started with; the supersets are read live.
+  const exercises = useWatch({ control, name: 'exercises' })
   const allowLeaving = useLeaveGuard(isDirty)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -235,6 +239,16 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
                     errors={errors.exercises?.[index]}
                     onRemove={() => remove(index)}
                   />
+                  {index < fields.length - 1 && (
+                    <SupersetToggle
+                      linked={exercises[index]?.supersetWithNext === true}
+                      first={field.name}
+                      second={fields[index + 1].name}
+                      onToggle={(linked) =>
+                        setValue(`exercises.${index}.supersetWithNext`, linked, { shouldDirty: true })
+                      }
+                    />
+                  )}
                 </li>
               ))}
             </ol>
@@ -293,6 +307,7 @@ export function RoutineEditor({ routine }: RoutineEditorProps) {
             exerciseId: exercise.id,
             name: exercise.name,
             sets: Array.from({ length: DEFAULT_SET_COUNT }, emptySet),
+            supersetWithNext: false,
           })
           setPickerOpen(false)
         }}

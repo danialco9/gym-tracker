@@ -25,6 +25,8 @@ export const routineExerciseSchema = z.object({
   sets: z
     .array(routineSetSchema)
     .max(MAX_SETS_PER_EXERCISE, `Como máximo ${MAX_SETS_PER_EXERCISE} series por ejercicio`),
+  /** Done in a superset with the next exercise: their sets alternate, resting after the round. */
+  supersetWithNext: z.boolean(),
 })
 
 export const routineFormSchema = z.object({
@@ -57,6 +59,7 @@ export function routineToForm(routine: Routine): RoutineFormValues {
         targetWeightKg: planned.target_weight_kg,
         targetRir: rpeToRir(planned.target_rpe),
       })),
+      supersetWithNext: item.superset_with_next,
     })),
   }
 }
@@ -65,13 +68,15 @@ export function formToRoutinePayload(values: RoutineFormValues): RoutineIn {
   return {
     name: values.name.trim(),
     description: values.description.trim() || null,
-    exercises: values.exercises.map((item) => ({
+    exercises: values.exercises.map((item, index) => ({
       exercise_id: item.exerciseId,
       sets: item.sets.map((planned) => ({
         target_reps: planned.targetReps,
         target_weight_kg: planned.targetWeightKg,
         target_rpe: rirToRpe(planned.targetRir),
       })),
+      // The last exercise has nothing after it to pair with.
+      superset_with_next: item.supersetWithNext && index < values.exercises.length - 1,
     })),
   }
 }

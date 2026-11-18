@@ -17,6 +17,7 @@ const legDay: Routine = {
     {
       id: 1,
       position: 1,
+      superset_with_next: false,
       sets: [
         { set_number: 1, target_reps: 10, target_weight_kg: 60, target_rpe: null },
         { set_number: 2, target_reps: 8, target_weight_kg: 70, target_rpe: 8.5 },
@@ -50,6 +51,7 @@ describe('routine form', () => {
             { targetReps: 10, targetWeightKg: 60, targetRir: null },
             { targetReps: 8, targetWeightKg: 70, targetRir: 1.5 },
           ],
+          supersetWithNext: false,
         },
       ],
     })
@@ -63,9 +65,27 @@ describe('routine form', () => {
             { target_reps: 10, target_weight_kg: 60, target_rpe: null },
             { target_reps: 8, target_weight_kg: 70, target_rpe: 8.5 },
           ],
+          superset_with_next: false,
         },
       ],
     })
+  })
+
+  it('sends the supersets, never on the last exercise', () => {
+    const exercise = (exerciseId: number) => ({
+      exerciseId,
+      name: 'Ejercicio',
+      sets: [],
+      supersetWithNext: true,
+    })
+
+    const payload = formToRoutinePayload({
+      name: 'Torso',
+      description: '',
+      exercises: [exercise(1), exercise(2)],
+    })
+
+    expect(payload.exercises.map((item) => item.superset_with_next)).toEqual([true, false])
   })
 
   it('starts a new set as a copy of the previous one', () => {
@@ -120,7 +140,7 @@ describe('routine form', () => {
     const result = routineFormSchema.safeParse({
       name: 'Pierna',
       description: '',
-      exercises: [{ exerciseId: 11, name: 'Sentadilla', sets }],
+      exercises: [{ exerciseId: 11, name: 'Sentadilla', sets, supersetWithNext: false }],
     })
 
     expect(result.error?.issues.map((issue) => issue.message)).toEqual([

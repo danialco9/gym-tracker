@@ -98,6 +98,9 @@ class RoutineExercise(Base):
     routine_id: Mapped[int] = mapped_column(ForeignKey("routines.id", ondelete="CASCADE"))
     exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id", ondelete="RESTRICT"), index=True)
     position: Mapped[int]
+    # Done in a superset with the exercise after it: their sets alternate, resting after the round.
+    # Several in a row make a circuit. The last exercise of a routine never has one.
+    superset_with_next: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     routine: Mapped[Routine] = relationship(back_populates="exercises")
     exercise: Mapped[Exercise] = relationship()
