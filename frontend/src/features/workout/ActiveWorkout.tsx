@@ -17,6 +17,7 @@ import { useGoalPlans } from '@/features/goal/queries'
 import { useProgressOverview } from '@/features/progress/queries'
 import {
   completedSetCount,
+  continuesRound,
   draftReducer,
   nextPendingSet,
   toWorkoutPayload,
@@ -82,19 +83,36 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const startRest = (entryId: string, setId: string) => {
     setCurrentEntryId(entryId)
     const after = draftReducer(draft, { type: 'toggleDone', entryId, setId })
-    if (after !== null && nextPendingSet(after) !== null) {
-      const warmup = draft.exercises
-        .find((entry) => entry.id === entryId)
-        ?.sets.find((set) => set.id === setId)?.isWarmup
+    if (after === null) {
+      return
+    }
+    const showEntry = (id: string) =>
+      carousel.current?.show(after.exercises.findIndex((entry) => entry.id === id))
+    // A superset goes straight on to the next exercise of the round, with no rest in between.
+    const partner = continuesRound(after, entryId)
+    if (partner !== null) {
+      timer.stop()
+      showEntry(partner.id)
+      return
+    }
+    const next = nextPendingSet(after, entryId)
+    if (next !== null) {
+      const entry = draft.exercises.find((candidate) => candidate.id === entryId)
+      const warmup = entry?.sets.find((set) => set.id === setId)?.isWarmup
       // A warm-up barely tires: a short breather is enough before the next set.
       timer.start(warmup === true ? WARMUP_REST_SECONDS : restSeconds)
+      // After a superset's round, its first exercise (or whatever follows) is ready during the rest.
+      if (entry?.superset !== undefined && next.entry.id !== entryId) {
+        showEntry(next.entry.id)
+      }
     }
   }
 
-  // Finishing an exercise slides the next one in with its first set already open.
+  // Finishing an exercise slides the next one in with its first set already open. In a superset the
+  // round decides where to go (see startRest), so nothing moves here.
   const showNextExercise = (entryId: string) => {
     const index = draft.exercises.findIndex((entry) => entry.id === entryId)
-    if (index + 1 < draft.exercises.length) {
+    if (draft.exercises[index]?.superset === undefined && index + 1 < draft.exercises.length) {
       carousel.current?.show(index + 1)
     }
   }
@@ -104,8 +122,17 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
     timer.stop()
     setCurrentEntryId(entryId)
     dispatch({ type: 'markDone', entryId, setIds, done: true })
-    showNextExercise(entryId)
     const index = draft.exercises.findIndex((entry) => entry.id === entryId)
+    if (draft.exercises[index]?.superset === undefined) {
+      showNextExercise(entryId)
+    } else {
+      // In a superset, on to whatever is left of it, or to what follows.
+      const after = draftReducer(draft, { type: 'markDone', entryId, setIds, done: true })
+      const next = after === null ? null : nextPendingSet(after, entryId)
+      if (next !== null) {
+        carousel.current?.show(draft.exercises.findIndex((entry) => entry.id === next.entry.id))
+      }
+    }
     toast.success(`${draft.exercises[index].name}: ${setIds.length} series hechas`, {
       action: {
         label: 'Deshacer',
@@ -275,6 +302,14 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
               entry={entry}
               exercise={catalog.get(entry.exerciseId)}
               gym={gym}
+              supersetWith={draft.exercises
+                .filter(
+                  (other) =>
+                    other.superset !== undefined &&
+                    other.superset === entry.superset &&
+                    other.id !== entry.id,
+                )
+                .map((other) => other.name)}
               dispatch={dispatch}
               bestE1rmKg={records.get(entry.exerciseId)}
               onSetCompleted={(setId) => startRest(entry.id, setId)}

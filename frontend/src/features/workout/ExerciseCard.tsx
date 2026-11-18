@@ -1,4 +1,4 @@
-import { ArrowLeftRightIcon, CheckCheckIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { ArrowLeftRightIcon, CheckCheckIcon, Link2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,6 +23,8 @@ interface ExerciseCardProps {
   exercise?: Pick<Exercise, 'slug' | 'is_custom' | 'equipment'>
   /** The user's bar and plates, shown as what to load on a barbell lift. */
   gym: Gym
+  /** The other exercises of its superset, by name; empty for an exercise on its own. */
+  supersetWith: string[]
   dispatch: Dispatch<DraftAction>
   /** The exercise's saved best estimated 1RM; none when it has no history (or it is loading). */
   bestE1rmKg?: number
@@ -41,6 +43,7 @@ export function ExerciseCard({
   entry,
   exercise,
   gym,
+  supersetWith,
   dispatch,
   bestE1rmKg,
   onSetCompleted,
@@ -93,6 +96,12 @@ export function ExerciseCard({
           {entry.name}
         </CardTitle>
         <CardDescription className="space-y-0.5">
+          {supersetWith.length > 0 && (
+            <span className="text-primary flex items-center gap-1 font-medium">
+              <Link2Icon className="size-3.5" aria-hidden />
+              Superserie con {supersetWith.join(' y ')}
+            </span>
+          )}
           {target && <span className="block">Objetivo: {target}</span>}
           {/* The open set already compares itself with last time; the whole session would repeat it. */}
           {activeLastTime === null && <LastSessionHint exerciseId={entry.exerciseId} />}

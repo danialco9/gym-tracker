@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { Routine } from '@/lib/types'
 import {
   completedSetCount,
+  continuesRound,
   DRAFT_STORAGE_KEY,
   draftReducer,
   loadDraft,
@@ -310,6 +311,101 @@ describe('warm-ups', () => {
       [false, 100],
     ])
     expect(replacement.targets).toHaveLength(3)
+  })
+})
+
+describe('supersets', () => {
+  const [squatItem] = legDay.exercises
+  const item = (id: number, name: string, sets: number, supersetWithNext: boolean) => ({
+    ...squatItem,
+    id,
+    superset_with_next: supersetWithNext,
+    sets: squatItem.sets.slice(0, 1).flatMap((set) => Array.from({ length: sets }, () => set)),
+    exercise: { ...squatItem.exercise, id: id * 10, name },
+  })
+  // A bench and row superset (the row a set short), a circuit of three, then one on its own.
+  const upperDay: Routine = {
+    ...legDay,
+    exercises: [
+      item(1, 'Banca', 3, true),
+      item(2, 'Remo', 2, false),
+      item(3, 'Militar', 2, true),
+      item(4, 'Dominadas', 2, true),
+      item(5, 'Fondos', 2, false),
+      item(6, 'Curl', 2, false),
+    ],
+  }
+  const doneOnce = (draft: WorkoutDraft, entry: WorkoutDraft['exercises'][number]) =>
+    apply(draft, { type: 'toggleDone', entryId: entry.id, setId: entry.sets.find((set) => !set.done)!.id })
+  const name = (entry: WorkoutDraft['exercises'][number] | null | undefined) => entry?.name ?? null
+
+  it('groups the exercises joined in the routine', () => {
+    const [bench, row, press, pullUp, dip, curl] = start(upperDay).exercises
+
+    expect(bench.superset).toBeDefined()
+    expect(row.superset).toBe(bench.superset)
+    expect(press.superset).toBeDefined()
+    expect([pullUp.superset, dip.superset]).toEqual([press.superset, press.superset])
+    expect(press.superset).not.toBe(bench.superset)
+    expect(curl.superset).toBeUndefined()
+  })
+
+  it('alternates the sets of a superset, resting only after the round', () => {
+    let draft = start(upperDay)
+    const [bench, row] = draft.exercises
+
+    draft = doneOnce(draft, bench)
+    expect(name(continuesRound(draft, bench.id))).toBe('Remo')
+    expect(name(nextPendingSet(draft, bench.id)?.entry)).toBe('Remo')
+
+    draft = doneOnce(draft, draft.exercises[1])
+    // The round is over: rest, then back to the bench.
+    expect(continuesRound(draft, row.id)).toBeNull()
+    expect(name(nextPendingSet(draft, row.id)?.entry)).toBe('Banca')
+
+    draft = doneOnce(draft, draft.exercises[0])
+    draft = doneOnce(draft, draft.exercises[1])
+    // The row is done: the bench's last set is a round of its own, and then the circuit follows.
+    draft = doneOnce(draft, draft.exercises[0])
+    expect(continuesRound(draft, bench.id)).toBeNull()
+    expect(name(nextPendingSet(draft, bench.id)?.entry)).toBe('Militar')
+  })
+
+  it('goes round a circuit of three before resting', () => {
+    let draft = start(upperDay)
+    const [, , press, pullUp, dip] = draft.exercises
+
+    draft = doneOnce(draft, press)
+    expect(name(continuesRound(draft, press.id))).toBe('Dominadas')
+    draft = doneOnce(draft, draft.exercises[3])
+    expect(name(continuesRound(draft, pullUp.id))).toBe('Fondos')
+    draft = doneOnce(draft, draft.exercises[4])
+    expect(continuesRound(draft, dip.id)).toBeNull()
+    expect(name(nextPendingSet(draft, dip.id)?.entry)).toBe('Militar')
+  })
+
+  it('starts at the top, and an exercise on its own never continues a round', () => {
+    const draft = start(upperDay)
+    expect(name(nextPendingSet(draft)?.entry)).toBe('Banca')
+    expect(continuesRound(draft, draft.exercises[5].id)).toBeNull()
+  })
+
+  it('keeps a swapped exercise in its superset', () => {
+    const draft = start(upperDay)
+    const row = draft.exercises[1]
+
+    const swapped = apply(draft, {
+      type: 'swapExercise',
+      entryId: row.id,
+      exercise: { id: 99, name: 'Remo en polea' },
+      replacementId: 'cable-row',
+      weightsKg: [],
+    })
+
+    expect(swapped.exercises[1].superset).toBe(row.superset)
+    expect(name(continuesRound(doneOnce(swapped, swapped.exercises[0]), swapped.exercises[0].id))).toBe(
+      'Remo en polea',
+    )
   })
 })
 
