@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BodyWeightTab } from './BodyWeightTab'
+import { CalendarTab } from './CalendarTab'
 import { ExercisesTab } from './ExercisesTab'
 import { useProgressOverview } from './queries'
 import { RecommendationsTab } from './RecommendationsTab'
@@ -13,6 +14,7 @@ const TABS = [
   { value: 'ejercicios', label: 'Ejercicios' },
   { value: 'volumen', label: 'Volumen' },
   { value: 'peso', label: 'Peso' },
+  { value: 'calendario', label: 'Calendario' },
 ] as const
 
 type TabValue = (typeof TABS)[number]['value']
@@ -71,6 +73,9 @@ export function ProgressPage() {
           </TabsContent>
           <TabsContent value="peso" className="pt-2">
             <BodyWeightTab bodyWeight={overview.data.body_weight} />
+          </TabsContent>
+          <TabsContent value="calendario" className="pt-2">
+            <CalendarTab />
           </TabsContent>
         </Tabs>
       )}

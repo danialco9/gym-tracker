@@ -1,8 +1,10 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { ExerciseProgress, MuscleGroup, ProgressOverview, User } from '@/lib/types'
+import { formatLongDay } from '@/features/plan/week-dates'
+import type { ExerciseProgress, MuscleGroup, ProgressOverview, User, Workout } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
+import { addMonths, formatMonth, localDate, monthOf } from './calendar'
 
 // Recharts needs real layout (ResizeObserver, element sizes), which jsdom does not provide.
 vi.mock('./ProgressCharts', () => ({
@@ -311,5 +313,69 @@ describe('Progress', () => {
     expect(within(link).getByText('1 ejercicio listo para subir peso')).toBeInTheDocument()
     expect(within(link).getByText('1 descarga')).toBeInTheDocument()
     expect(link).toHaveAttribute('href', '/progreso')
+  })
+})
+
+describe('Calendar', () => {
+  // The current month, as the calendar opens on it.
+  const month = monthOf(localDate(new Date()))
+  const [year, monthNumber] = month.split('-').map(Number) as [number, number]
+  const at = (day: number) => new Date(year, monthNumber - 1, day, 18).toISOString()
+  const sets = (working: number, warmups = 0): Workout['sets'] =>
+    Array.from({ length: working + warmups }, (_, index) => ({
+      id: index + 1,
+      exercise_id: 11 + (index % 2),
+      set_number: index + 1,
+      reps: 8,
+      weight_kg: 60,
+      rpe: null,
+      is_warmup: index < warmups,
+    }))
+  const workout = (id: number, day: number, working: number, warmups = 0): Workout => ({
+    id,
+    routine_id: id === 1 ? 7 : null,
+    started_at: at(day),
+    ended_at: null,
+    notes: null,
+    sets: sets(working, warmups),
+  })
+
+  it('shades the days trained by their working sets, and lists a day tapped', async () => {
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /routines': {
+        body: [{ id: 7, name: 'Pierna', description: null, created_at: at(1), exercises: [] }],
+      },
+      [`GET /workouts?start=${month}&end=${addMonths(month, 1)}&limit=100`]: {
+        body: [workout(2, 3, 25), workout(1, 2, 12, 2)],
+      },
+      [`GET /workouts?start=${addMonths(month, -1)}&end=${month}&limit=100`]: { body: [] },
+    })
+    const { user } = renderRoute('/progreso?vista=calendario')
+
+    expect(await screen.findByRole('heading', { name: formatMonth(month) })).toBeInTheDocument()
+    expect(await screen.findByText('2 días entrenados')).toBeInTheDocument()
+    const day = (number: number) => `${month.slice(0, 8)}${String(number).padStart(2, '0')}`
+    // Warm-ups do not count: 12 working sets is the second shade, 25 the third.
+    const second = screen.getByRole('button', { name: `${formatLongDay(day(2))}, 1 entreno, 12 series` })
+    expect(second).toHaveClass('bg-primary/40')
+    expect(
+      screen.getByRole('button', { name: `${formatLongDay(day(3))}, 1 entreno, 25 series` }),
+    ).toHaveClass('bg-primary/70')
+    expect(screen.getByRole('button', { name: `${formatLongDay(day(4))}, sin entrenos` })).toBeDisabled()
+
+    await user.click(second)
+    const list = screen.getByRole('region', { name: formatLongDay(day(2)) })
+    expect(within(list).getByText('Pierna')).toBeInTheDocument()
+    expect(within(list).getByText('2 ejercicios · 14 series')).toBeInTheDocument()
+
+    // No months ahead of this one; back one, and it is empty.
+    expect(screen.getByRole('button', { name: 'Mes siguiente' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Mes anterior' }))
+    expect(
+      await screen.findByRole('heading', { name: formatMonth(addMonths(month, -1)) }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('0 días entrenados')).toBeInTheDocument()
   })
 })

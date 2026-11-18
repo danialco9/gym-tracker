@@ -118,6 +118,24 @@ def test_list_is_newest_first_and_paginated(auth_client: TestClient) -> None:
     assert [workout["started_at"][:10] for workout in second_page] == ["2026-09-13"]
 
 
+def test_list_keeps_the_workouts_of_the_local_dates_asked(auth_client: TestClient) -> None:
+    # Madrid time: the first and last are September and November there, whatever UTC says.
+    for started_at in (
+        "2026-09-30T23:30:00+02:00",
+        "2026-10-01T00:30:00+02:00",
+        "2026-10-31T23:30:00+01:00",
+        "2026-11-01T08:00:00+01:00",
+    ):
+        assert auth_client.post("/api/workouts", json=workout_payload(started_at)).status_code == 201
+
+    october = auth_client.get("/api/workouts", params={"start": "2026-10-01", "end": "2026-11-01"}).json()
+
+    assert [datetime.fromisoformat(workout["started_at"]) for workout in october] == [
+        datetime.fromisoformat("2026-10-31T23:30:00+01:00"),
+        datetime.fromisoformat("2026-10-01T00:30:00+02:00"),
+    ]
+
+
 def test_replace_workout(auth_client: TestClient, session: Session) -> None:
     curl = catalog_exercise_id(session, "dumbbell-curl")
     created = auth_client.post("/api/workouts", json=workout_payload(sets=[set_payload(curl, 1), set_payload(curl, 2)]))

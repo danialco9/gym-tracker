@@ -16,21 +16,10 @@ import { useProgressOverview, useStreak } from '@/features/progress/queries'
 import { loadDraft } from '@/features/workout/draft'
 import { PendingWorkouts } from '@/features/workout/PendingWorkouts'
 import { useRecentWorkouts, useRoutines } from '@/features/workout/queries'
-import { formatDate, formatDuration, plural } from '@/lib/format'
-import type { ProgressOverview, Workout } from '@/lib/types'
+import { workoutSummary } from '@/features/workout/workout-summary'
+import { formatDate, plural } from '@/lib/format'
+import type { ProgressOverview } from '@/lib/types'
 import { cn } from '@/lib/utils'
-
-function workoutSummary(workout: Workout): string {
-  const exerciseCount = new Set(workout.sets.map((set) => set.exercise_id)).size
-  const setCount = workout.sets.length
-  return [
-    formatDuration(workout.started_at, workout.ended_at),
-    `${exerciseCount} ${plural(exerciseCount, 'ejercicio', 'ejercicios')}`,
-    `${setCount} ${plural(setCount, 'serie', 'series')}`,
-  ]
-    .filter(Boolean)
-    .join(' · ')
-}
 
 /** Until a goal is chosen the advice is the general one; this says it can be tailored. */
 function GoalPrompt() {
