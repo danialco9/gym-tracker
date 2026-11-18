@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { randomId } from '@/lib/id'
-import type { Exercise, PlannedSet, Routine, RoutineExercise, WorkoutIn } from '@/lib/types'
+import type { Exercise, MuscleGroup, PlannedSet, Routine, RoutineExercise, WorkoutIn } from '@/lib/types'
+import { warmupSets } from './warmup'
 
 export const WEIGHT_STEP_KG = 2.5
 export const DRAFT_STORAGE_KEY = 'gym-tracker:workout-draft:v1'
@@ -128,10 +129,27 @@ function newSet(template?: Pick<DraftSet, 'reps' | 'weightKg' | 'rpe'>): DraftSe
 /** The deload week keeps the first half of the sets, rounded up so a single set stays. */
 export const deloadSets = <T>(sets: readonly T[]): T[] => sets.slice(0, Math.ceil(sets.length / 2))
 
+/**
+ * The routine exercises the workout warms up: the first multi-joint lift of each muscle. Once the
+ * squat has warmed up the quads, the leg press after it needs no ramp of its own.
+ */
+function warmedUpIds(routine: Routine): Set<number> {
+  const muscles = new Set<MuscleGroup>()
+  const ids = new Set<number>()
+  for (const item of routine.exercises) {
+    if (item.exercise.is_compound && !muscles.has(item.exercise.muscle_group)) {
+      muscles.add(item.exercise.muscle_group)
+      ids.add(item.id)
+    }
+  }
+  return ids
+}
+
 function entryFromRoutine(
   item: RoutineExercise,
   suggested: PlannedSet[] = [],
   deload = false,
+  warmUp = false,
 ): DraftExercise {
   const planned = item.sets.map((set) => ({
     reps: set.target_reps,
@@ -141,18 +159,26 @@ function entryFromRoutine(
   // A suggestion for today wins over the routine's plan, which stays shown as the target.
   const prefill =
     suggested.length > 0 ? suggested.map((set) => ({ reps: set.reps, weightKg: set.weight_kg })) : targets
+  // Each planned set is prefilled with its own reps and weight.
+  const sets =
+    prefill.length === 0
+      ? [newSet()]
+      : prefill.map((set) =>
+          newSet({ reps: set.reps ?? DEFAULT_REPS, weightKg: set.weightKg ?? 0, rpe: null }),
+        )
+  // The warm-up ramps up to the first working set, ahead of it.
+  const warmups = warmUp
+    ? warmupSets(sets[0]!.weightKg, item.exercise.equipment).map((set) => ({
+        ...newSet({ ...set, rpe: null }),
+        isWarmup: true,
+      }))
+    : []
   return {
     id: newId(),
     exerciseId: item.exercise.id,
     name: item.exercise.name,
     targets,
-    // Each planned set is prefilled with its own reps and weight.
-    sets:
-      prefill.length === 0
-        ? [newSet()]
-        : prefill.map((set) =>
-            newSet({ reps: set.reps ?? DEFAULT_REPS, weightKg: set.weightKg ?? 0, rpe: null }),
-          ),
+    sets: [...warmups, ...sets],
   }
 }
 
@@ -161,14 +187,17 @@ function swapEntry(
   action: Extract<DraftAction, { type: 'swapExercise' }>,
 ): DraftExercise[] {
   const done = entry.sets.filter((set) => set.done)
+  // The targets are the working sets': warm-ups take none.
+  const workingDone = done.filter((set) => !set.isWarmup).length
   const replacement: DraftExercise = {
     id: action.replacementId,
     exerciseId: action.exercise.id,
     name: action.exercise.name,
     // The plan's reps still apply to the sets left; its weights were for the other exercise.
-    targets: entry.targets.slice(done.length).map((target) => ({ reps: target.reps, weightKg: null })),
+    targets: entry.targets.slice(workingDone).map((target) => ({ reps: target.reps, weightKg: null })),
+    // Warm-ups still to do were weighed for the other exercise, so they stay behind.
     sets: entry.sets
-      .filter((set) => !set.done)
+      .filter((set) => !set.done && !set.isWarmup)
       .map((set, index) => ({
         ...set,
         weightKg: action.weightsKg[index] ?? action.weightsKg.at(-1) ?? 0,
@@ -178,7 +207,7 @@ function swapEntry(
   if (done.length === 0) {
     return [replacement]
   }
-  return [{ ...entry, targets: entry.targets.slice(0, done.length), sets: done }, replacement]
+  return [{ ...entry, targets: entry.targets.slice(0, workingDone), sets: done }, replacement]
 }
 
 function updateEntry(
@@ -206,6 +235,7 @@ function updateSet(
 
 export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): WorkoutDraft | null {
   if (action.type === 'start') {
+    const warmedUp = action.routine === undefined ? new Set<number>() : warmedUpIds(action.routine)
     return {
       clientId: newId(),
       routineId: action.routine?.id ?? null,
@@ -214,7 +244,12 @@ export function draftReducer(draft: WorkoutDraft | null, action: DraftAction): W
       notes: '',
       exercises:
         action.routine?.exercises.map((item) =>
-          entryFromRoutine(item, action.suggestions?.get(item.exercise.id), action.deload),
+          entryFromRoutine(
+            item,
+            action.suggestions?.get(item.exercise.id),
+            action.deload,
+            warmedUp.has(item.id),
+          ),
         ) ?? [],
     }
   }
@@ -339,10 +374,15 @@ export function nextPendingSet(
   for (const entry of ordered) {
     const index = entry.sets.findIndex((set) => !set.done)
     if (index !== -1) {
-      return { entry, set: entry.sets[index], number: index + 1 }
+      return { entry, set: entry.sets[index], number: workingSetNumber(entry.sets, index) }
     }
   }
   return null
+}
+
+/** The number a set goes by: working sets count from 1, warm-ups ahead of them do not count. */
+export function workingSetNumber(sets: readonly DraftSet[], index: number): number {
+  return sets.slice(0, index + 1).filter((set) => !set.isWarmup).length
 }
 
 /** Builds the API payload with only completed sets, numbering sets per exercise. */

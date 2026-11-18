@@ -14,6 +14,7 @@ const exercise = (id: number, muscle: MuscleGroup): RoutineExercise => ({
     secondary_muscles: [],
     equipment: null,
     is_custom: false,
+    is_compound: false,
   },
 })
 

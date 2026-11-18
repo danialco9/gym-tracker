@@ -43,11 +43,19 @@ test("picks a goal, follows today's plan for a routine and starts a streak", asy
 
   await page.getByRole('button', { name: 'Empezar con este plan' }).click()
 
-  // The routine's targets prefill the card; after the first set the rest bar counts down as long
-  // as the goal asks for.
+  // A squat starts with its warm-ups, ramping up to the working weight, with a short rest after each.
+  const rest = page.getByRole('region', { name: 'Descanso' })
+  for (const warmup of ['25', '35', '47,5']) {
+    await expect(page.getByRole('textbox', { name: 'Peso (kg)', exact: true })).toHaveValue(warmup)
+    await page.getByRole('button', { name: 'Completar calentamiento' }).click()
+    await expect(rest.getByRole('timer')).toHaveText(/Descanso (1:00|0:59|0:58)$/)
+    await rest.getByRole('button', { name: 'Saltar descanso' }).click()
+  }
+
+  // The routine's targets prefill the working sets; after the first one the rest bar counts down as
+  // long as the goal asks for.
   await expect(page.getByRole('textbox', { name: 'Peso (kg)', exact: true })).toHaveValue('60')
   await page.getByRole('button', { name: 'Completar serie 1' }).click()
-  const rest = page.getByRole('region', { name: 'Descanso' })
   await expect(rest.getByRole('timer')).toHaveText(/Descanso (2:00|1:59|1:58)$/)
   await rest.getByRole('button', { name: 'Saltar descanso' }).click()
   await expect(rest).toBeHidden()

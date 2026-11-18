@@ -36,6 +36,7 @@ const LEG_DAY: Routine = {
         secondary_muscles: ['glutes'],
         equipment: 'barbell',
         is_custom: false,
+        is_compound: false,
       },
     },
     {
@@ -55,6 +56,7 @@ const LEG_DAY: Routine = {
         secondary_muscles: [],
         equipment: 'machine',
         is_custom: false,
+        is_compound: false,
       },
     },
   ],
@@ -236,6 +238,36 @@ describe("Today's plan", () => {
 
     // The workout starts with four squat sets.
     expect(await screen.findByText('0/4')).toBeInTheDocument()
+  })
+
+  it('starts a multi-joint lift with its warm-ups and a short rest after them', async () => {
+    const [squat, curl] = LEG_DAY.exercises
+    const routine: Routine = {
+      ...LEG_DAY,
+      exercises: [{ ...squat, exercise: { ...squat.exercise, is_compound: true } }, curl],
+    }
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /routines': { body: [routine] },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /progress/goals': { body: GOAL_PLANS },
+    })
+    const { user } = renderRoute('/entrenar')
+
+    await user.click(await screen.findByRole('button', { name: /Pierna/ }))
+    await user.click(await screen.findByRole('button', { name: 'Empezar con este plan' }))
+
+    // 65 kg suggested: 25, 40 and 52.5 kg ahead of the three working sets.
+    expect(await screen.findByText('0/6')).toBeInTheDocument()
+    expect(screen.getByText('Calentamiento')).toBeInTheDocument()
+    expect((screen.getAllByRole('textbox', { name: 'Peso (kg)' })[0] as HTMLInputElement).value).toBe('25')
+
+    await user.click(screen.getAllByRole('button', { name: 'Completar calentamiento' })[0])
+
+    expect(screen.getByRole('timer')).toHaveTextContent('1:00')
+    expect(screen.getByRole('region', { name: 'Descanso' })).toHaveTextContent(
+      'Sentadilla con barra · calentamiento',
+    )
   })
 
   it('goes back to the routines', async () => {

@@ -5,7 +5,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { formatSetPlan } from '@/lib/set-plan'
 import type { Exercise } from '@/lib/types'
 import { ActiveSet } from './ActiveSet'
-import type { DraftAction, DraftExercise } from './draft'
+import { workingSetNumber, type DraftAction, type DraftExercise } from './draft'
 import { exerciseFrameUrls } from './exercise-art'
 import { ExerciseThumbnail } from './ExerciseThumbnail'
 import { compareWithLastTime } from './last-time'
@@ -112,7 +112,7 @@ export function ExerciseCard({
           />
         )}
         {entry.sets.map((set, index) => {
-          const number = index + 1
+          const number = workingSetNumber(entry.sets, index)
           if (set.done) {
             return (
               <CompletedSetRow key={set.id} number={number} set={set} onEdit={() => toggleDone(set.id)} />

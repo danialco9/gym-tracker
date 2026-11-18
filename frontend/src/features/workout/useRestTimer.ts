@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 export const DEFAULT_REST_SECONDS = 90
+/** After a warm-up set, whatever the goal's rest. */
+export const WARMUP_REST_SECONDS = 60
 // How long "time's up" stays on screen once the countdown runs out by itself.
 export const READY_SECONDS = 5
 

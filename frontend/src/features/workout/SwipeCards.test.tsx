@@ -22,6 +22,7 @@ const SQUAT: Exercise = {
   secondary_muscles: ['glutes'],
   equipment: 'barbell',
   is_custom: false,
+  is_compound: false,
 }
 
 const set = (id: string) => ({ id, reps: 8, weightKg: 60, rpe: null, isWarmup: false, done: false })

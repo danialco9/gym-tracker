@@ -22,6 +22,7 @@ const LEG_PRESS: Exercise = {
   secondary_muscles: ['glutes'],
   equipment: 'machine',
   is_custom: false,
+  is_compound: false,
 }
 
 const SQUAT: Exercise = {
@@ -32,6 +33,7 @@ const SQUAT: Exercise = {
   secondary_muscles: ['glutes'],
   equipment: 'barbell',
   is_custom: false,
+  is_compound: false,
 }
 
 function legDay(overrides: Partial<Routine> = {}): Routine {

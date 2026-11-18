@@ -9,7 +9,9 @@ export const LONGER_REST_SECONDS = 30
 
 export interface NextSet {
   exerciseName: string
+  /** The working set's number; a warm-up goes by its name instead. */
   number: number
+  isWarmup: boolean
   reps: number
   weightKg: number
 }
@@ -54,7 +56,7 @@ export function RestBar({
               role="status"
               className="text-primary motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 min-w-0 flex-1 font-semibold"
             >
-              ¡A por la serie {next.number}!
+              {next.isWarmup ? '¡A por el calentamiento!' : `¡A por la serie ${next.number}!`}
               <span className="text-muted-foreground block truncate text-sm font-normal">
                 {next.exerciseName}
               </span>
@@ -70,7 +72,7 @@ export function RestBar({
               <div className="min-w-0 flex-1">
                 <p className="text-muted-foreground text-xs">Siguiente</p>
                 <p className="truncate text-sm font-semibold">
-                  {next.exerciseName} · serie {next.number}
+                  {next.exerciseName} · {next.isWarmup ? 'calentamiento' : `serie ${next.number}`}
                 </p>
                 <p className="text-muted-foreground text-xs tabular-nums">
                   {next.reps} × {formatDecimal(next.weightKg)} kg

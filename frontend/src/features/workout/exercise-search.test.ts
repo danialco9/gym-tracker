@@ -22,6 +22,7 @@ function exercise(
     equipment,
     secondary_muscles: [],
     is_custom: false,
+    is_compound: false,
   }
 }
 

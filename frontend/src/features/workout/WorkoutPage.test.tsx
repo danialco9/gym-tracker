@@ -22,6 +22,7 @@ const LEG_PRESS: Exercise = {
   secondary_muscles: ['glutes'],
   equipment: 'machine',
   is_custom: false,
+  is_compound: false,
 }
 
 const BENCH_PRESS: Exercise = {
@@ -32,6 +33,7 @@ const BENCH_PRESS: Exercise = {
   secondary_muscles: ['triceps'],
   equipment: 'barbell',
   is_custom: false,
+  is_compound: false,
 }
 
 /** Matches the span whose whole text is this, even when part of it sits in a nested element. */

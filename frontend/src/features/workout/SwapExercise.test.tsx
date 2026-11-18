@@ -28,6 +28,7 @@ const exercise = (
   secondary_muscles,
   equipment,
   is_custom: false,
+  is_compound: false,
 })
 
 const CATALOG = [
