@@ -309,6 +309,12 @@ describe("Today's plan", () => {
     const { user } = renderRoute('/entrenar')
 
     await user.click(await screen.findByRole('button', { name: /Pierna/ }))
+
+    // Today's plan already says which go together.
+    const plan = screen.getByRole('list', { name: 'Ejercicios de hoy' })
+    const planSquat = within(plan).getByText('Sentadilla con barra').closest('li')!
+    expect(within(planSquat).getByText('Superserie con Curl femoral tumbado')).toBeInTheDocument()
+
     await user.click(await screen.findByRole('button', { name: 'Empezar con este plan' }))
 
     expect(await screen.findByText('Superserie con Curl femoral tumbado')).toBeInTheDocument()

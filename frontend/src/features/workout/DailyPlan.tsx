@@ -1,6 +1,7 @@
 import {
   BatteryChargingIcon,
   ChevronLeftIcon,
+  Link2Icon,
   ListChecksIcon,
   PlayIcon,
   TargetIcon,
@@ -39,9 +40,33 @@ interface PlanRowProps {
   deloadWeek: boolean
   /** One more set this week, as the block's target of sets climbs. */
   extraSet: boolean
+  /** The other exercises of its superset, by name; empty for an exercise on its own. */
+  supersetWith: string[]
 }
 
-function PlanRow({ item, recommendation, deloadWeek, extraSet }: PlanRowProps) {
+/** For each routine exercise (by its id), the names of the others in its superset. */
+function supersetPartners(routine: Routine): Map<number, string[]> {
+  const partners = new Map<number, string[]>()
+  let run: RoutineExercise[] = []
+  routine.exercises.forEach((item, index) => {
+    run.push(item)
+    // A run ends where an exercise is not joined to the next, or at the last one.
+    if (!item.superset_with_next || index === routine.exercises.length - 1) {
+      if (run.length > 1) {
+        for (const member of run) {
+          partners.set(
+            member.id,
+            run.filter((other) => other !== member).map((other) => other.exercise.name),
+          )
+        }
+      }
+      run = []
+    }
+  })
+  return partners
+}
+
+function PlanRow({ item, recommendation, deloadWeek, extraSet, supersetWith }: PlanRowProps) {
   const Icon = recommendation === undefined ? ListChecksIcon : ACTION_ICONS[recommendation.action]
   const sets =
     recommendation === undefined
@@ -65,6 +90,12 @@ function PlanRow({ item, recommendation, deloadWeek, extraSet }: PlanRowProps) {
       </span>
       <span className="min-w-0 space-y-0.5">
         <span className="block font-medium">{item.exercise.name}</span>
+        {supersetWith.length > 0 && (
+          <span className="text-primary flex items-center gap-1 text-xs font-medium">
+            <Link2Icon className="size-3.5" aria-hidden />
+            Superserie con {supersetWith.join(' y ')}
+          </span>
+        )}
         <span className="text-muted-foreground block text-xs">
           {/* The notice above the list already says why: in the deload week the row only says what changes. */}
           {deloadWeek
@@ -108,6 +139,7 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
   const muscles = new Set(routine.exercises.map((item) => item.exercise.muscle_group))
   const volume = overview.data?.volume_advice.filter((advice) => muscles.has(advice.muscle_group)) ?? []
   const ramped = rampExercises(routine.exercises, overview.data?.week_sets ?? [], currentUser?.block)
+  const supersets = supersetPartners(routine)
 
   const start = () => {
     const suggestions = new Map<number, PlannedSet[]>()
@@ -196,6 +228,7 @@ export function DailyPlan({ routine, onStart, onBack }: DailyPlanProps) {
               recommendation={recommendations.get(item.exercise.id)}
               deloadWeek={deloadWeek}
               extraSet={ramped.has(item.exercise.id)}
+              supersetWith={supersets.get(item.id) ?? []}
             />
           ))}
         </ul>
