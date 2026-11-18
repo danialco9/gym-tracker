@@ -143,4 +143,38 @@ describe('Account', () => {
     expect(screen.getByRole('radiogroup', { name: 'Compararte con' })).toBeInTheDocument()
     expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({ sex: 'female' })
   })
+
+  it('sets the bar and the plates of the gym, starting from the defaults', async () => {
+    const calls = mockApi({
+      'GET /auth/me': { body: USER },
+      'PATCH /auth/me': ({ body }) => ({ body: { ...USER, ...(body as object) } }),
+    })
+    const { user } = renderRoute('/cuenta')
+
+    // A session saved before the setting reads as an Olympic bar and the usual seven plates.
+    await user.click(await screen.findByRole('button', { name: /Barra y discos.*Barra de 20 kg · 7 discos/ }))
+    expect(screen.getByRole('radio', { name: '20 kg' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('button', { name: 'Disco de 25 kg' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Disco de 0,5 kg' })).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(screen.getByRole('radio', { name: '15 kg' }))
+    await user.click(screen.getByRole('button', { name: 'Disco de 25 kg' }))
+    await user.click(screen.getByRole('button', { name: 'Disco de 0,5 kg' }))
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByRole('button', { name: /Barra de 15 kg · 7 discos/ })).toBeInTheDocument()
+    expect(calls.find((call) => call.method === 'PATCH')?.body).toEqual({
+      bar_kg: 15,
+      plates_kg: [20, 15, 10, 5, 2.5, 1.25, 0.5],
+    })
+  })
+
+  it('needs at least one plate to save', async () => {
+    mockApi({ 'GET /auth/me': { body: { ...USER, plates_kg: [20] } } })
+    const { user } = renderRoute('/cuenta')
+
+    await user.click(await screen.findByRole('button', { name: /Barra y discos/ }))
+    await user.click(screen.getByRole('button', { name: 'Disco de 20 kg' }))
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeDisabled()
+  })
 })

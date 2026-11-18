@@ -44,6 +44,12 @@ export interface User {
   block_weeks?: number | null
   /** Where this week falls in the block, worked out by the server; null without blocks. */
   block?: BlockWeek | null
+  /**
+   * The bar and plates of the user's gym, for the plate calculator. Optional because a session
+   * saved on the phone by an earlier version does not carry them: `gymOf` fills in the defaults.
+   */
+  bar_kg?: number
+  plates_kg?: number[]
   created_at: string
 }
 

@@ -112,6 +112,25 @@ def test_a_block_length_outside_four_to_six_weeks_is_rejected(auth_client: TestC
     assert auth_client.patch("/api/auth/me", json={"block_weeks": weeks}).status_code == 422
 
 
+def test_the_bar_and_plates_start_as_the_defaults_and_can_be_changed(auth_client: TestClient) -> None:
+    me = auth_client.get("/api/auth/me").json()
+    assert (me["bar_kg"], me["plates_kg"]) == (20.0, [25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25])
+
+    changed = auth_client.patch("/api/auth/me", json={"bar_kg": 15, "plates_kg": [5, 20, 2.5, 20]}).json()
+    assert (changed["bar_kg"], changed["plates_kg"]) == (15.0, [20.0, 5.0, 2.5])
+    me = auth_client.get("/api/auth/me").json()
+    assert (me["bar_kg"], me["plates_kg"]) == (15.0, [20.0, 5.0, 2.5])
+
+    # Null goes back to the defaults.
+    reset = auth_client.patch("/api/auth/me", json={"bar_kg": None, "plates_kg": None}).json()
+    assert (reset["bar_kg"], reset["plates_kg"][0]) == (20.0, 25.0)
+
+
+@pytest.mark.parametrize("change", [{"bar_kg": 30}, {"bar_kg": 2}, {"plates_kg": [7.5]}, {"plates_kg": []}])
+def test_an_odd_bar_or_unknown_plates_are_rejected(auth_client: TestClient, change: dict[str, object]) -> None:
+    assert auth_client.patch("/api/auth/me", json=change).status_code == 422
+
+
 def test_the_sex_starts_empty_and_can_be_set_and_cleared(auth_client: TestClient) -> None:
     assert auth_client.get("/api/auth/me").json()["sex"] is None
 

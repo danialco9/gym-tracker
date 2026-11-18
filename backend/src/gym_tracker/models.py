@@ -47,6 +47,10 @@ class User(Base):
     # Both null without blocks; they are set and cleared together.
     block_weeks: Mapped[int | None] = mapped_column(SmallInteger)
     block_started_on: Mapped[date | None] = mapped_column(Date)
+    # The bar and plates of the user's gym, for the plate calculator (plates.py). Null reads as the
+    # defaults: an Olympic bar and the usual plates.
+    bar_kg: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))
+    plates_kg: Mapped[list[Decimal] | None] = mapped_column(ARRAY(Numeric(5, 2)))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
