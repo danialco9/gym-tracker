@@ -2,9 +2,10 @@ import { BatteryChargingIcon, LayersIcon } from 'lucide-react'
 import type { BlockWeek } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-function blockHint({ week, weeks }: BlockWeek) {
+function blockHint({ week, weeks, target_hard_sets }: BlockWeek) {
   const left = weeks - week
-  return left === 1 ? 'Descarga la semana que viene' : `Descarga en ${left} semanas`
+  const deload = left === 1 ? 'Descarga la semana que viene' : `Descarga en ${left} semanas`
+  return target_hard_sets === undefined ? deload : `Meta: ${target_hard_sets} series por músculo · ${deload}`
 }
 
 /**

@@ -132,6 +132,8 @@ class BlockWeekRead(BaseModel):
     week: int
     weeks: int
     is_deload: bool
+    # Hard sets each main muscle aims for this week: it climbs through the block.
+    target_hard_sets: int
 
 
 class UserUpdate(PartialUpdate):
@@ -460,6 +462,8 @@ class MuscleWeekRead(BaseModel):
     hard_sets: float
     min_hard_sets: int
     max_hard_sets: int
+    # This week's aim: the minimum, or a step on the way to the maximum when training in blocks.
+    target_hard_sets: int
 
 
 class SetLoadRead(BaseModel):

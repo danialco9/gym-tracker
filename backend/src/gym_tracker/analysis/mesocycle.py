@@ -36,6 +36,31 @@ def block_week(started_on: date, weeks: int, today: date) -> BlockWeek:
     return BlockWeek(week=week, weeks=weeks, is_deload=week == weeks)
 
 
+def current_block_week(started_on: date | None, weeks: int | None, today: date) -> BlockWeek | None:
+    """``block_week`` for someone who may not train in blocks (both values stored as null)."""
+    if started_on is None or weeks is None:
+        return None
+    return block_week(started_on, weeks, today)
+
+
+def week_set_target(block: BlockWeek | None, min_sets: int, max_sets: int) -> int:
+    """Hard sets each main muscle aims for this week.
+
+    Without blocks it is the minimum of the goal's range. In a block the building weeks climb from the
+    minimum in the first week to the maximum in the last one before the deload, so the extra work
+    arrives a little at a time and the fatigue it builds is cleared by the deload, which aims for half
+    the minimum (rounded up).
+    """
+    if block is None:
+        return min_sets
+    if block.is_deload:
+        return -(-min_sets // 2)
+    building_weeks = block.weeks - 1
+    if building_weeks <= 1:
+        return min_sets
+    return min_sets + round((max_sets - min_sets) * (block.week - 1) / (building_weeks - 1))
+
+
 def in_deload_week(started_on: date, weeks: int, day: date) -> bool:
     """Whether ``day`` fell in a deload week of the blocks started on ``started_on``.
 

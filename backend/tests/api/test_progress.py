@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -109,6 +109,7 @@ def test_overview_without_data(progress_client: TestClient) -> None:
         "hard_sets": 0.0,
         "min_hard_sets": 10,
         "max_hard_sets": 20,
+        "target_hard_sets": 10,
     }
 
 
@@ -255,6 +256,20 @@ def test_weekly_volume_advice_follows_the_training_goal(
     assert (advice["chest"]["min_hard_sets"], advice["chest"]["max_hard_sets"]) == (10, 14)
     week = {item["muscle_group"]: item for item in overview["week_sets"]}
     assert (week["chest"]["min_hard_sets"], week["chest"]["max_hard_sets"]) == (10, 14)
+
+
+def test_the_week_target_climbs_through_the_block(progress_client: TestClient, training_log: dict[str, int]) -> None:
+    progress_client.app.dependency_overrides[get_today] = lambda: date(2026, 10, 21)  # type: ignore[attr-defined]
+    assert progress_client.patch("/api/auth/me", json={"goal": "build_muscle", "block_weeks": 5}).status_code == 200
+
+    def target_on(today: date) -> int:
+        progress_client.app.dependency_overrides[get_today] = lambda: today  # type: ignore[attr-defined]
+        week_sets = progress_client.get("/api/progress/overview").json()["week_sets"]
+        assert len({item["target_hard_sets"] for item in week_sets}) == 1
+        return int(week_sets[0]["target_hard_sets"])
+
+    # Building muscle asks for 12-20 sets: from 12 in the first week to 20 in the fourth, half of 12 in the deload.
+    assert [target_on(date(2026, 10, 21) + timedelta(weeks=offset)) for offset in range(5)] == [12, 15, 17, 20, 6]
 
 
 def test_recommendations_progress_in_the_rep_range_of_the_goal(

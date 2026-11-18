@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from gym_tracker.analysis.mesocycle import BlockWeek, block_week, in_deload_week, week_start
+from gym_tracker.analysis.mesocycle import BlockWeek, block_week, in_deload_week, week_set_target, week_start
 
 # A Monday.
 START = date(2026, 11, 9)
@@ -44,3 +44,25 @@ def test_in_deload_week_tells_the_days_of_every_deload() -> None:
     assert not in_deload_week(START, 4, date(2026, 12, 7))
     # Before the first block there were no deloads, whatever the arithmetic says.
     assert not in_deload_week(START, 4, date(2026, 11, 5))
+
+
+def test_without_a_block_the_target_is_the_minimum() -> None:
+    assert week_set_target(None, 12, 20) == 12
+
+
+@pytest.mark.parametrize(
+    ("weeks", "targets"),
+    [
+        # The building weeks climb from the minimum to the maximum; the deload aims for half the minimum.
+        (4, [12, 16, 20, 6]),
+        (5, [12, 15, 17, 20, 6]),
+        (6, [12, 14, 16, 18, 20, 6]),
+    ],
+)
+def test_the_target_climbs_through_the_block(weeks: int, targets: list[int]) -> None:
+    blocks = [BlockWeek(week=week, weeks=weeks, is_deload=week == weeks) for week in range(1, weeks + 1)]
+    assert [week_set_target(block, 12, 20) for block in blocks] == targets
+
+
+def test_the_deload_target_rounds_up() -> None:
+    assert week_set_target(BlockWeek(week=4, weeks=4, is_deload=True), 11, 14) == 6

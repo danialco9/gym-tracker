@@ -9,27 +9,27 @@ const sets = (count: number) => `${formatDecimal(count)} ${count === 1 ? 'serie'
 
 /** Where a muscle stands this week, in words. */
 function describe(muscle: MuscleWeek): string {
-  const range = `${muscle.min_hard_sets}–${muscle.max_hard_sets}`
-  const done = `${MUSCLE_GROUP_LABELS[muscle.muscle_group]}: ${sets(muscle.hard_sets)} de ${range}`
+  const name = MUSCLE_GROUP_LABELS[muscle.muscle_group]
   switch (weekVolumeStatus(muscle)) {
     case 'low':
-      return `${done}. Te faltan ${sets(muscle.min_hard_sets - muscle.hard_sets)} esta semana.`
+      return `${name}: ${formatDecimal(muscle.hard_sets)} de ${sets(muscle.target_hard_sets)} esta semana. Te faltan ${sets(muscle.target_hard_sets - muscle.hard_sets)}.`
     case 'optimal':
-      return `${done}. En la zona óptima para crecer.`
+      return `${name}: ${sets(muscle.hard_sets)}. Meta de esta semana cumplida (${muscle.target_hard_sets}).`
     case 'high':
-      return `${done}. Te pasas: más series sobre todo suman fatiga.`
+      return `${name}: ${sets(muscle.hard_sets)}, más del máximo (${muscle.max_hard_sets}): sobre todo suman fatiga.`
   }
 }
 
 const LEGEND = [
   { color: WEEK_VOLUME_COLORS.empty, label: 'Faltan series' },
-  { color: WEEK_VOLUME_COLORS.optimal, label: 'Óptimo' },
+  { color: WEEK_VOLUME_COLORS.optimal, label: 'Meta cumplida' },
   { color: WEEK_VOLUME_COLORS.high, label: 'Te pasas' },
 ]
 
 /**
- * The week's hard sets painted on the body: each main muscle fills with green as it nears the weekly
- * minimum of the user's goal. Smaller muscles stay grey, as the volume advice does not judge them.
+ * The week's hard sets painted on the body: each main muscle fills with green as it nears the week's
+ * target, which climbs through a training block. Smaller muscles stay grey, as the volume advice does
+ * not judge them.
  */
 export function WeekVolumeBody({ muscles }: { muscles: MuscleWeek[] }) {
   const [selected, setSelected] = useState<MuscleGroup | null>(null)
@@ -41,7 +41,7 @@ export function WeekVolumeBody({ muscles }: { muscles: MuscleWeek[] }) {
       <div className="space-y-1">
         <h2 className="font-heading text-lg font-medium">Series de esta semana</h2>
         <p className="text-muted-foreground text-sm">
-          Cada músculo se llena de verde al acercarse a las series que pide tu objetivo.
+          Cada músculo se llena de verde al acercarse a la meta de series de esta semana.
         </p>
       </div>
       <BodyFigures

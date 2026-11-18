@@ -82,10 +82,19 @@ def test_a_training_block_starts_this_week_and_counts_the_weeks(auth_client: Tes
     _on(auth_client, date(2026, 11, 11))  # a Wednesday
     response = auth_client.patch("/api/auth/me", json={"block_weeks": 4})
     assert response.status_code == 200
-    assert response.json()["block"] == {"week": 1, "weeks": 4, "is_deload": False}
+    # Without a goal the range is 10-20 sets: the first week aims for the minimum.
+    assert response.json()["block"] == {"week": 1, "weeks": 4, "is_deload": False, "target_hard_sets": 10}
+
+    _on(auth_client, date(2026, 11, 16))
+    assert auth_client.get("/api/auth/me").json()["block"]["target_hard_sets"] == 15
 
     _on(auth_client, date(2026, 11, 30))
-    assert auth_client.get("/api/auth/me").json()["block"] == {"week": 4, "weeks": 4, "is_deload": True}
+    assert auth_client.get("/api/auth/me").json()["block"] == {
+        "week": 4,
+        "weeks": 4,
+        "is_deload": True,
+        "target_hard_sets": 5,
+    }
     # Other changes leave the block where it is.
     assert auth_client.patch("/api/auth/me", json={"goal": "lose_fat"}).json()["block"]["week"] == 4
 
