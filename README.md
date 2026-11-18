@@ -92,6 +92,9 @@ remove it like any other app (long press on the icon).
   comes with its warm-up ahead of the working sets: 40 % × 10, 60 % × 5 and 80 % × 3 of the first
   working weight, rounded to 2.5 kg and never under the empty bar. They rest a short minute, go by
   "C" instead of a number, and never count as volume or records.
+- **Plate calculator.** On a barbell lift the open set says what to load on each side, *Por lado:
+  25 + 5*, with the fewest plates, using the bar and plates of your own gym (set in your account).
+  A weight the plates cannot make offers the closest ones that can.
 - **Logging a workout in plain language.** Type (or dictate with the phone keyboard) `prensa 4x10
   120, press banca 12,10,8 a 60 rir 2` and the server reads it into sets, matched against your
   exercise catalog. It never saves on its own: the reading prefills the workout screen for you to
@@ -309,14 +312,11 @@ A few decisions worth calling out:
 - [x] Swap an exercise when the machine is taken, for the closest ones of the same muscle
 - [x] Double progression in the rep range of the goal: more weight and fewer reps at the top of the range
 - [x] Warm-up sets worked out from the first working set (40 %, 60 % and 80 %) on the multi-joint lifts
+- [x] Plate calculator: what to load on each side of the bar, with the bar and plates of your gym
 
 ## Ideas for the future
 
 Not promised, roughly in order of value for the effort.
-
-**Hypertrophy and progressive overload**
-
-- [ ] Plate calculator: which plates to load on each side of the bar for the weight on screen.
 
 **In the gym**
 

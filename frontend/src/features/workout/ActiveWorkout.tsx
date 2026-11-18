@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCurrentUser } from '@/features/auth/queries'
 import { ApiError } from '@/lib/api'
 import { formatDecimal, formatTime, plural } from '@/lib/format'
+import { gymOf } from '@/lib/plates'
 import { randomId } from '@/lib/id'
 import type { Exercise } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -50,6 +51,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const navigate = useNavigate()
   const currentUser = useCurrentUser().data
   const userId = currentUser?.id
+  const gym = gymOf(currentUser)
   const goalPlan = useGoalPlans().data?.find((plan) => plan.goal === currentUser?.goal)
   // The goal's shortest rest; "+30 s" is there for the heavy sets that need more.
   const restSeconds = goalPlan?.rest_seconds.min ?? DEFAULT_REST_SECONDS
@@ -272,6 +274,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
             <ExerciseCard
               entry={entry}
               exercise={catalog.get(entry.exerciseId)}
+              gym={gym}
               dispatch={dispatch}
               bestE1rmKg={records.get(entry.exerciseId)}
               onSetCompleted={(setId) => startRest(entry.id, setId)}
