@@ -3,6 +3,7 @@ import { useState, type Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatSetPlan } from '@/lib/set-plan'
+import type { Gym } from '@/lib/plates'
 import type { Exercise } from '@/lib/types'
 import { ActiveSet } from './ActiveSet'
 import { workingSetNumber, type DraftAction, type DraftExercise } from './draft'
@@ -18,8 +19,10 @@ import { CompletedSetRow, PendingSetRow } from './SetSummary'
 
 interface ExerciseCardProps {
   entry: DraftExercise
-  /** The catalog exercise, for its drawing; none while the catalog loads. */
-  exercise?: Pick<Exercise, 'slug' | 'is_custom'>
+  /** The catalog exercise, for its drawing and whether it takes a bar; none while the catalog loads. */
+  exercise?: Pick<Exercise, 'slug' | 'is_custom' | 'equipment'>
+  /** The user's bar and plates, shown as what to load on a barbell lift. */
+  gym: Gym
   dispatch: Dispatch<DraftAction>
   /** The exercise's saved best estimated 1RM; none when it has no history (or it is loading). */
   bestE1rmKg?: number
@@ -37,6 +40,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({
   entry,
   exercise,
+  gym,
   dispatch,
   bestE1rmKg,
   onSetCompleted,
@@ -128,6 +132,7 @@ export function ExerciseCard({
               number={number}
               set={set}
               canGoBack={previousDone !== undefined}
+              gym={exercise?.equipment === 'barbell' ? gym : null}
               isRecord={beatsRecord(
                 set,
                 entry.sets.filter((other) => other.done),

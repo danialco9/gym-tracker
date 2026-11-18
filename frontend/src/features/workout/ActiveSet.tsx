@@ -2,10 +2,12 @@ import { ArrowLeftIcon, CheckIcon, PlusIcon, Trash2Icon, TrendingUpIcon, TrophyI
 import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { formatDecimal } from '@/lib/format'
+import type { Gym } from '@/lib/plates'
 import { cn } from '@/lib/utils'
 import { WEIGHT_STEP_KG, type DraftSet } from './draft'
 import type { LastTimeComparison } from './last-time'
 import { RIR_OPTIONS, matchesRirOption } from '@/lib/rir'
+import { PlateLine } from './PlateLine'
 import { Stepper } from './Stepper'
 
 interface ActiveSetProps {
@@ -14,6 +16,8 @@ interface ActiveSetProps {
   canGoBack: boolean
   /** The reps and weight entered would beat the exercise's best estimated 1RM. */
   isRecord: boolean
+  /** The user's bar and plates on a barbell lift, for what to load on each side; null otherwise. */
+  gym: Gym | null
   /** The same set last session; null for a warm-up or an exercise without history. */
   lastTime: LastTimeComparison | null
   onAdjust: (field: 'reps' | 'weightKg', delta: number) => void
@@ -32,6 +36,7 @@ export function ActiveSet({
   set,
   canGoBack,
   isRecord,
+  gym,
   lastTime,
   onAdjust,
   onChange,
@@ -74,6 +79,8 @@ export function ActiveSet({
           onChange={(reps) => onChange({ reps })}
         />
       </div>
+
+      {gym !== null && <PlateLine weightKg={set.weightKg} gym={gym} />}
 
       {lastTime && <LastTimeLine comparison={lastTime} onBeat={(target) => onChange(target)} />}
 

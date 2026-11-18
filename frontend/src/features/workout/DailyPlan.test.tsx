@@ -270,6 +270,31 @@ describe("Today's plan", () => {
     )
   })
 
+  it("says what to load on each side of the bar, with the user's own bar and plates", async () => {
+    const [squat, curl] = LEG_DAY.exercises
+    mockApi({
+      'GET /auth/me': { body: { ...USER, bar_kg: 15, plates_kg: [20, 10, 5, 2.5] } },
+      'GET /routines': { body: [LEG_DAY] },
+      'GET /exercises': { body: [squat.exercise, curl.exercise] },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /progress/goals': { body: GOAL_PLANS },
+    })
+    const { user } = renderRoute('/entrenar')
+
+    await user.click(await screen.findByRole('button', { name: /Pierna/ }))
+    await user.click(await screen.findByRole('button', { name: 'Empezar con este plan' }))
+
+    // 65 kg on a 15 kg bar: 25 kg a side, as 20 + 5.
+    expect(await screen.findByText('Por lado: 20 + 5 · barra 15 kg')).toBeInTheDocument()
+    // The leg curl is a machine: no plates to work out.
+    expect(screen.getAllByText(/Por lado/)).toHaveLength(1)
+    // 67.5 kg needs 26.25 kg a side, which these plates cannot make.
+    await user.click(screen.getAllByRole('button', { name: 'Aumentar peso (kg)' })[0])
+    expect(screen.getByText('No cuadra con tus discos: 65 o 70 kg')).toBeInTheDocument()
+    await user.click(screen.getAllByRole('button', { name: 'Aumentar peso (kg)' })[0])
+    expect(screen.getByText('Por lado: 20 + 5 + 2,5 · barra 15 kg')).toBeInTheDocument()
+  })
+
   it('goes back to the routines', async () => {
     mockApi({
       'GET /auth/me': { body: USER },
