@@ -47,6 +47,17 @@ export function useRecentWorkouts(limit = 5) {
   })
 }
 
+/** The workouts that began in a month (``month`` is its first day), for the calendar. */
+export function useMonthWorkouts(month: string, nextMonth: string) {
+  return useQuery({
+    queryKey: [...queryKeys.workouts, { month }],
+    queryFn: ({ signal }) =>
+      apiFetch<Workout[]>(`/workouts?start=${month}&end=${nextMonth}&limit=100`, { signal }),
+    // Keeps the month on screen while the next one loads.
+    placeholderData: (previous) => previous,
+  })
+}
+
 export function useSaveWorkout() {
   const queryClient = useQueryClient()
   return useMutation({

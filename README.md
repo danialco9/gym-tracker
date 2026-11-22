@@ -319,6 +319,7 @@ A few decisions worth calling out:
 - [x] Plate calculator: what to load on each side of the bar, with the bar and plates of your gym
 - [x] Supersets and circuits: exercises that alternate, with the rest only after the round
 - [x] Install guide on the iPhone, which is also what unlocks the end-of-rest notification there
+- [x] JavaScript split by route: no chunk over 500 kB, the main one about 130 kB gzipped
 
 ## Ideas for the future
 
@@ -333,6 +334,4 @@ Not promised, roughly in order of value for the effort.
 
 **Engineering**
 
-- [ ] Split the JavaScript bundle by route: the build warns that one chunk is over 500 kB, which
-  slows the first open on mobile data.
 - [ ] Language-model reading for the dictated sentences the rules cannot reach (listed above).

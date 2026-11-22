@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime, time
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
@@ -10,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from gym_tracker.api.common import UNPROCESSABLE, commit_or_conflict, ensure_exercises_visible, not_found
-from gym_tracker.api.deps import CurrentUser, SessionDep
+from gym_tracker.api.deps import CurrentUser, SessionDep, SettingsDep
 from gym_tracker.models import Routine, User, Workout, WorkoutSet
 from gym_tracker.schemas import WorkoutIn, WorkoutRead, WorkoutSetIn, WorkoutSetRead
 
@@ -44,9 +45,15 @@ def _sets(payload: WorkoutIn) -> list[WorkoutSet]:
 def list_workouts(
     session: SessionDep,
     user: CurrentUser,
+    *,
+    settings: SettingsDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
+    start: date | None = None,
+    end: date | None = None,
 ) -> list[WorkoutRead]:
+    """The user's workouts, latest first. ``start`` (included) and ``end`` (left out) keep those that
+    began on those local dates, e.g. a month for the calendar."""
     query = (
         select(Workout)
         .where(Workout.user_id == user.id)
@@ -55,6 +62,10 @@ def list_workouts(
         .limit(limit)
         .offset(offset)
     )
+    if start is not None:
+        query = query.where(Workout.started_at >= datetime.combine(start, time(), settings.zone))
+    if end is not None:
+        query = query.where(Workout.started_at < datetime.combine(end, time(), settings.zone))
     return [WorkoutRead.model_validate(workout) for workout in session.scalars(query)]
 
 
