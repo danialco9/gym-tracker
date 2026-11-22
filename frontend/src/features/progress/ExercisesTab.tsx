@@ -3,6 +3,7 @@ import { QueryStatus } from '@/components/QueryStatus'
 import { formatDay, formatDecimal, formatKg, formatShortDay } from '@/lib/format'
 import { MUSCLE_GROUP_LABELS } from '@/lib/labels'
 import type { PersonalRecord } from '@/lib/types'
+import { forecastMessage } from './forecast'
 import { ChartFallback, DataTable, EmptyState, StatTile } from './ProgressParts'
 import { useExerciseProgress } from './queries'
 
@@ -77,9 +78,10 @@ export function ExercisesTab({ records }: { records: PersonalRecord[] }) {
             <EmptyState>Con dos sesiones de este ejercicio verás su gráfica.</EmptyState>
           ) : (
             <Suspense fallback={<ChartFallback />}>
-              <ExerciseChart sessions={sessions} />
+              <ExerciseChart sessions={sessions} forecast={progress.data.forecast} />
             </Suspense>
           ))}
+        {progress.data?.forecast && <ForecastNote message={forecastMessage(progress.data.forecast)} />}
         {sessions.length > 0 && (
           <DataTable
             caption={`Sesiones de ${record.exercise_name}`}
@@ -118,5 +120,14 @@ export function ExercisesTab({ records }: { records: PersonalRecord[] }) {
         </ul>
       </section>
     </div>
+  )
+}
+
+function ForecastNote({ message }: { message: { title: string; detail: string } }) {
+  return (
+    <p className="bg-card ring-foreground/10 rounded-xl px-4 py-3 text-sm ring-1">
+      <span className="block font-medium">{message.title}</span>
+      <span className="text-muted-foreground block">{message.detail}</span>
+    </p>
   )
 }
