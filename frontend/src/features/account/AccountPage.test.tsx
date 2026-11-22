@@ -15,6 +15,19 @@ const USER: User = {
 }
 
 describe('Account', () => {
+  it('downloads workouts and measurements as CSV files', async () => {
+    mockApi({ 'GET /auth/me': { body: USER } })
+    renderRoute('/cuenta')
+
+    const workouts = await screen.findByRole('link', { name: /Descargar entrenos/ })
+    expect(workouts).toHaveAttribute('href', '/api/export/workouts.csv')
+    expect(workouts).toHaveAttribute('download')
+    expect(screen.getByRole('link', { name: /Descargar medidas/ })).toHaveAttribute(
+      'href',
+      '/api/export/measurements.csv',
+    )
+  })
+
   it('sends feedback about the screen it was opened from', async () => {
     const calls = mockApi({
       'GET /auth/me': { body: USER },

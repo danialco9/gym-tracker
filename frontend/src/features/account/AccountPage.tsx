@@ -1,5 +1,6 @@
 import {
   ChevronRightIcon,
+  DownloadIcon,
   DumbbellIcon,
   LogOutIcon,
   MessageSquareIcon,
@@ -280,6 +281,25 @@ function DeleteAccountForm({ userId, onCancel }: { userId: number; onCancel: () 
   )
 }
 
+/** A CSV of the user's own data: a plain link, as the session cookie goes with it. */
+function ExportLink({ href, title, detail }: { href: string; title: string; detail: string }) {
+  return (
+    <a
+      href={href}
+      download
+      className="hover:bg-accent flex w-full items-center justify-between gap-3 rounded-lg p-3 transition-colors"
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <DownloadIcon className="text-primary size-5 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          <span className="block font-medium">{title}</span>
+          <span className="text-muted-foreground block text-sm">{detail}</span>
+        </span>
+      </span>
+    </a>
+  )
+}
+
 export function AccountPage() {
   const user = useCurrentUser().data
   const { signOut, pending } = useSignOut()
@@ -392,6 +412,23 @@ export function AccountPage() {
           <LogOutIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
           Cerrar sesión
         </button>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="eyebrow">Tus datos</h2>
+        <div className="bg-card ring-foreground/10 rounded-xl p-2 ring-1">
+          <ExportLink
+            href="/api/export/workouts.csv"
+            title="Descargar entrenos"
+            detail="Cada serie de cada entreno"
+          />
+          <ExportLink
+            href="/api/export/measurements.csv"
+            title="Descargar medidas"
+            detail="Peso y perímetros"
+          />
+        </div>
+        <p className="text-muted-foreground px-1 text-sm">En CSV, listo para abrir en Excel o Numbers.</p>
       </section>
 
       <section className="space-y-3">
