@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from 'lucide-react'
 import { useState } from 'react'
 import { QueryStatus } from '@/components/QueryStatus'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { plural } from '@/lib/format'
 import type { Workout } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { addMonths, daysOf, formatMonth, heatLevel, localDate, monthOf } from './calendar'
+import { EditWorkoutSheet } from './EditWorkoutSheet'
 
 const HEAT_CLASSES = [
   '',
@@ -31,6 +32,7 @@ export function CalendarTab() {
   const today = localDate(new Date())
   const [month, setMonth] = useState(() => monthOf(today))
   const [selected, setSelected] = useState<string | null>(null)
+  const [editing, setEditing] = useState<Workout | null>(null)
   const workouts = useMonthWorkouts(month, addMonths(month, 1))
   const routineNames = new Map(useRoutines().data?.map((routine) => [routine.id, routine.name]))
 
@@ -129,23 +131,36 @@ export function CalendarTab() {
           <h3 className="font-medium">{formatLongDay(selected)}</h3>
           <ul className="bg-card ring-foreground/10 divide-border divide-y rounded-xl ring-1">
             {chosen.map((workout) => (
-              <li key={workout.id} className="px-4 py-3">
-                <span className="flex items-baseline justify-between gap-3">
-                  <span className="truncate font-medium">
-                    {workout.routine_id === null
-                      ? 'Entreno libre'
-                      : (routineNames.get(workout.routine_id) ?? 'Rutina')}
+              <li key={workout.id} className="flex items-center gap-3 py-3 pr-2 pl-4">
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-3">
+                    <span className="truncate font-medium">
+                      {workout.routine_id === null
+                        ? 'Entreno libre'
+                        : (routineNames.get(workout.routine_id) ?? 'Rutina')}
+                    </span>
+                    <span className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                      {time.format(new Date(workout.started_at))}
+                    </span>
                   </span>
-                  <span className="text-muted-foreground shrink-0 text-sm tabular-nums">
-                    {time.format(new Date(workout.started_at))}
-                  </span>
+                  <span className="text-muted-foreground block text-sm">{workoutSummary(workout)}</span>
                 </span>
-                <span className="text-muted-foreground block text-sm">{workoutSummary(workout)}</span>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-10 shrink-0"
+                  onClick={() => setEditing(workout)}
+                >
+                  <PencilIcon />
+                  Editar
+                </Button>
               </li>
             ))}
           </ul>
         </section>
       )}
+
+      <EditWorkoutSheet workout={editing} onClose={() => setEditing(null)} />
     </section>
   )
 }

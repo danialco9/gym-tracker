@@ -378,4 +378,52 @@ describe('Calendar', () => {
     ).toBeInTheDocument()
     expect(await screen.findByText('0 días entrenados')).toBeInTheDocument()
   })
+
+  it('edits a saved workout from the day tapped: reps changed, a set removed, notes added', async () => {
+    const saved = workout(1, 2, 3)
+    const calls = mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /routines': { body: [] },
+      'GET /exercises': {
+        body: [
+          { id: 11, name: 'Sentadilla' },
+          { id: 12, name: 'Prensa' },
+        ],
+      },
+      [`GET /workouts?start=${month}&end=${addMonths(month, 1)}&limit=100`]: { body: [saved] },
+      'PUT /workouts/1': ({ body }) => ({ body: { ...saved, ...(body as object) } }),
+    })
+    const { user } = renderRoute('/progreso?vista=calendario')
+
+    const day = `${month.slice(0, 8)}02`
+    await user.click(
+      await screen.findByRole('button', { name: `${formatLongDay(day)}, 1 entreno, 3 series` }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Editar entreno' })
+    // Nothing changed yet, so nothing to save.
+    expect(within(sheet).getByRole('button', { name: 'Guardar cambios' })).toBeDisabled()
+
+    const reps = await within(sheet).findByRole('textbox', { name: 'Sentadilla, serie 2: reps' })
+    await user.clear(reps)
+    await user.type(reps, '10')
+    await user.click(within(sheet).getByRole('button', { name: 'Quitar Prensa, serie 1' }))
+    await user.type(within(sheet).getByRole('textbox', { name: 'Notas' }), 'Rodilla bien')
+    await user.click(within(sheet).getByRole('button', { name: 'Guardar cambios' }))
+
+    const put = await vi.waitFor(() => {
+      const call = calls.find((item) => item.method === 'PUT')
+      expect(call).toBeDefined()
+      return call!
+    })
+    expect(put.path).toBe('/workouts/1')
+    expect(put.body).toMatchObject({
+      notes: 'Rodilla bien',
+      sets: [
+        { exercise_id: 11, set_number: 1, reps: 8 },
+        { exercise_id: 11, set_number: 2, reps: 10 },
+      ],
+    })
+  })
 })
