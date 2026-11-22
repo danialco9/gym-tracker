@@ -58,22 +58,49 @@ export function useMonthWorkouts(month: string, nextMonth: string) {
   })
 }
 
-export function useSaveWorkout() {
+/** Everything a saved workout feeds: history, last sessions, progress and the week plan. */
+function useRefreshAfterWorkout() {
   const queryClient = useQueryClient()
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.workouts }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.exercises }),
+      queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+      // The week plan marks the days trained.
+      queryClient.invalidateQueries({ queryKey: planKeys.all }),
+    ])
+}
+
+export function useSaveWorkout() {
+  const refresh = useRefreshAfterWorkout()
   return useMutation({
     mutationFn: (payload: WorkoutIn) => apiFetch<Workout>('/workouts', { method: 'POST', body: payload }),
     // By default a mutation started offline is paused until the connection returns, which would
     // leave the finish button saying "Guardando…" in a gym with no coverage. The request fails at
     // once instead, and the workout goes to the offline queue.
     networkMode: 'always',
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.workouts }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.exercises }),
-        queryClient.invalidateQueries({ queryKey: progressKeys.all }),
-        // The week plan marks the days trained.
-        queryClient.invalidateQueries({ queryKey: planKeys.all }),
-      ]),
+    onSuccess: refresh,
+  })
+}
+
+/** Replaces a saved workout's sets and notes, from the calendar. */
+export function useUpdateWorkout() {
+  const refresh = useRefreshAfterWorkout()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: WorkoutIn }) =>
+      apiFetch<Workout>(`/workouts/${id}`, { method: 'PUT', body: payload }),
+    // Fail at once with no connection instead of waiting paused with the button saying "Guardando…".
+    networkMode: 'always',
+    onSuccess: refresh,
+  })
+}
+
+export function useDeleteWorkout() {
+  const refresh = useRefreshAfterWorkout()
+  return useMutation({
+    mutationFn: (id: number) => apiFetch<void>(`/workouts/${id}`, { method: 'DELETE' }),
+    networkMode: 'always',
+    onSuccess: refresh,
   })
 }
 
