@@ -328,7 +328,8 @@ Not promised, roughly in order of value for the effort.
 **History and data**
 
 - [x] Calendar of workouts with a heat map, and editing a saved workout from it.
-- [ ] Export all your data to CSV (workouts, measurements), and import a CSV from another app.
+- [x] Export your workouts and measurements to CSV, laid out for a spreadsheet in Spanish.
+- [ ] Import a CSV from another app.
 - [ ] Progress photos next to the body weight chart.
 - [ ] Forecasts with scikit-learn: when a lift is likely to stall, and the expected 1RM in a month.
 
