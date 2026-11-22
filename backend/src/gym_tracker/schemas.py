@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, ClassVar, Self
+from typing import Annotated, ClassVar, Literal, Self
 from uuid import UUID
 
 from pydantic import (
@@ -562,10 +562,25 @@ class ExerciseSessionRead(BaseModel):
     volume_kg: float
 
 
+class ForecastRead(BaseModel):
+    """The estimated 1RM's trend over the last eight weeks, carried a month from today."""
+
+    trend: Literal["rising", "flat", "falling"]
+    weekly_change: float
+    from_date: date
+    from_kg: float
+    on: date
+    expected_kg: float
+    low_kg: float
+    high_kg: float
+
+
 class ExerciseProgressRead(BaseModel):
     exercise_id: int
     exercise_name: str
     sessions: list[ExerciseSessionRead]
+    # None with too few recent sessions for a trend.
+    forecast: ForecastRead | None = None
 
 
 # Ranking

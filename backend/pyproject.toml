@@ -20,6 +20,7 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.14.0",
     "pywebpush>=2.5.0",
+    "scikit-learn>=1.7",
     "sqlalchemy>=2.0.53",
     "tzdata>=2026.4",
     "uvicorn[standard]>=0.53.0",
@@ -61,7 +62,7 @@ strict = true
 files = ["src", "tests", "migrations"]
 
 [[tool.mypy.overrides]]
-module = ["testcontainers.*"]
+module = ["testcontainers.*", "sklearn.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
