@@ -10,6 +10,7 @@ from gym_tracker.api import (
     feedback,
     health,
     history,
+    importing,
     measurements,
     plan,
     progress,
@@ -33,6 +34,7 @@ for module in (
     ranking,
     dictation,
     export,
+    importing,
     feedback,
     push,
 ):
