@@ -330,7 +330,7 @@ Not promised, roughly in order of value for the effort.
 - [x] Calendar of workouts with a heat map, and editing a saved workout from it.
 - [x] Export your workouts and measurements to CSV, laid out for a spreadsheet in Spanish.
 - [x] Import workouts from a CSV of Strong, Hevy or this app: a preview first, the unclear exercises picked by hand, nothing imported twice.
-- [ ] Progress photos next to the body weight chart.
+- [x] Progress photos next to the body weight chart, kept only on the phone: the first next to the latest, with the weight change between them.
 - [x] Forecasts with scikit-learn: when a lift is likely to stall, and the expected 1RM in a month.
 
 **Engineering**

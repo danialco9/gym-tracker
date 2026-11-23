@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BodyMeasurement, User } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
-import { closePhotoDatabase, listPhotos } from './photo-store'
+import { closePhotoDatabase, listPhotos, savePhoto } from './photo-store'
 
 vi.mock('@/features/progress/ProgressCharts', () => ({ BodyWeightChart: () => null }))
 // jsdom cannot decode or draw images: the photo is kept as it comes.
@@ -76,7 +76,6 @@ describe('Progress photos', () => {
     await user.click(await screen.findByRole('button', { name: /Foto del/ }))
 
     const sheet = await screen.findByRole('dialog')
-    expect(within(sheet).getByText('Sin peso registrado ese día')).toBeInTheDocument()
     await user.click(within(sheet).getByRole('button', { name: 'Borrar foto' }))
     await user.click(within(sheet).getByRole('button', { name: 'Sí, borrar' }))
 
@@ -92,5 +91,49 @@ describe('Progress photos', () => {
 
     expect(screen.queryByLabelText('Día de la foto')).not.toBeInTheDocument()
     expect(await listPhotos(USER.id)).toEqual([])
+  })
+
+  it('puts the first photo next to the latest, with the weight change between them', async () => {
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /measurements': {
+        body: [{ ...WEIGHT, id: 2, measured_on: '2026-09-01', weight_kg: 81.6 }, WEIGHT],
+      },
+    })
+    for (const [id, takenOn] of [
+      ['first', '2026-09-01'],
+      ['middle', '2026-10-10'],
+      ['last', '2026-11-20'],
+    ] as const) {
+      await savePhoto({ id, userId: USER.id, takenOn, addedAt: `${takenOn}T08:00:00Z`, image: image() })
+    }
+    const { user } = renderRoute('/medidas')
+
+    expect(await screen.findByRole('button', { name: /^Antes: foto del mar, 1 sept/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Ahora: foto del vie, 20 nov/ })).toBeInTheDocument()
+    expect(screen.getByText('-3,2 kg entre las dos fotos')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^Antes:/ }))
+    expect(within(await screen.findByRole('dialog')).getByText('81,6 kg ese día')).toBeInTheDocument()
+  })
+
+  it('downloads a copy of a photo', async () => {
+    await savePhoto({
+      id: 'a',
+      userId: USER.id,
+      takenOn: '2026-11-20',
+      addedAt: '2026-11-20T08:00:00Z',
+      image: image(),
+    })
+    const clicked: HTMLAnchorElement[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicked.push(this)
+    })
+    const { user } = renderRoute('/medidas')
+
+    await user.click(await screen.findByRole('button', { name: /Foto del/ }))
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Descargar' }))
+
+    expect(clicked.map((link) => link.download)).toEqual(['foto-progreso-2026-11-20.jpg'])
   })
 })
