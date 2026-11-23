@@ -310,10 +310,25 @@ export interface ExerciseSession {
   volume_kg: number
 }
 
+/** The estimated 1RM's trend over the last eight weeks, carried a month from today. */
+export interface ExerciseForecast {
+  trend: 'rising' | 'flat' | 'falling'
+  /** Change per week as a share of the current estimate: 0.01 is 1 % a week. */
+  weekly_change: number
+  from_date: string
+  from_kg: number
+  on: string
+  expected_kg: number
+  low_kg: number
+  high_kg: number
+}
+
 export interface ExerciseProgress {
   exercise_id: number
   exercise_name: string
   sessions: ExerciseSession[]
+  /** Null with too few recent sessions for a trend. */
+  forecast: ExerciseForecast | null
 }
 
 /** A workout read from plain text. Nothing is saved: the app prefills the workout screen with it. */

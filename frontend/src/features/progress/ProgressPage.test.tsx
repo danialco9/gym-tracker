@@ -156,8 +156,14 @@ const OVERVIEW: ProgressOverview = {
   },
 }
 
-function sessions(exerciseId: number, name: string, count: number): ExerciseProgress {
+function sessions(
+  exerciseId: number,
+  name: string,
+  count: number,
+  forecast: ExerciseProgress['forecast'] = null,
+): ExerciseProgress {
   return {
+    forecast,
     exercise_id: exerciseId,
     exercise_name: name,
     sessions: Array.from({ length: count }, (_, index) => ({
@@ -210,7 +216,18 @@ describe('Progress', () => {
     mockApi({
       'GET /auth/me': { body: USER },
       'GET /progress/overview': { body: OVERVIEW },
-      'GET /progress/exercises/1': { body: sessions(1, 'Press banca con barra', 14) },
+      'GET /progress/exercises/1': {
+        body: sessions(1, 'Press banca con barra', 14, {
+          trend: 'rising',
+          weekly_change: 0.012,
+          from_date: '2026-09-14',
+          from_kg: 93,
+          on: '2026-10-16',
+          expected_kg: 98.4,
+          low_kg: 97.1,
+          high_kg: 99.6,
+        }),
+      },
       'GET /progress/exercises/11': { body: sessions(11, 'Sentadilla con barra', 1) },
     })
     const { user, router } = renderRoute('/progreso')
@@ -220,12 +237,15 @@ describe('Progress', () => {
     expect(screen.getByLabelText('Ejercicio')).toHaveDisplayValue('Press banca con barra')
     expect(await screen.findByText('Gráfica de 14 sesiones')).toBeInTheDocument()
     expect(screen.getByText('83,3 kg')).toBeInTheDocument()
+    expect(screen.getByText('En un mes: ~98 kg de e1RM')).toBeInTheDocument()
 
     await user.selectOptions(screen.getByLabelText('Ejercicio'), 'Sentadilla con barra')
     expect(
       await screen.findByText('Con dos sesiones de este ejercicio verás su gráfica.'),
     ).toBeInTheDocument()
     expect(screen.getByText('101,3 kg')).toBeInTheDocument()
+    // One session: no trend to tell.
+    expect(screen.queryByText(/En un mes/)).not.toBeInTheDocument()
   })
 
   it('opens the tab from the URL and shows volume and body weight', async () => {

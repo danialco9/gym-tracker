@@ -11,8 +11,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { formatDay, formatDecimal, formatKg, formatShortDay } from '@/lib/format'
-import type { ExerciseSession, ProgressOverview } from '@/lib/types'
+import { formatDate, formatDay, formatDecimal, formatKg, formatShortDate, formatShortDay } from '@/lib/format'
+import type { ExerciseForecast, ExerciseSession, ProgressOverview } from '@/lib/types'
+import { exerciseChartRows } from './forecast'
 import {
   muscleLabel,
   OTHER_MUSCLES,
@@ -39,7 +40,7 @@ const volumeColor = (key: VolumeSeriesKey, index: number) =>
 interface LegendItem {
   label: string
   color: string
-  shape?: 'line' | 'dot' | 'square'
+  shape?: 'line' | 'dashed' | 'dot' | 'square'
 }
 
 /** Identity for multi-series charts: a coloured key beside text in the normal text colour. */
@@ -51,13 +52,17 @@ function ChartLegend({ items }: { items: LegendItem[] }) {
           <span
             aria-hidden
             className={
-              shape === 'line'
+              shape === 'line' || shape === 'dashed'
                 ? 'h-0.5 w-4 rounded-full'
                 : shape === 'dot'
                   ? 'size-2 rounded-full'
                   : 'size-2.5 rounded-sm'
             }
-            style={{ background: color }}
+            style={
+              shape === 'dashed'
+                ? { background: `repeating-linear-gradient(90deg, ${color} 0 4px, transparent 4px 7px)` }
+                : { background: color }
+            }
           />
           {label}
         </li>
@@ -68,16 +73,29 @@ function ChartLegend({ items }: { items: LegendItem[] }) {
 
 const kgAxis = (value: number) => formatDecimal(Math.round(value))
 
-export function ExerciseChart({ sessions }: { sessions: ExerciseSession[] }) {
+const shortDay = (day: unknown) => formatShortDate(new Date(Number(day)).toISOString())
+const longDay = (day: unknown) => formatDate(new Date(Number(day)).toISOString())
+
+export function ExerciseChart({
+  sessions,
+  forecast,
+}: {
+  sessions: ExerciseSession[]
+  forecast: ExerciseForecast | null
+}) {
   return (
     <div className="space-y-2">
       <div className="h-56 w-full">
         <ResponsiveContainer>
-          <LineChart data={sessions} margin={CHART_MARGIN}>
+          <LineChart data={exerciseChartRows(sessions, forecast)} margin={CHART_MARGIN}>
             <CartesianGrid vertical={false} stroke="var(--border)" />
+            {/* By date, not by session: a month ahead looks like a month. */}
             <XAxis
-              dataKey="performed_on"
-              tickFormatter={formatShortDay}
+              dataKey="day"
+              type="number"
+              scale="time"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={shortDay}
               tickLine={false}
               axisLine={false}
               minTickGap={24}
@@ -93,12 +111,24 @@ export function ExerciseChart({ sessions }: { sessions: ExerciseSession[] }) {
             />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
-              labelFormatter={(label) => formatDay(String(label))}
+              labelFormatter={longDay}
               formatter={(value, name) => [formatKg(Number(value)), name]}
+            />
+            <Line
+              name="Tendencia"
+              dataKey="forecast_kg"
+              stroke={seriesColor(0)}
+              strokeWidth={2}
+              strokeDasharray="5 4"
+              strokeOpacity={0.7}
+              dot={false}
+              activeDot={false}
+              connectNulls
             />
             <Line
               name="e1RM estimado"
               dataKey="best_e1rm_kg"
+              connectNulls
               stroke={seriesColor(0)}
               strokeWidth={2}
               dot={{ r: 4, fill: seriesColor(0), stroke: 'var(--background)', strokeWidth: 2 }}
@@ -107,6 +137,7 @@ export function ExerciseChart({ sessions }: { sessions: ExerciseSession[] }) {
             <Line
               name="Peso máximo"
               dataKey="top_weight_kg"
+              connectNulls
               stroke={seriesColor(1)}
               strokeWidth={2}
               dot={{ r: 4, fill: seriesColor(1), stroke: 'var(--background)', strokeWidth: 2 }}
@@ -119,6 +150,9 @@ export function ExerciseChart({ sessions }: { sessions: ExerciseSession[] }) {
         items={[
           { label: 'e1RM estimado', color: seriesColor(0), shape: 'line' },
           { label: 'Peso máximo', color: seriesColor(1), shape: 'line' },
+          ...(forecast === null
+            ? []
+            : [{ label: 'Tendencia', color: seriesColor(0), shape: 'dashed' as const }]),
         ]}
       />
     </div>
