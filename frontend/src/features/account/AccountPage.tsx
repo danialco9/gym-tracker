@@ -23,6 +23,7 @@ import { useSendFeedback, useUpdateRankingProfile } from '@/features/account/que
 import { useSignOut } from '@/features/account/useSignOut'
 import { tooManyAttemptsMessage } from '@/features/auth/errors'
 import { useCurrentUser, useDeleteAccount } from '@/features/auth/queries'
+import { deleteUserPhotos } from '@/features/measurements/photo-store'
 import { saveDraft } from '@/features/workout/draft'
 import { clearOutbox } from '@/features/workout/outbox'
 import { ApiError } from '@/lib/api'
@@ -237,6 +238,8 @@ function DeleteAccountForm({ userId, onCancel }: { userId: number; onCancel: () 
       onSuccess: () => {
         saveDraft(null)
         clearOutbox(userId)
+        // Photos live only on this phone, so the server cannot delete them.
+        void deleteUserPhotos(userId).catch(() => undefined)
         toast.success('Cuenta borrada. ¡Gracias por probar la app!')
         navigate('/login', { replace: true })
       },
@@ -246,7 +249,8 @@ function DeleteAccountForm({ userId, onCancel }: { userId: number; onCancel: () 
   return (
     <form onSubmit={submit} className="border-destructive/40 space-y-3 rounded-xl border p-4">
       <p className="text-sm">
-        Se borrarán para siempre tus rutinas, entrenos, medidas y ejercicios propios. No se puede deshacer.
+        Se borrarán para siempre tus rutinas, entrenos, medidas, fotos y ejercicios propios. No se puede
+        deshacer.
       </p>
       <div className="space-y-1.5">
         <Label htmlFor="delete-password">Escribe tu contraseña para confirmar</Label>

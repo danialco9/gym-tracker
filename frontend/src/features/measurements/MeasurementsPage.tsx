@@ -2,11 +2,13 @@ import { lazy, Suspense, useRef, useState } from 'react'
 import { PageHeader } from '@/components/PageHeader'
 import { QueryStatus } from '@/components/QueryStatus'
 import { ChartFallback } from '@/features/progress/ProgressParts'
+import { useCurrentUser } from '@/features/auth/queries'
 import { useProgressOverview } from '@/features/progress/queries'
 import { formatKg, formatSignedKg } from '@/lib/format'
 import { localToday } from './measurement-form'
 import { MeasurementForm } from './MeasurementForm'
 import { MeasurementHistory } from './MeasurementHistory'
+import { ProgressPhotos } from './ProgressPhotos'
 import { useMeasurements } from './queries'
 
 // The same chart as Progreso → Peso (each weigh-in plus the 7-day mean), so one number looks one way.
@@ -16,6 +18,7 @@ const BodyWeightChart = lazy(() =>
 
 export function MeasurementsPage() {
   const measurements = useMeasurements()
+  const userId = useCurrentUser().data?.id
   // Saving a measurement refreshes it too, so the chart follows the form.
   const trend = useProgressOverview().data?.body_weight.entries
   const formRef = useRef<HTMLDivElement>(null)
@@ -74,6 +77,13 @@ export function MeasurementsPage() {
               </section>
             )}
           </div>
+
+          {userId !== undefined && (
+            <ProgressPhotos
+              userId={userId}
+              weights={new Map(weights.map((entry) => [entry.date, entry.weightKg]))}
+            />
+          )}
 
           <section className="space-y-3">
             <h2 className="font-heading text-lg font-medium">Historial</h2>
