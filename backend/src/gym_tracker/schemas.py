@@ -722,3 +722,43 @@ class WeekPlanRead(BaseModel):
     start: date
     today: date
     days: list[PlanDayRead]
+
+
+# Import
+
+# Characters of CSV accepted in one request, under Vercel's 4.5 MB body limit: years of workouts.
+MAX_IMPORT_CHARS = 4_000_000
+
+
+class WorkoutImportIn(InputModel):
+    content: str = Field(min_length=1, max_length=MAX_IMPORT_CHARS)
+    # Names in the file the user matched by hand, each to an exercise id; they win over the automatic match.
+    exercise_ids: dict[str, int] = Field(default_factory=dict, max_length=500)
+
+
+class ImportExerciseRead(BaseModel):
+    """A name in the file. ``exercise_id`` is null when it matched no exercise for sure: the user picks it."""
+
+    name: str
+    sets: int
+    exercise_id: int | None
+    suggestions: list[DictationSuggestion] = []
+
+
+class WorkoutImportPreview(BaseModel):
+    source: Literal["gym_tracker", "strong", "hevy"]
+    # Only the workouts not already in the account; ``duplicates`` counts the others.
+    workouts: int
+    sets: int
+    duplicates: int
+    # Rows with nothing to keep: cardio, rest timers, impossible numbers.
+    skipped_rows: int
+    first_date: date | None
+    last_date: date | None
+    exercises: list[ImportExerciseRead]
+
+
+class WorkoutImportResult(BaseModel):
+    workouts: int
+    sets: int
+    duplicates: int
