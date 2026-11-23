@@ -29,6 +29,7 @@ from gym_tracker.analysis import (
     working_sets,
 )
 from gym_tracker.analysis.database import load_user_log
+from gym_tracker.analysis.forecast import SessionPoint, forecast_e1rm
 from gym_tracker.analysis.mesocycle import current_block_week, in_deload_week, week_set_target
 from gym_tracker.analysis.recommendations import SINGLE_JOINT_LIFTS
 from gym_tracker.api.common import not_found, visible_to
@@ -47,6 +48,7 @@ from gym_tracker.schemas import (
     ExerciseOverloadRead,
     ExerciseProgressRead,
     ExerciseSessionRead,
+    ForecastRead,
     GoalPlanRead,
     IntRangeRead,
     MuscleVolumeRead,
@@ -268,9 +270,10 @@ def read_streak(session: SessionDep, user: CurrentUser, settings: SettingsDep, t
 
 @router.get("/exercises/{exercise_id}")
 def read_exercise_progress(
-    exercise_id: int, session: SessionDep, user: CurrentUser, settings: SettingsDep
+    exercise_id: int, session: SessionDep, user: CurrentUser, settings: SettingsDep, today: TodayDep
 ) -> ExerciseProgressRead:
-    """Best estimated 1RM, top weight and volume of every session that included the exercise."""
+    """Best estimated 1RM, top weight and volume of every session that included the exercise, and
+    where the estimate is heading."""
     name = session.scalar(select(Exercise.name).where(Exercise.id == exercise_id, visible_to(user)))
     if name is None:
         raise not_found("Exercise")
@@ -291,4 +294,17 @@ def read_exercise_progress(
             )
             for row in bests.to_dict(orient="records")
         ],
+        forecast=_forecast(bests, user, today),
     )
+
+
+def _forecast(bests: pd.DataFrame, user: User, today: date) -> ForecastRead | None:
+    # Deload sessions are light on purpose: in the trend they would read as strength lost.
+    in_deload = _deload_days(user)
+    points = [
+        SessionPoint(performed_on=row["date"].date(), e1rm_kg=float(row["best_e1rm_kg"]))
+        for row in bests.to_dict(orient="records")
+        if in_deload is None or not in_deload(row["date"].date())
+    ]
+    forecast = forecast_e1rm(points, today)
+    return None if forecast is None else ForecastRead.model_validate(forecast, from_attributes=True)

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from gym_tracker.api.deps import get_today
 from gym_tracker.config import Settings
-from gym_tracker.models import Workout, WorkoutSet
+from gym_tracker.models import User, Workout, WorkoutSet
 from gym_tracker.users import create_user
 from tests.api.conftest import catalog_exercise_id
 
@@ -361,7 +361,53 @@ def test_exercise_progress_lists_sessions(progress_client: TestClient, training_
                 "volume_kg": 1500.0,
             },
         ],
+        # Two sessions are too few for a trend.
+        "forecast": None,
     }
+
+
+def weekly_bench(client: TestClient, bench: int, weights: list[float], first: date) -> None:
+    """One bench session a week from ``first``: three sets of 5 at each weight."""
+    for week, weight in enumerate(weights):
+        day = first + timedelta(weeks=week)
+        post(
+            client,
+            "/api/workouts",
+            {
+                "started_at": f"{day.isoformat()}T18:00:00+02:00",
+                "sets": [bench_set(bench, n, 5, weight) for n in (1, 2, 3)],
+            },
+        )
+
+
+def test_exercise_progress_forecasts_a_month_ahead(progress_client: TestClient, session: Session) -> None:
+    bench = catalog_exercise_id(session, "bench-press")
+    weekly_bench(progress_client, bench, [60, 62.5, 65, 67.5, 70], first=date(2026, 8, 17))
+
+    forecast = progress_client.get(f"/api/progress/exercises/{bench}").json()["forecast"]
+
+    # 2.5 kg a week on the bar is 2.9 kg of estimated 1RM (x 1.1667 for 5 reps).
+    assert forecast["trend"] == "rising"
+    assert forecast["from_date"] == "2026-09-14"
+    assert forecast["from_kg"] == pytest.approx(81.7, abs=0.1)
+    assert forecast["on"] == "2026-10-16"
+    # 32 days after the last session: 81.7 + 2.92 x 32 / 7.
+    assert forecast["expected_kg"] == pytest.approx(95.0, abs=0.2)
+    assert forecast["low_kg"] < forecast["expected_kg"] < forecast["high_kg"]
+
+
+def test_the_forecast_leaves_deload_weeks_out(progress_client: TestClient, session: Session, user: User) -> None:
+    bench = catalog_exercise_id(session, "bench-press")
+    # Four-week blocks from 17 August: the week of 7 September is a deload, light on purpose.
+    user.block_weeks = 4
+    user.block_started_on = date(2026, 8, 17)
+    session.flush()
+    weekly_bench(progress_client, bench, [60, 62.5, 65, 40, 67.5], first=date(2026, 8, 17))
+
+    forecast = progress_client.get(f"/api/progress/exercises/{bench}").json()["forecast"]
+
+    assert forecast["trend"] == "rising"
+    assert forecast["from_kg"] == pytest.approx(78.75, abs=0.5)
 
 
 def test_workout_dates_follow_the_configured_time_zone(progress_client: TestClient, session: Session) -> None:
