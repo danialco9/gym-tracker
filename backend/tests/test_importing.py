@@ -190,3 +190,11 @@ def test_a_custom_exercise_matches_by_its_own_name() -> None:
     custom = CatalogEntry(999, "Plancha lastrada", "plancha-lastrada", None)
 
     assert match_name("Plancha lastrada", [*ENTRIES, custom]).exercise_id == 999
+
+
+def test_does_not_suggest_exercises_that_share_a_single_word() -> None:
+    calf = match_name("Calf Raise (Machine)", ENTRIES)
+    sled = match_name("Sled Push", ENTRIES)
+
+    assert "machine-lateral-raise" not in {SLUG_BY_ID[option.id] for option in calf.suggestions}
+    assert not {SLUG_BY_ID[option.id] for option in sled.suggestions} & {"push-up", "wide-push-up"}

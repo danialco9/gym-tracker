@@ -2,6 +2,7 @@ import {
   ChevronRightIcon,
   DownloadIcon,
   DumbbellIcon,
+  FileUpIcon,
   LogOutIcon,
   MessageSquareIcon,
   TargetIcon,
@@ -427,6 +428,21 @@ export function AccountPage() {
             title="Descargar medidas"
             detail="Peso y perímetros"
           />
+          <Link
+            to="/importar"
+            className="hover:bg-accent flex w-full items-center justify-between gap-3 rounded-lg p-3 transition-colors"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <FileUpIcon className="text-primary size-5 shrink-0" aria-hidden />
+              <span className="min-w-0">
+                <span className="block font-medium">Importar entrenos</span>
+                <span className="text-muted-foreground block text-sm">
+                  Desde Strong, Hevy o una copia de esta app
+                </span>
+              </span>
+            </span>
+            <ChevronRightIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />
+          </Link>
         </div>
         <p className="text-muted-foreground px-1 text-sm">En CSV, listo para abrir en Excel o Numbers.</p>
       </section>

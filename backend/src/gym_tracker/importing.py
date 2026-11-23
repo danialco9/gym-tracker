@@ -27,6 +27,8 @@ MAX_SETS_PER_EXERCISE = 50
 MAX_NAME_LENGTH = 100
 MAX_NOTES_LENGTH = 2000
 MAX_SUGGESTIONS = 5
+# A suggestion shares at least half its words with the name: one shared "push" or "raise" is noise.
+MIN_SUGGESTION_OVERLAP = 0.5
 MAX_RPE = 10
 # Shorter words ending in "s" are not plurals: "abs", "bus".
 MIN_PLURAL_LENGTH = 4
@@ -449,7 +451,7 @@ def match_name(name: str, entries: Sequence[CatalogEntry]) -> NameMatch:
         overlap = len(core & english.words) / len(core | english.words)
         if overlap == 1 and _compatible(english.equipment, entry):
             exact.append((entry, named_equipment))
-        if overlap > 0:
+        if overlap >= MIN_SUGGESTION_OVERLAP:
             scored.append(((_compatible(english.equipment, entry), overlap), entry))
     if len(exact) == 1:
         return NameMatch(exact[0][0].id)
