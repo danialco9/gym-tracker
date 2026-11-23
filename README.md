@@ -173,7 +173,7 @@ same.
 | --- | --- |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, React Router, Recharts, vite-plugin-pwa |
 | Backend | Python 3.12, FastAPI, SQLAlchemy 2.0 (typed), Alembic, Pydantic |
-| Data analysis | pandas, NumPy (scikit-learn planned) |
+| Data analysis | pandas, NumPy |
 | Database | PostgreSQL 18 |
 | Tooling | uv, Ruff, mypy, pytest · pnpm, oxlint, Prettier, Vitest |
 | CI/CD | GitHub Actions (tests, end-to-end, production migrations, nightly demo reset) · Vercel (web and API) · Neon (database) |
@@ -331,7 +331,7 @@ Not promised, roughly in order of value for the effort.
 - [x] Export your workouts and measurements to CSV, laid out for a spreadsheet in Spanish.
 - [x] Import workouts from a CSV of Strong, Hevy or this app: a preview first, the unclear exercises picked by hand, nothing imported twice.
 - [x] Progress photos next to the body weight chart, kept only on the phone: the first next to the latest, with the weight change between them.
-- [x] Forecasts with scikit-learn: when a lift is likely to stall, and the expected 1RM in a month.
+- [x] Forecasts with a robust (Huber) trend in NumPy: when a lift is likely to stall, and the expected 1RM in a month.
 
 **Engineering**
 

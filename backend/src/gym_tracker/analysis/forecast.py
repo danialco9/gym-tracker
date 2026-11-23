@@ -27,6 +27,37 @@ FLAT_WEEKLY_SHARE = 0.005
 # How wide the range is: the typical distance of a session from the trend, times this.
 SPREAD_FACTOR = 1.5
 MIN_SPREAD_SHARE = 0.01
+# Huber's usual threshold: residuals within 1.35 robust standard deviations count fully.
+HUBER_EPSILON = 1.35
+# Median absolute deviation over this is a robust standard deviation for normal noise.
+MAD_TO_SIGMA = 0.6745
+MAX_ITERATIONS = 50
+
+
+def huber_line(days: np.ndarray, kgs: np.ndarray) -> tuple[float, float]:
+    """Intercept and slope of a Huber regression, by iteratively reweighted least squares.
+
+    Each round fits weighted least squares, then gives every session whose distance from the line is
+    beyond ``HUBER_EPSILON`` robust standard deviations a weight that shrinks with that distance, so
+    its pull on the line grows only linearly. Plain NumPy: scikit-learn and SciPy made the API too
+    large for a regular Vercel function.
+    """
+    design = np.column_stack([np.ones_like(days), days])
+    weights = np.ones_like(kgs)
+    coefficients = np.zeros(2)
+    for _ in range(MAX_ITERATIONS):
+        root = np.sqrt(weights)
+        fitted, *_ = np.linalg.lstsq(design * root[:, None], kgs * root, rcond=None)
+        converged = np.allclose(fitted, coefficients, rtol=1e-9, atol=1e-9)
+        coefficients = fitted
+        if converged:
+            break
+        residuals = np.abs(kgs - design @ coefficients)
+        scale = float(np.median(residuals)) / MAD_TO_SIGMA
+        if scale <= 0:
+            break
+        weights = np.minimum(1.0, HUBER_EPSILON * scale / np.maximum(residuals, 1e-12))
+    return float(coefficients[0]), float(coefficients[1])
 
 
 class Trend(StrEnum):
@@ -68,23 +99,19 @@ def forecast_e1rm(points: Sequence[SessionPoint], today: date) -> Forecast | Non
     if len(window) < MIN_SESSIONS or (latest - first).days < MIN_SPAN_DAYS:
         return None
 
-    # Imported here: scikit-learn and SciPy take a while to load, and only this needs them.
-    from sklearn.linear_model import HuberRegressor  # noqa: PLC0415
-
-    days = np.array([(point.performed_on - first).days for point in window], dtype=float).reshape(-1, 1)
+    days = np.array([(point.performed_on - first).days for point in window], dtype=float)
     kgs = np.array([point.e1rm_kg for point in window], dtype=float)
-    model = HuberRegressor(alpha=0.0).fit(days, kgs)
-    slope = float(model.coef_[0])
+    intercept, slope = huber_line(days, kgs)
 
     def at(day: date) -> float:
-        return float(model.intercept_) + slope * (day - first).days
+        return intercept + slope * (day - first).days
 
     from_kg = at(latest)
     target = today + timedelta(days=HORIZON_DAYS)
     expected = max(at(target), 0.0)
     # Median distance from the trend: like the fit, not thrown by one odd session.
     spread = max(
-        SPREAD_FACTOR * float(np.median(np.abs(kgs - model.predict(days)))),
+        SPREAD_FACTOR * float(np.median(np.abs(kgs - (intercept + slope * days)))),
         MIN_SPREAD_SHARE * expected,
     )
     weekly_change = slope * 7 / from_kg if from_kg > 0 else 0.0

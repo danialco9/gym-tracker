@@ -1,5 +1,3 @@
-import subprocess
-import sys
 from datetime import date, timedelta
 
 import pytest
@@ -76,10 +74,3 @@ def test_only_the_last_eight_weeks_count() -> None:
 )
 def test_no_forecast_from_too_little_or_old_data(points: list[SessionPoint]) -> None:
     assert forecast_e1rm(points, TODAY) is None
-
-
-def test_the_api_starts_without_loading_scikit_learn() -> None:
-    # Cold starts on Vercel: only a forecast pays for scikit-learn and SciPy.
-    code = "import sys, gym_tracker.main; print('sklearn' in sys.modules)"
-    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
-    assert result.stdout.strip() == "False"
