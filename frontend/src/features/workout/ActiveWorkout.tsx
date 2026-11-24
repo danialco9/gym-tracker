@@ -16,6 +16,7 @@ import type { Exercise } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { useGoalPlans } from '@/features/goal/queries'
 import { useProgressOverview } from '@/features/progress/queries'
+import { useCelebrateMilestones } from '@/features/progress/useCelebrateMilestones'
 import {
   completedSetCount,
   continuesRound,
@@ -50,6 +51,7 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const carousel = useRef<ExerciseCarouselHandle>(null)
   const timer = useRestTimer()
   const saveWorkout = useSaveWorkout()
+  const celebrateMilestones = useCelebrateMilestones()
   const navigate = useNavigate()
   const currentUser = useCurrentUser().data
   const userId = currentUser?.id
@@ -219,9 +221,10 @@ export function ActiveWorkout({ draft, dispatch }: ActiveWorkoutProps) {
   const finish = () => {
     const payload = toWorkoutPayload(draft, new Date().toISOString())
     saveWorkout.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (saved) => {
         close()
         toast.success('Entreno guardado')
+        void celebrateMilestones(saved.id)
       },
       onError: (error) => {
         // No coverage in the gym: the workout waits on the phone and goes up on its own later.
