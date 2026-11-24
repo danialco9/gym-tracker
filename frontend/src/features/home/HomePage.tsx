@@ -13,6 +13,7 @@ import { RankingCard } from '@/features/home/RankingCard'
 import { StreakCard } from '@/features/home/StreakCard'
 import { WeekCard } from '@/features/plan/WeekCard'
 import { useProgressOverview, useStreak } from '@/features/progress/queries'
+import { ShareWorkoutButton } from '@/features/share/ShareWorkoutButton'
 import { loadDraft } from '@/features/workout/draft'
 import { PendingWorkouts } from '@/features/workout/PendingWorkouts'
 import { useRecentWorkouts, useRoutines } from '@/features/workout/queries'
@@ -156,21 +157,26 @@ export function HomePage() {
         )}
         {(workouts.data?.length ?? 0) > 0 && (
           <ul className="bg-card ring-foreground/10 divide-border divide-y rounded-xl ring-1">
-            {workouts.data?.map((workout) => (
-              <li key={workout.id} className="min-w-0 px-4 py-3">
-                <span className="flex items-baseline justify-between gap-3">
-                  <span className="truncate font-medium">
-                    {workout.routine_id === null
-                      ? 'Entreno libre'
-                      : (routineNames.get(workout.routine_id) ?? 'Rutina')}
+            {workouts.data?.map((workout) => {
+              const title =
+                workout.routine_id === null
+                  ? 'Entreno libre'
+                  : (routineNames.get(workout.routine_id) ?? 'Rutina')
+              return (
+                <li key={workout.id} className="flex items-center gap-2 px-4 py-3">
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="truncate font-medium">{title}</span>
+                      <span className="text-muted-foreground shrink-0 text-sm whitespace-nowrap">
+                        {formatDate(workout.started_at)}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground block text-sm">{workoutSummary(workout)}</span>
                   </span>
-                  <span className="text-muted-foreground shrink-0 text-sm whitespace-nowrap">
-                    {formatDate(workout.started_at)}
-                  </span>
-                </span>
-                <span className="text-muted-foreground block text-sm">{workoutSummary(workout)}</span>
-              </li>
-            ))}
+                  <ShareWorkoutButton workout={workout} title={title} />
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
