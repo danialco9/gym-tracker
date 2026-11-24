@@ -76,6 +76,7 @@ def _activity(log: TrainingLog, today: date) -> ActivityRead:
     days = log.workouts["date"].dt.date
     return ActivityRead(
         workouts_total=len(days),
+        workouts_this_week=int((days >= today - timedelta(days=today.weekday())).sum()),
         workouts_last_7_days=int((days > today - timedelta(days=7)).sum()),
         workouts_last_28_days=int((days > today - timedelta(days=28)).sum()),
         last_workout_on=days.max() if len(days) else None,
