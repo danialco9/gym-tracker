@@ -334,6 +334,31 @@ def test_streak_without_workouts(progress_client: TestClient) -> None:
     assert streak == {"current_days": 0, "best_days": 0, "last_workout_on": None, "at_risk": False}
 
 
+def test_milestones_tell_the_round_weight_and_the_kilos_gained(
+    progress_client: TestClient, training_log: dict[str, int]
+) -> None:
+    # 62.5 kg in the second session is neither a round weight nor 10 kg above the first 60 kg.
+    assert progress_client.get("/api/progress/milestones").json() == []
+
+    workout = post(
+        progress_client,
+        "/api/workouts",
+        {"started_at": "2026-09-16T18:00:00+02:00", "sets": [bench_set(training_log["bench"], 1, 3, 80)]},
+    )
+
+    assert progress_client.get("/api/progress/milestones").json() == [
+        {
+            "exercise_id": training_log["bench"],
+            "exercise_name": "Press banca con barra",
+            "kind": kind,
+            "value_kg": value,
+            "achieved_on": "2026-09-16",
+            "workout_id": workout["id"],
+        }
+        for kind, value in (("weight", 80.0), ("gain", 20.0))
+    ]
+
+
 def test_exercise_progress_lists_sessions(progress_client: TestClient, training_log: dict[str, int]) -> None:
     response = progress_client.get(f"/api/progress/exercises/{training_log['bench']}")
 

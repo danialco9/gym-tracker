@@ -31,6 +31,7 @@ from gym_tracker.analysis import (
 from gym_tracker.analysis.database import load_user_log
 from gym_tracker.analysis.forecast import SessionPoint, forecast_e1rm
 from gym_tracker.analysis.mesocycle import current_block_week, in_deload_week, week_set_target
+from gym_tracker.analysis.milestones import log_milestones
 from gym_tracker.analysis.recommendations import SINGLE_JOINT_LIFTS
 from gym_tracker.api.common import not_found, visible_to
 from gym_tracker.api.deps import (
@@ -51,6 +52,7 @@ from gym_tracker.schemas import (
     ForecastRead,
     GoalPlanRead,
     IntRangeRead,
+    MilestoneRead,
     MuscleVolumeRead,
     MuscleWeekRead,
     PerformedSetRead,
@@ -266,6 +268,24 @@ def read_streak(session: SessionDep, user: CurrentUser, settings: SettingsDep, t
         last_workout_on=streak.last_workout_on,
         at_risk=streak.at_risk,
     )
+
+
+@router.get("/milestones")
+def read_milestones(session: SessionDep, user: CurrentUser, settings: SettingsDep) -> list[MilestoneRead]:
+    """Round weights reached and kilos gained since the first session, newest first."""
+    log = load_user_log(session, user.id, settings.zone)
+    names = dict(zip(log.exercises["exercise_id"], log.exercises["name"], strict=True))
+    return [
+        MilestoneRead(
+            exercise_id=int(milestone.exercise_id),
+            exercise_name=str(names[milestone.exercise_id]),
+            kind=milestone.kind.value,
+            value_kg=milestone.value_kg,
+            achieved_on=milestone.achieved_on,
+            workout_id=int(milestone.workout_id),
+        )
+        for milestone in log_milestones(log)
+    ]
 
 
 @router.get("/exercises/{exercise_id}")
