@@ -120,6 +120,21 @@ class FeedbackIn(BaseModel):
         return value.strip()
 
 
+class ExerciseNoteIn(BaseModel):
+    # Empty, or only spaces, deletes the note.
+    text: str = Field(max_length=200)
+
+    @field_validator("text")
+    @classmethod
+    def strip(cls, value: str) -> str:
+        return value.strip()
+
+
+class ExerciseNoteRead(BaseModel):
+    exercise_id: int
+    text: str
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=128)

@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from gym_tracker.api import (
     auth,
     dictation,
+    exercise_notes,
     exercises,
     export,
     feedback,
@@ -25,6 +26,7 @@ for module in (
     health,
     auth,
     exercises,
+    exercise_notes,
     history,
     routines,
     workouts,
