@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PersonalRecord, Workout, WorkoutSet } from '@/lib/types'
+import type { Milestone, PersonalRecord, Workout, WorkoutSet } from '@/lib/types'
 import { shareCardData } from './share-card-data'
 
 let nextId = 1
@@ -40,6 +40,13 @@ const record = (exercise_id: number, best_e1rm_on: string, max_weight_on: string
   max_weight_on,
 })
 
+const milestoneOf = (
+  workout_id: number,
+  kind: Milestone['kind'],
+  value_kg: number,
+  exercise_name: string,
+): Milestone => ({ exercise_id: 1, exercise_name, kind, value_kg, achieved_on: '2026-11-24', workout_id })
+
 describe('shareCardData', () => {
   it('sums the working sets and leaves the warm-ups out', () => {
     const data = shareCardData(workout, 'Torso', names, [])
@@ -63,6 +70,31 @@ describe('shareCardData', () => {
     const bodyweight = { ...workout, sets: [set(4, 0, 15)] }
     expect(shareCardData(bodyweight, 'Libre', names, []).topExercises).toEqual([
       { name: 'Dominadas', bestSet: '15 reps' },
+    ])
+  })
+
+  it('names the milestones of this workout, and keeps two best sets to make room for them', () => {
+    const milestones: Milestone[] = [
+      milestoneOf(7, 'weight', 100, 'Press banca'),
+      milestoneOf(3, 'weight', 80, 'Press banca'),
+    ]
+    const data = shareCardData(workout, 'Torso', names, [], milestones)
+
+    expect(data.milestones).toEqual(['Primer 100 kg en Press banca'])
+    expect(data.topExercises).toHaveLength(2)
+    expect(shareCardData(workout, 'Torso', names, []).milestones).toEqual([])
+  })
+
+  it('counts the milestones past the second line', () => {
+    const milestones = [
+      milestoneOf(7, 'weight', 100, 'Press banca'),
+      milestoneOf(7, 'gain', 20, 'Press banca'),
+      milestoneOf(7, 'weight', 80, 'Remo con barra'),
+    ]
+
+    expect(shareCardData(workout, 'Torso', names, [], milestones).milestones).toEqual([
+      'Primer 100 kg en Press banca',
+      '+2 hitos más',
     ])
   })
 

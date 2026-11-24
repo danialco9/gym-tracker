@@ -2,7 +2,7 @@ import { LoaderCircleIcon, Share2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { useProgressOverview } from '@/features/progress/queries'
+import { useMilestones, useProgressOverview } from '@/features/progress/queries'
 import { useExercises } from '@/features/workout/queries'
 import type { Workout } from '@/lib/types'
 import { shareCardPng } from './share-card'
@@ -24,13 +24,20 @@ function download(file: File) {
 export function ShareWorkoutButton({ workout, title }: { workout: Workout; title: string }) {
   const exercises = useExercises()
   const overview = useProgressOverview()
+  const milestones = useMilestones()
   const [busy, setBusy] = useState(false)
 
   const share = async () => {
     setBusy(true)
     try {
       const names = new Map((exercises.data ?? []).map((exercise) => [exercise.id, exercise.name]))
-      const data = shareCardData(workout, title, names, overview.data?.personal_records ?? [])
+      const data = shareCardData(
+        workout,
+        title,
+        names,
+        overview.data?.personal_records ?? [],
+        milestones.data,
+      )
       const png = await shareCardPng(data)
       const file = new File([png], `entreno-${workout.started_at.slice(0, 10)}.png`, { type: 'image/png' })
       if (navigator.canShare?.({ files: [file] })) {

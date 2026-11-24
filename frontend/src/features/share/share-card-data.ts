@@ -1,7 +1,11 @@
-import { formatDate, formatDecimal, formatDuration, formatKg } from '@/lib/format'
-import type { PersonalRecord, Workout } from '@/lib/types'
+import { milestoneSentence } from '@/features/progress/milestones'
+import { formatDate, formatDecimal, formatDuration, formatKg, plural } from '@/lib/format'
+import type { Milestone, PersonalRecord, Workout } from '@/lib/types'
 
 const TOP_EXERCISES = 3
+// With milestones the card is fuller: one best set less keeps the footer clear.
+const TOP_EXERCISES_WITH_MILESTONES = 2
+const MILESTONE_LINES = 2
 
 export interface ShareCardData {
   title: string
@@ -13,6 +17,8 @@ export interface ShareCardData {
   topExercises: { name: string; bestSet: string }[]
   /** Exercises whose best estimated 1RM or heaviest weight dates from this workout's day. */
   records: number
+  /** The milestones earned in this workout, at most two lines: "Primer 100 kg en Press banca". */
+  milestones: string[]
 }
 
 /** `YYYY-MM-DD` of the local day the workout started, the format the API dates records with. */
@@ -32,7 +38,15 @@ export function shareCardData(
   title: string,
   exerciseNames: Map<number, string>,
   records: PersonalRecord[],
+  milestones: Milestone[] = [],
 ): ShareCardData {
+  const earned = milestones.filter((milestone) => milestone.workout_id === workout.id).map(milestoneSentence)
+  // A third line would push the best sets off the card: the rest are counted instead.
+  const milestoneLines =
+    earned.length <= MILESTONE_LINES
+      ? earned
+      : [earned[0], `+${earned.length - 1} ${plural(earned.length - 1, 'hito más', 'hitos más')}`]
+
   const working = workout.sets.filter((set) => !set.is_warmup)
   const volumeKg = working.reduce((total, set) => total + set.reps * set.weight_kg, 0)
 
@@ -49,7 +63,7 @@ export function shareCardData(
   }
   const topExercises = [...best.entries()]
     .sort(([, a], [, b]) => b.weight_kg - a.weight_kg || b.reps - a.reps)
-    .slice(0, TOP_EXERCISES)
+    .slice(0, earned.length > 0 ? TOP_EXERCISES_WITH_MILESTONES : TOP_EXERCISES)
     .map(([exerciseId, set]) => ({
       name: exerciseNames.get(exerciseId) ?? 'Ejercicio',
       bestSet: set.weight_kg > 0 ? `${formatKg(set.weight_kg)} × ${set.reps}` : `${set.reps} reps`,
@@ -68,5 +82,6 @@ export function shareCardData(
     volume: `${formatDecimal(Math.round(volumeKg))} kg`,
     topExercises,
     records: recordCount,
+    milestones: milestoneLines,
   }
 }
