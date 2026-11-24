@@ -406,6 +406,8 @@ class BodyMeasurementRead(ORMModel):
 
 class ActivityRead(BaseModel):
     workouts_total: int
+    # Since Monday, the same week as the week plan and the overload summary.
+    workouts_this_week: int
     workouts_last_7_days: int
     workouts_last_28_days: int
     last_workout_on: date | None

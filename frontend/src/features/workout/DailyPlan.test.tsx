@@ -67,6 +67,7 @@ const LEG_DAY: Routine = {
 const OVERVIEW: ProgressOverview = {
   activity: {
     workouts_total: 8,
+    workouts_this_week: 2,
     workouts_last_7_days: 2,
     workouts_last_28_days: 8,
     last_workout_on: '2026-10-15',

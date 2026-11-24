@@ -257,6 +257,7 @@ export interface Streak {
 export interface ProgressOverview {
   activity: {
     workouts_total: number
+    workouts_this_week: number
     workouts_last_7_days: number
     workouts_last_28_days: number
     last_workout_on: string | null

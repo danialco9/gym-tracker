@@ -82,6 +82,7 @@ def test_overview_without_data(progress_client: TestClient) -> None:
 
     assert overview["activity"] == {
         "workouts_total": 0,
+        "workouts_this_week": 0,
         "workouts_last_7_days": 0,
         "workouts_last_28_days": 0,
         "last_workout_on": None,
@@ -119,6 +120,7 @@ def test_overview_summarizes_the_training_log(progress_client: TestClient, train
 
     assert overview["activity"] == {
         "workouts_total": 2,
+        "workouts_this_week": 1,
         "workouts_last_7_days": 1,
         "workouts_last_28_days": 2,
         "last_workout_on": "2026-09-15",
@@ -205,6 +207,15 @@ def test_overview_summarizes_the_training_log(progress_client: TestClient, train
         ],
         "weekly_change_kg": -0.8,
     }
+
+
+def test_overview_counts_this_week_from_monday(progress_client: TestClient, training_log: dict[str, int]) -> None:
+    # Monday 21 September: last Tuesday's workout is within seven days, but in last week.
+    progress_client.app.dependency_overrides[get_today] = lambda: date(2026, 9, 21)  # type: ignore[attr-defined]
+    activity = progress_client.get("/api/progress/overview").json()["activity"]
+
+    assert activity["workouts_this_week"] == 0
+    assert activity["workouts_last_7_days"] == 1
 
 
 def test_overview_in_a_deload_week_suggests_half_the_sets(

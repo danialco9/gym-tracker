@@ -48,6 +48,7 @@ describe('Training block card', () => {
     const overview: ProgressOverview = {
       activity: {
         workouts_total: 3,
+        workouts_this_week: 1,
         workouts_last_7_days: 1,
         workouts_last_28_days: 3,
         last_workout_on: null,

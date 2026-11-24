@@ -49,6 +49,7 @@ const weekSets = (done: Partial<Record<MuscleGroup, number>> = {}) =>
 const OVERVIEW: ProgressOverview = {
   activity: {
     workouts_total: 12,
+    workouts_this_week: 3,
     workouts_last_7_days: 3,
     workouts_last_28_days: 11,
     last_workout_on: '2026-09-15',
@@ -278,6 +279,7 @@ describe('Progress', () => {
         body: {
           activity: {
             workouts_total: 0,
+            workouts_this_week: 0,
             workouts_last_7_days: 0,
             workouts_last_28_days: 0,
             last_workout_on: null,
@@ -308,7 +310,12 @@ describe('Progress', () => {
       'GET /progress/overview': {
         body: {
           ...OVERVIEW,
-          activity: { ...OVERVIEW.activity, workouts_last_7_days: 0, workouts_last_28_days: 0 },
+          activity: {
+            ...OVERVIEW.activity,
+            workouts_this_week: 0,
+            workouts_last_7_days: 0,
+            workouts_last_28_days: 0,
+          },
           recommendations: [],
         } satisfies ProgressOverview,
       },

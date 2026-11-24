@@ -133,7 +133,7 @@ export function HomePage() {
       )}
 
       {streak.data !== undefined && (
-        <StreakCard streak={streak.data} workoutsThisWeek={overview.data?.activity.workouts_last_7_days} />
+        <StreakCard streak={streak.data} workoutsThisWeek={overview.data?.activity.workouts_this_week} />
       )}
 
       {currentUser?.block != null && <BlockCard block={currentUser.block} />}
