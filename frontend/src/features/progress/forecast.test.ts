@@ -45,10 +45,13 @@ describe('exercise forecast', () => {
 
   it('says where the lift is heading and what to do about it', () => {
     expect(forecastMessage(forecast('rising', 0.0123))).toEqual({
-      title: 'En un mes: ~105 kg de e1RM',
-      detail: 'Probablemente entre 103 y 106 kg. Subes un 1,2 % por semana: sigue así.',
+      title: 'En un mes: entre 103 y 106 kg',
+      detail: 'Lo que podrías levantar a 1 repetición. Subes un 1,2 % por semana: sigue así.',
     })
+    expect(forecastMessage({ ...forecast('rising', 0.01), low_kg: 104.6, high_kg: 105.2 }).title).toBe(
+      'En un mes: unos 105 kg',
+    )
     expect(forecastMessage(forecast('flat', 0.001)).title).toBe('Se está frenando')
-    expect(forecastMessage(forecast('falling', -0.02)).detail).toMatch(/^Bajas un 2 % por semana/)
+    expect(forecastMessage(forecast('falling', -0.02)).detail).toMatch(/^Bajas un 2 % por semana/)
   })
 })

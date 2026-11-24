@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { formatDate, formatDay, formatDecimal, formatKg, formatShortDate, formatShortDay } from '@/lib/format'
 import type { ExerciseForecast, ExerciseSession, ProgressOverview } from '@/lib/types'
+import { roundKgTicks } from './chart-axis'
 import { exerciseChartRows } from './forecast'
 import {
   muscleLabel,
@@ -72,6 +73,14 @@ function ChartLegend({ items }: { items: LegendItem[] }) {
 }
 
 const kgAxis = (value: number) => formatDecimal(Math.round(value))
+/** The Y axis of a kilo chart: round ticks, and the domain they span. */
+const kgYAxis = (values: (number | undefined)[], padding: number) => {
+  const ticks = roundKgTicks(
+    values.filter((value) => value !== undefined),
+    padding,
+  )
+  return ticks.length > 0 ? { ticks, domain: [ticks[0]!, ticks[ticks.length - 1]!] } : {}
+}
 
 const shortDay = (day: unknown) => formatShortDate(new Date(Number(day)).toISOString())
 const longDay = (day: unknown) => formatDate(new Date(Number(day)).toISOString())
@@ -83,11 +92,16 @@ export function ExerciseChart({
   sessions: ExerciseSession[]
   forecast: ExerciseForecast | null
 }) {
+  const rows = exerciseChartRows(sessions, forecast)
+  const yAxis = kgYAxis(
+    rows.flatMap((row) => [row.best_e1rm_kg, row.top_weight_kg, row.forecast_kg]),
+    2,
+  )
   return (
     <div className="space-y-2">
       <div className="h-56 w-full">
         <ResponsiveContainer>
-          <LineChart data={exerciseChartRows(sessions, forecast)} margin={CHART_MARGIN}>
+          <LineChart data={rows} margin={CHART_MARGIN}>
             <CartesianGrid vertical={false} stroke="var(--border)" />
             {/* By date, not by session: a month ahead looks like a month. */}
             <XAxis
@@ -102,7 +116,7 @@ export function ExerciseChart({
               tick={AXIS_TICK}
             />
             <YAxis
-              domain={['dataMin - 5', 'dataMax + 5']}
+              {...yAxis}
               tickFormatter={kgAxis}
               tickLine={false}
               axisLine={false}
@@ -208,6 +222,10 @@ export function VolumeChart({ rows, series }: VolumeChartProps) {
 }
 
 export function BodyWeightChart({ entries }: { entries: ProgressOverview['body_weight']['entries'] }) {
+  const yAxis = kgYAxis(
+    entries.flatMap((entry) => [entry.weight_kg, entry.trend_kg]),
+    0.5,
+  )
   return (
     <div className="space-y-2">
       <div className="h-56 w-full">
@@ -223,7 +241,7 @@ export function BodyWeightChart({ entries }: { entries: ProgressOverview['body_w
               tick={AXIS_TICK}
             />
             <YAxis
-              domain={['dataMin - 1', 'dataMax + 1']}
+              {...yAxis}
               tickFormatter={kgAxis}
               allowDecimals={false}
               tickLine={false}

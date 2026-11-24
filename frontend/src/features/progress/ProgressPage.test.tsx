@@ -238,7 +238,7 @@ describe('Progress', () => {
     expect(screen.getByLabelText('Ejercicio')).toHaveDisplayValue('Press banca con barra')
     expect(await screen.findByText('Gráfica de 14 sesiones')).toBeInTheDocument()
     expect(screen.getByText('83,3 kg')).toBeInTheDocument()
-    expect(screen.getByText('En un mes: ~98 kg de e1RM')).toBeInTheDocument()
+    expect(screen.getByText('En un mes: entre 97 y 100 kg')).toBeInTheDocument()
 
     await user.selectOptions(screen.getByLabelText('Ejercicio'), 'Sentadilla con barra')
     expect(
