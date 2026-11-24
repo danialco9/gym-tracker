@@ -39,6 +39,19 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
   ctx.roundRect(x, y, w, h, r)
 }
 
+/** A filled five-pointed star in the accent colour, centred on (cx, cy). */
+function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number) {
+  ctx.beginPath()
+  for (let point = 0; point < 10; point++) {
+    const r = point % 2 === 0 ? radius : radius * 0.45
+    const angle = -Math.PI / 2 + (point * Math.PI) / 5
+    ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle))
+  }
+  ctx.closePath()
+  ctx.fillStyle = COLORS.primary
+  ctx.fill()
+}
+
 function drawStat(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -127,6 +140,26 @@ export async function drawShareCard(data: ShareCardData): Promise<HTMLCanvasElem
     ctx.fillStyle = COLORS.primaryForeground
     ctx.fillText(text, PADDING + 36, y + 53)
     y += 80
+  }
+
+  if (data.milestones.length > 0) {
+    y += 40
+    const lineHeight = 64
+    const boxHeight = 24 + data.milestones.length * lineHeight
+    roundedRect(ctx, PADDING, y, inner, boxHeight, 28)
+    ctx.fillStyle = 'rgba(166, 226, 46, 0.08)'
+    ctx.fill()
+    ctx.strokeStyle = COLORS.primary
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.font = font(700, 36)
+    data.milestones.forEach((line, index) => {
+      const baseline = y + 12 + (index + 1) * lineHeight - 18
+      drawStar(ctx, PADDING + 52, baseline - 13, 17)
+      ctx.fillStyle = COLORS.foreground
+      ctx.fillText(fit(ctx, line, inner - 120), PADDING + 92, baseline)
+    })
+    y += boxHeight
   }
 
   if (data.topExercises.length > 0) {
