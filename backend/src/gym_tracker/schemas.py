@@ -552,6 +552,16 @@ class StreakRead(BaseModel):
     at_risk: bool
 
 
+class MilestoneRead(BaseModel):
+    exercise_id: int
+    exercise_name: str
+    # "weight": first time at a round weight; "gain": kilos above the first session.
+    kind: Literal["weight", "gain"]
+    value_kg: float
+    achieved_on: date
+    workout_id: int
+
+
 class ExerciseSessionRead(BaseModel):
     workout_id: int
     performed_on: date
