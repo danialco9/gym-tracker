@@ -1,4 +1,11 @@
-import { ArrowLeftRightIcon, CheckCheckIcon, Link2Icon, PlusIcon, Trash2Icon } from 'lucide-react'
+import {
+  ArrowLeftRightIcon,
+  CheckCheckIcon,
+  Link2Icon,
+  NotebookPenIcon,
+  PlusIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,12 +15,13 @@ import type { Exercise } from '@/lib/types'
 import { ActiveSet } from './ActiveSet'
 import { workingSetNumber, type DraftAction, type DraftExercise } from './draft'
 import { exerciseFrameUrls } from './exercise-art'
+import { ExerciseNote } from './ExerciseNote'
 import { ExerciseThumbnail } from './ExerciseThumbnail'
 import { compareWithLastTime } from './last-time'
 import { LastSessionHint } from './LastSessionHint'
 import { MovementAnimation } from './MovementAnimation'
 import { ProgressRing } from './ProgressRing'
-import { useLastSession } from './queries'
+import { useExerciseNote, useLastSession } from './queries'
 import { beatsRecord } from './records'
 import { CompletedSetRow, PendingSetRow } from './SetSummary'
 
@@ -60,6 +68,8 @@ export function ExerciseCard({
   const pendingIds = entry.sets.filter((set) => !set.done).map((set) => set.id)
   const frames = exercise ? exerciseFrameUrls(exercise) : []
   const [showMovement, setShowMovement] = useState(false)
+  const [editingNote, setEditingNote] = useState(false)
+  const note = useExerciseNote(entry.exerciseId)
   // The same query as the hint under the title, so it is fetched once.
   const lastSession = useLastSession(entry.exerciseId)
   const activeLastTime =
@@ -118,6 +128,13 @@ export function ExerciseCard({
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-1">
+        <ExerciseNote
+          exerciseId={entry.exerciseId}
+          exerciseName={entry.name}
+          editing={editingNote}
+          onEdit={() => setEditingNote(true)}
+          onClose={() => setEditingNote(false)}
+        />
         {showMovement && (
           <MovementAnimation
             frames={frames}
@@ -179,6 +196,19 @@ export function ExerciseCard({
         </div>
         {/* Down here, away from the set's own bin, so removing a set never takes the whole exercise. */}
         <div className="mt-1 flex justify-center gap-2">
+          {/* A note already there is edited by tapping it, at the top of the card. */}
+          {!note && !editingNote && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              aria-label={`Añadir nota a ${entry.name}`}
+              onClick={() => setEditingNote(true)}
+            >
+              <NotebookPenIcon />
+              Nota
+            </Button>
+          )}
           {/* Swapping moves the sets still to do; with none left there is nothing to move. */}
           {pendingIds.length > 0 && (
             <Button

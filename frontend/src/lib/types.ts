@@ -162,6 +162,12 @@ export interface WorkoutIn {
   sets: WorkoutSetIn[]
 }
 
+/** What someone keeps in mind about an exercise each time: a seat height, a grip. */
+export interface ExerciseNote {
+  exercise_id: number
+  text: string
+}
+
 export interface LastSession {
   workout_id: number
   started_at: string

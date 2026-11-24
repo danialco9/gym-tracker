@@ -2,10 +2,20 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/r
 import { planKeys } from '@/features/plan/queries'
 import { progressKeys } from '@/features/progress/queries'
 import { apiFetch } from '@/lib/api'
-import type { Dictation, Exercise, ExerciseIn, LastSession, Routine, Workout, WorkoutIn } from '@/lib/types'
+import type {
+  Dictation,
+  Exercise,
+  ExerciseIn,
+  ExerciseNote,
+  LastSession,
+  Routine,
+  Workout,
+  WorkoutIn,
+} from '@/lib/types'
 
 export const queryKeys = {
   exercises: ['exercises'] as const,
+  exerciseNotes: ['exercise-notes'] as const,
   lastSession: (exerciseId: number) => ['exercises', exerciseId, 'last-session'] as const,
   routines: ['routines'] as const,
   workouts: ['workouts'] as const,
@@ -116,6 +126,38 @@ export function useCreateExercise() {
       queryClient.setQueryData<Exercise[]>(queryKeys.exercises, (current) => current && [...current, created])
       // Not awaited: the new exercise is already in the cache, so it can be added without waiting.
       void queryClient.invalidateQueries({ queryKey: queryKeys.exercises })
+    },
+  })
+}
+
+/** Every note of the user, fetched once and shared by all the exercise cards of a workout. */
+export function useExerciseNotes() {
+  return useQuery({
+    queryKey: queryKeys.exerciseNotes,
+    queryFn: ({ signal }) => apiFetch<ExerciseNote[]>('/exercise-notes', { signal }),
+    staleTime: 5 * 60_000,
+  })
+}
+
+/** The note of an exercise, or "" when it has none. */
+export function useExerciseNote(exerciseId: number): string {
+  const notes = useExerciseNotes()
+  return notes.data?.find((note) => note.exercise_id === exerciseId)?.text ?? ''
+}
+
+/** Writes the note of an exercise; an empty one deletes it. The cached list follows at once. */
+export function useSaveExerciseNote() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ exerciseId, text }: { exerciseId: number; text: string }) =>
+      apiFetch<ExerciseNote>(`/exercise-notes/${exerciseId}`, { method: 'PUT', body: { text } }),
+    // Fail at once with no connection instead of waiting paused with the button saying "Guardando…".
+    networkMode: 'always',
+    onSuccess: (saved) => {
+      queryClient.setQueryData<ExerciseNote[]>(queryKeys.exerciseNotes, (current = []) => [
+        ...current.filter((note) => note.exercise_id !== saved.exercise_id),
+        ...(saved.text ? [saved] : []),
+      ])
     },
   })
 }
