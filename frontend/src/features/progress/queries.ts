@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api'
-import type { ExerciseProgress, ProgressOverview, Streak } from '@/lib/types'
+import type { ExerciseProgress, Milestone, ProgressOverview, Streak } from '@/lib/types'
 
 // Derived from workouts and measurements, so saving either should refresh it.
 export const progressKeys = {
@@ -8,6 +8,7 @@ export const progressKeys = {
   overview: ['progress', 'overview'] as const,
   goals: ['progress', 'goals'] as const,
   streak: ['progress', 'streak'] as const,
+  milestones: ['progress', 'milestones'] as const,
   exercise: (exerciseId: number) => ['progress', 'exercises', exerciseId] as const,
 }
 
@@ -30,5 +31,13 @@ export function useExerciseProgress(exerciseId: number | null) {
     queryKey: progressKeys.exercise(exerciseId ?? 0),
     queryFn: ({ signal }) => apiFetch<ExerciseProgress>(`/progress/exercises/${exerciseId}`, { signal }),
     enabled: exerciseId !== null,
+  })
+}
+
+/** Round weights reached and kilos gained since the first session, newest first. */
+export function useMilestones() {
+  return useQuery({
+    queryKey: progressKeys.milestones,
+    queryFn: ({ signal }) => apiFetch<Milestone[]>('/progress/milestones', { signal }),
   })
 }
