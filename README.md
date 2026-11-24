@@ -74,6 +74,11 @@ remove it like any other app (long press on the icon).
   sets the rep ranges, effort (RIR, reps in reserve), rest and weekly volume to aim for. Opening a
   routine shows today's plan first: what to do with each exercise and why, and how the week's volume of its
   muscles compares with the goal. One tap starts the workout with the suggested weights.
+- **Week plan.** The home screen opens on the week from Monday to Sunday: what each day holds and
+  which were already trained. A short setup asks which days you train and lays a ready-made split
+  on them (full body for 1–3 days, upper/lower for 4, push/pull/legs for 6), previewed day by day
+  before anything is saved. A missed day can be moved or swapped for that date alone, without
+  touching the usual week.
 - **Training streak.** Days in a row with workouts, where one rest day does not break it.
 - **Weekly overload summary.** The home screen says how many exercises trained this week beat the
   session before ("4 de 6 ejercicios superan la última vez"), judged set by set as during the
@@ -85,6 +90,14 @@ remove it like any other app (long press on the icon).
   colour. Each tier has a medal of its own, told apart by shape as well as colour: round, starred,
   scalloped and seal medals, then gem cuts and a crown for Máster. There is no list of people:
   everyone sees only their own standing.
+- **Strength milestones.** Instead of points or badges, the round numbers a lift reaches for the
+  first time: every 20 kg from 40 kg on bars, machines and cables, every 10 kg from 10 kg on
+  dumbbells, and every 10 kg gained over the first session (5 kg on dumbbells). They are rare on
+  purpose; saving a workout that earns one says so, and the Progress tab lists them all.
+- **Share a workout.** Any recent workout turns into an image for WhatsApp or Instagram, drawn on a
+  canvas in the phone: date, duration, working sets, volume, the heaviest exercises and the
+  records and milestones of the day. It opens the phone's share sheet, or downloads where there is
+  none.
 - **Routines with per-set targets.** Each exercise carries ordered set rows (reps, weight, optional
   RIR), so pyramids and ramps are described exactly and prefill the next workout. Drag to reorder,
   with keyboard support.
@@ -114,11 +127,21 @@ remove it like any other app (long press on the icon).
   A locked phone freezes the page, so the end of a rest can also arrive as a Web Push sent by the
   API ("Avisarme" on the rest bar). An iPhone only allows that once the app is on its home screen,
   so there a card on the home screen and a line on the rest bar open a three-step install guide.
-- **Body measurements.** Quick weight entry plus an optional full set of measurements, with history
-  and a weight trend chart.
+- **Body measurements and progress photos.** Quick weight entry plus an optional full set of
+  measurements, with history and a weight trend chart. Progress photos sit next to it, with the
+  first one beside the latest and the weight change between them. They never leave the phone:
+  shrunk and stripped of their location data, they are kept in the browser (IndexedDB), not on
+  the server.
 - **Progress dashboard.** Estimated 1RM per exercise, weekly hard sets by muscle group, personal
   records and body weight trend. The volume tab opens on a body figure that fills each muscle as
-  the week's hard sets reach the goal's range: grey below, green inside, orange above.
+  the week's hard sets reach the goal's range: grey below, green inside, orange above. Each
+  exercise chart carries its trend a month ahead and says whether the lift is rising, flat or
+  falling. A month calendar shades each day by its working sets, and tapping one opens that
+  workout to edit or delete it.
+- **Your data, in and out.** Workouts and measurements download as CSV laid out for a spreadsheet
+  in Spanish (semicolons, decimal commas). Workouts from Strong, Hevy or this app's own CSV can be
+  imported: a preview first, the exercises it cannot match picked by hand, and nothing imported
+  twice.
 - **Training recommendations.** The analytics engine compares the sets you actually did against the
   ones the routine planned: everything hit with 2 or more reps in reserve adds load to every
   planned set (keeping the pyramid shape), missed reps suggest holding, and a detected plateau suggests a deload. The load
@@ -150,7 +173,7 @@ flowchart LR
     end
     subgraph api["FastAPI service"]
         R["REST API<br/>cookie JWT auth<br/>rate limiting"]
-        A["Analytics engine<br/>pandas + NumPy<br/>e1RM · volume · plateaus"]
+        A["Analytics engine<br/>pandas + NumPy<br/>e1RM · volume · plateaus · forecasts"]
     end
     DB[("PostgreSQL<br/>SQLAlchemy + Alembic")]
 
@@ -259,8 +282,14 @@ A few decisions worth calling out:
 - **Analytics.** Estimated 1RM (Epley), weekly hard sets per muscle group and plateau detection live
   in a pure module fed either from the CSV log or from PostgreSQL, which keeps it testable without a
   web request.
-- **Derived, never stored.** The streak and the ranking are recomputed from the workout history
-  on every request, so editing or deleting a workout can never leave them out of step with the log.
+- **Derived, never stored.** The streak, the ranking and the milestones are recomputed from the
+  workout history on every request, so editing or deleting a workout can never leave them out of
+  step with the log.
+- **Forecasts that admit doubt.** A lift's trend is a Huber regression over its last eight weeks,
+  written in NumPy: it fits like least squares near the line but gives a far-off session only a
+  linear pull, so one bad day does not bend it. With fewer than four sessions, under two weeks of
+  them or a month without the exercise there is no forecast, rather than a guess dressed up as a
+  number.
 - **Fair strength percentiles.** A lift is never ranked against the app's own users, who are too
   few to mean anything, but against gym-goers at large: the
   [Strength Level](https://strengthlevel.com/strength-standards) standards of 19 main lifts, per
@@ -320,19 +349,11 @@ A few decisions worth calling out:
 - [x] Supersets and circuits: exercises that alternate, with the rest only after the round
 - [x] Install guide on the iPhone, which is also what unlocks the end-of-rest notification there
 - [x] JavaScript split by route: no chunk over 500 kB, the main one about 130 kB gzipped
-
-## Ideas for the future
-
-Not promised, roughly in order of value for the effort.
-
-**History and data**
-
-- [x] Calendar of workouts with a heat map, and editing a saved workout from it.
-- [x] Export your workouts and measurements to CSV, laid out for a spreadsheet in Spanish.
-- [x] Import workouts from a CSV of Strong, Hevy or this app: a preview first, the unclear exercises picked by hand, nothing imported twice.
-- [x] Progress photos next to the body weight chart, kept only on the phone: the first next to the latest, with the weight change between them.
-- [x] Forecasts with a robust (Huber) trend in NumPy: when a lift is likely to stall, and the expected 1RM in a month.
-
-**Engineering**
-
-- [ ] Language-model reading for the dictated sentences the rules cannot reach (listed above).
+- [x] Week plan: the usual week, single-day changes and ready-made splits, set up in a few steps
+- [x] Calendar of workouts with a heat map, and editing a saved workout from it
+- [x] Export workouts and measurements to CSV, laid out for a spreadsheet in Spanish
+- [x] Import workouts from a CSV of Strong, Hevy or this app, without duplicates
+- [x] Progress photos kept only on the phone, the first next to the latest
+- [x] Forecasts with a robust (Huber) trend in NumPy: where each lift will be in a month
+- [x] Strength milestones instead of points or badges, celebrated when a workout is saved
+- [x] Share a workout as an image, with its records and milestones
