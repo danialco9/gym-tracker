@@ -52,21 +52,25 @@ export function exerciseChartRows(
 }
 
 const kg = (value: number) => formatDecimal(Math.round(value))
-const percent = (share: number) => `${formatDecimal(Math.round(Math.abs(share) * 1000) / 10)} %`
+// The space before % is a no-break space, so a narrow screen never leaves the % alone on a line.
+const percent = (share: number) => `${formatDecimal(Math.round(Math.abs(share) * 1000) / 10)} %`
 
 /** What the forecast says, in a sentence for the gym floor and a second one on what to do. */
 export function forecastMessage(forecast: ExerciseForecast): { title: string; detail: string } {
-  const range = `entre ${kg(forecast.low_kg)} y ${kg(forecast.high_kg)} kg`
+  const range =
+    kg(forecast.low_kg) === kg(forecast.high_kg)
+      ? `unos ${kg(forecast.expected_kg)} kg`
+      : `entre ${kg(forecast.low_kg)} y ${kg(forecast.high_kg)} kg`
   switch (forecast.trend) {
     case 'rising':
       return {
-        title: `En un mes: ~${kg(forecast.expected_kg)} kg de e1RM`,
-        detail: `Probablemente ${range}. Subes un ${percent(forecast.weekly_change)} por semana: sigue así.`,
+        title: `En un mes: ${range}`,
+        detail: `Lo que podrías levantar a 1 repetición. Subes un ${percent(forecast.weekly_change)} por semana: sigue así.`,
       }
     case 'flat':
       return {
         title: 'Se está frenando',
-        detail: `En un mes, ~${kg(forecast.expected_kg)} kg (${range}). Prueba otro rango de reps o una semana de descarga.`,
+        detail: `En un mes, ${range}. Prueba otro rango de reps o una semana de descarga.`,
       }
     case 'falling':
       return {
