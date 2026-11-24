@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BodyWeightTab } from './BodyWeightTab'
 import { CalendarTab } from './CalendarTab'
 import { ExercisesTab } from './ExercisesTab'
-import { useProgressOverview } from './queries'
+import { MilestonesCard } from './MilestonesCard'
+import { useMilestones, useProgressOverview } from './queries'
 import { RecommendationsTab } from './RecommendationsTab'
 import { VolumeTab } from './VolumeTab'
 
@@ -23,6 +24,7 @@ const isTab = (value: unknown): value is TabValue => TABS.some((tab) => tab.valu
 
 export function ProgressPage() {
   const overview = useProgressOverview()
+  const milestones = useMilestones()
   // The active tab lives in the URL (?vista=), so reloads and the back button keep it.
   const [searchParams, setSearchParams] = useSearchParams()
   const requested = searchParams.get('vista')
@@ -65,7 +67,11 @@ export function ProgressPage() {
               hasWorkouts={overview.data.activity.workouts_total > 0}
             />
           </TabsContent>
-          <TabsContent value="ejercicios" className="pt-2">
+          <TabsContent value="ejercicios" className="space-y-6 pt-2">
+            {/* Only once there is a history to look back on: an empty one has nothing to celebrate. */}
+            {milestones.data !== undefined && overview.data.personal_records.length > 0 && (
+              <MilestonesCard milestones={milestones.data} />
+            )}
             <ExercisesTab records={overview.data.personal_records} />
           </TabsContent>
           <TabsContent value="volumen" className="pt-2">

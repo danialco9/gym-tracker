@@ -235,6 +235,17 @@ export interface WeeklyVolume {
   muscles: { muscle_group: MuscleGroup; hard_sets: number; volume_kg: number }[]
 }
 
+/** A strength milestone, derived from the history by the API. */
+export interface Milestone {
+  exercise_id: number
+  exercise_name: string
+  /** `weight`: first time at a round weight; `gain`: kilos above the first session. */
+  kind: 'weight' | 'gain'
+  value_kg: number
+  achieved_on: string
+  workout_id: number
+}
+
 /** Days in a row with workouts, derived from the history by the API; one rest day keeps it alive. */
 export interface Streak {
   current_days: number

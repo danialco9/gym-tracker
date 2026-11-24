@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { formatLongDay } from '@/features/plan/week-dates'
-import type { ExerciseProgress, MuscleGroup, ProgressOverview, User, Workout } from '@/lib/types'
+import type { ExerciseProgress, Milestone, MuscleGroup, ProgressOverview, User, Workout } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
 import { addMonths, formatMonth, localDate, monthOf } from './calendar'
@@ -317,6 +317,63 @@ describe('Progress', () => {
 
     expect(await screen.findByText(/No has entrenado en las últimas 4 semanas/)).toBeInTheDocument()
     expect(screen.queryByText(/Registra tu primer entreno/)).not.toBeInTheDocument()
+  })
+
+  it('lists the latest strength milestones above the exercises, the rest one tap away', async () => {
+    const milestone = (
+      exercise_name: string,
+      kind: Milestone['kind'],
+      value_kg: number,
+      achieved_on: string,
+    ) => ({
+      exercise_id: 1,
+      exercise_name,
+      kind,
+      value_kg,
+      achieved_on,
+      workout_id: 1,
+    })
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /progress/milestones': {
+        body: [
+          milestone('Press banca con barra', 'weight', 100, '2026-09-15'),
+          milestone('Press banca con barra', 'gain', 20, '2026-09-15'),
+          milestone('Curl con mancuernas', 'gain', 5, '2026-09-08'),
+          milestone('Sentadilla con barra', 'weight', 80, '2026-09-01'),
+        ] satisfies Milestone[],
+      },
+    })
+    const { user } = renderRoute('/progreso?vista=ejercicios')
+
+    const card = await screen.findByRole('region', { name: 'Hitos' })
+    const items = () =>
+      within(card)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent)
+    expect(items()).toEqual([
+      expect.stringMatching(/^Primer 100 kgPress banca con barra · /),
+      expect.stringMatching(/^\+20 kg desde el inicioPress banca con barra · /),
+      expect.stringMatching(/^\+5 kg desde el inicioCurl con mancuernas · /),
+    ])
+
+    await user.click(within(card).getByRole('button', { name: 'Ver todos (4)' }))
+    expect(items()).toHaveLength(4)
+    expect(within(card).getByRole('button', { name: 'Ver menos' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('says how a milestone is earned while there is none', async () => {
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /progress/milestones': { body: [] },
+    })
+    renderRoute('/progreso?vista=ejercicios')
+
+    expect(
+      await screen.findByText(/Aún no hay hitos\. Llegan al subir a un peso redondo/),
+    ).toBeInTheDocument()
   })
 
   it('summarizes the next session on the home page', async () => {
