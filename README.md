@@ -19,6 +19,11 @@ account with 12 weeks of simulated training. No sign-up needed.
   <img src="docs/screenshots/progress.png" width="250" alt="Progress: activity and the recommendation for the next session">
   <img src="docs/screenshots/picker.png" width="250" alt="Exercise picker with drawings, search, filters and recent exercises">
 </p>
+<p align="center">
+  <img src="docs/screenshots/week.png" width="250" alt="Week plan on the home screen: the routine of each training day, the days already done and today's workout">
+  <img src="docs/screenshots/milestones.png" width="250" alt="Strength milestones on the Progress tab: the round weights each lift reached for the first time">
+  <img src="docs/screenshots/share.png" width="250" alt="Image card of a workout to share: duration, working sets, volume and the best sets">
+</p>
 
 > Personal project and portfolio piece. The interface is in Spanish; the code, commits and docs are
 > in English. Open to anyone: each account sees only its own data, and the ranking
