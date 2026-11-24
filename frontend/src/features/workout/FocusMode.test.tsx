@@ -233,3 +233,40 @@ describe('Removing an exercise', () => {
     expect(screen.getByText('0/2')).toBeInTheDocument()
   })
 })
+
+describe('Saving a workout', () => {
+  it('celebrates the strength milestones it earned, and only those', async () => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    render(<Toaster />)
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(DRAFT))
+    const milestone = (workout_id: number, exercise_name: string, value_kg: number) => ({
+      exercise_id: 1,
+      exercise_name,
+      kind: 'weight',
+      value_kg,
+      achieved_on: '2026-11-24',
+      workout_id,
+    })
+    mockApi({
+      'GET /auth/me': { body: USER },
+      'GET /progress/goals': { body: GOAL_PLANS },
+      'GET /progress/overview': { body: OVERVIEW },
+      'GET /exercises': { body: [BENCH_PRESS] },
+      'POST /workouts': { status: 201, body: { id: 99 } },
+      'GET /progress/milestones': {
+        body: [milestone(99, 'Sentadilla con barra', 100), milestone(12, 'Press banca con barra', 60)],
+      },
+    })
+    const { user } = renderRoute('/entrenar')
+
+    await user.click((await screen.findAllByRole('button', { name: 'Completar serie 1' }))[0])
+    await user.click(screen.getByRole('button', { name: 'Terminar y guardar' }))
+
+    expect(await screen.findByText('¡Primer 100 kg en Sentadilla con barra!')).toBeInTheDocument()
+    expect(screen.queryByText(/Primer 60 kg/)).not.toBeInTheDocument()
+  })
+})
