@@ -278,3 +278,19 @@ class PlanChange(Base):
     kind: Mapped[str] = mapped_column(String(10))
     # Deleting the routine drops the change, and the date follows the usual week again.
     routine_id: Mapped[int | None] = mapped_column(ForeignKey("routines.id", ondelete="CASCADE"), index=True)
+
+
+class ExerciseNote(Base):
+    """What someone wants to remember about an exercise each time: a seat height, a grip, a twinge.
+
+    One note per person and exercise, kept until they change it.
+    """
+
+    __tablename__ = "exercise_notes"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    exercise_id: Mapped[int] = mapped_column(ForeignKey("exercises.id", ondelete="CASCADE"), primary_key=True)
+    text: Mapped[str] = mapped_column(String(200))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
