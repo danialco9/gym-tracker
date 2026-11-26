@@ -1,7 +1,7 @@
 name: Migrate production database
 
-# On Vercel the API has no start-up script, so the work docker-entrypoint.sh does on every Render boot
-# happens here instead: bring the schema up to date and load the exercise catalog after each push to main.
+# On Vercel the API has no start-up script, so the work docker-entrypoint.sh does when the Docker image
+# starts happens here instead: bring the schema up to date and load the exercise catalog after each push to main.
 on:
   push:
     branches: [main]
@@ -19,7 +19,7 @@ jobs:
   migrate:
     name: Upgrade schema and seed catalog
     runs-on: ubuntu-latest
-    # Off until the API left Render, whose entrypoint migrated on its own; on since then.
+    # Set to true in the repository variables since the API moved to Vercel.
     if: ${{ vars.PRODUCTION_MIGRATIONS_ENABLED == 'true' }}
     defaults:
       run:
