@@ -123,10 +123,31 @@ _SPELLED_NUMBER = re.compile(
     re.IGNORECASE,
 )
 
-# "4x10", "4 x 10", the same with a multiplication sign, or "4 series de 10": the number of sets first.
-_SETS_BY_REPS = re.compile(r"(?<!\d)(\d{1,2})(?:\s*[x\u00d7]\s*|\s+series?\s+de\s+)(\d{1,3})(?!\d)", re.IGNORECASE)
+# The most sets anyone writes before the repetitions ("10x10"). A bigger first number, or one with
+# decimals, is a weight: "100x5" is 100 kg for 5, not a hundred sets.
+MAX_SET_COUNT = 10
+
+# The patterns below run on tidied lines (see ``_tidy``), so they match single spaces only.
+# "100x5" or "60 kg por 10": a weight, then the repetitions done with it.
+_WEIGHT_TIMES_REPS = r"(\d{1,4}(?:[.,]\d{1,2})?)(?: ?(?:kgs?|kilos?|k)\b)?(?: ?[x\u00d7] ?| por )(\d{1,3})(?!\d)"
+_ONE_WEIGHT_TIMES_REPS = re.compile(_WEIGHT_TIMES_REPS, re.IGNORECASE)
+# "100x5, 105x5, 110x3" or "60 por 10, 70 por 8 y 80 por 6": a weight for each set.
+_WEIGHTS_TIMES_REPS = re.compile(
+    rf"(?<![\d.,]){_WEIGHT_TIMES_REPS}(?:(?:, ?| y | ){_WEIGHT_TIMES_REPS})*", re.IGNORECASE
+)
+# "4x10", "4 x 10", "4 por 10", the same with a multiplication sign, or "4 series de 10": the
+# number of sets first.
+_SETS_BY_REPS = re.compile(
+    r"(?<!\d)(\d{1,2})(?:\s*[x\u00d7]\s*| por |\s+series?\s+de\s+)(\d{1,3})(?!\d)", re.IGNORECASE
+)
 # "12,10,8" or "12-10-8": one entry per set, for pyramids and drop sets.
 _REP_LIST = re.compile(r"(?<!\d)\d{1,3}(?:\s*[,\-]\s*\d{1,3})+(?!\d)")
+# "12 10 8": the same with spaces. At least three numbers of 30 or fewer, and none with a unit, so
+# the weight in "12 10 8 60" or "12 10 8 14 kg" stays a weight.
+_SMALL_REPS = r"(?:30|[12]\d|[1-9])(?!\d)"
+_SPACED_REP_LIST = re.compile(
+    rf"(?<![\d.,]){_SMALL_REPS}(?: {_SMALL_REPS}){{2,}}(?![.,]\d| ?(?:kgs?|kilos?|k)\b)", re.IGNORECASE
+)
 # A weight stated outright: "60 kg", "a 82,5", "con 20 kilos".
 _WEIGHT = re.compile(
     r"(?:\b(?:a|con|de)\s+)?(\d{1,4}(?:[.,]\d{1,2})?)\s*(?:kgs?|kilos?|k)\b|\b(?:a|con)\s+(\d{1,4}(?:[.,]\d{1,2})?)\b",
@@ -268,17 +289,40 @@ def suggest(query: str, exercises: Iterable[ExerciseOption], limit: int = MAX_SU
 
 def _read_repetitions(line: str) -> tuple[list[int | None], str]:
     """Repetitions per set, and the line with that notation removed."""
-    grouped = _SETS_BY_REPS.search(line)
-    if grouped:
-        count = min(int(grouped.group(1)), MAX_SETS_PER_EXERCISE)
-        reps = min(int(grouped.group(2)), MAX_REPS)
-        return [reps] * count, _cut(line, grouped)
-    listed = _REP_LIST.search(line)
+    # One block of sets ("4x10"), or several in a row ("4x10 y 3x8").
+    blocks = list(_SETS_BY_REPS.finditer(line))
+    if blocks:
+        reps_per_set: list[int | None] = []
+        for block in blocks:
+            count = min(int(block.group(1)), MAX_SETS_PER_EXERCISE)
+            reps_per_set += [min(int(block.group(2)), MAX_REPS)] * count
+        return reps_per_set[:MAX_SETS_PER_EXERCISE], _SETS_BY_REPS.sub(" ", line)
+    listed = _REP_LIST.search(line) or _SPACED_REP_LIST.search(line)
     if listed:
         reps_per_set = [min(int(value), MAX_REPS) for value in re.findall(r"\d{1,3}", listed.group(0))]
         return list(reps_per_set[:MAX_SETS_PER_EXERCISE]), _cut(line, listed)
     # A line naming only an exercise still counts: one set, to fill in by hand.
     return [None], line
+
+
+def _read_weight_per_set(line: str) -> tuple[list[tuple[float, int]], str] | None:
+    """Weight and repetitions for each set ("100x5, 105x5"), and the line without them.
+
+    None when the line does not give a weight per set. "4x10" is four sets of ten, and "4x10 y
+    3x8" two blocks of sets, so pairs whose first numbers could all be a number of sets are left
+    to ``_read_repetitions``. So is a lone pair when the line states the weight elsewhere.
+    """
+    found = _WEIGHTS_TIMES_REPS.search(line)
+    if not found:
+        return None
+    matches = list(_ONE_WEIGHT_TIMES_REPS.finditer(found.group(0)))
+    rest = _cut(line, found)
+    if all(pair.group(1).isdigit() and int(pair.group(1)) <= MAX_SET_COUNT for pair in matches):
+        return None
+    if len(matches) == 1 and _WEIGHT.search(rest):
+        return None
+    pairs = [(_clamp(_number(pair.group(1)), 0, MAX_WEIGHT_KG), min(int(pair.group(2)), MAX_REPS)) for pair in matches]
+    return pairs[:MAX_SETS_PER_EXERCISE], rest
 
 
 def _read_weight(line: str, *, allow_bare_number: bool) -> tuple[float | None, str]:
@@ -300,7 +344,13 @@ def _read_line(line: str) -> tuple[str, tuple[ReadSet, ...]]:
     if effort:
         value = _number(effort.group(2))
         rpe = _clamp(10 - value if effort.group(1).lower() == "rir" else value, MIN_RPE, MAX_RPE)
-        remainder = _cut(remainder, effort)
+        remainder = " ".join(_cut(remainder, effort).split())
+
+    per_set = _read_weight_per_set(remainder)
+    if per_set:
+        pairs, remainder = per_set
+        sets = tuple(ReadSet(reps=reps, weight_kg=weight, rpe=rpe) for weight, reps in pairs)
+        return " ".join(remainder.split()), sets
 
     reps_per_set, remainder = _read_repetitions(remainder)
     # Only trust a unitless number as the weight once the repetitions have been accounted for:
