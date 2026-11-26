@@ -122,7 +122,8 @@ remove it like any other app (long press on the icon).
 - **Logging a workout in plain language.** Type (or dictate with the phone keyboard) `prensa 4x10
   120, press banca 12,10,8 a 60 rir 2` and the server reads it into sets, matched against your
   exercise catalog. Numbers can be spoken as words too, which is what dictation produces: `tres
-  series de diez en press banca con sesenta kilos`. It never saves on its own: the reading prefills the workout screen for you to
+  series de diez en press banca con sesenta kilos`; and each set can carry its own weight:
+  `sentadilla 100x5, 105x5, 110x3` or `60 por 10, 70 por 8 y 80 por 6`. It never saves on its own: the reading prefills the workout screen for you to
   review. Where the text genuinely fits more than one exercise - `press banca` is both the barbell
   and the dumbbell entry - it offers the candidates instead of guessing, since the wrong one
   quietly spoils the history.

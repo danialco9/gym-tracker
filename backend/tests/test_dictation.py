@@ -132,6 +132,83 @@ def test_reads_numbers_written_as_words(text: str, reps: list[int], weight: floa
     assert all(item.weight_kg == weight for item in exercise.sets)
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "sentadilla 100x5, 105x5, 110x3",
+        "sentadilla 100x5 105x5 110x3",
+        "sentadilla 100x5,105x5,110x3",
+        "sentadilla: 100 por 5, 105 por 5 y 110 por 3",
+        "sentadilla 100kg x 5, 105 kg x 5, 110 kilos por 3",
+        "sentadilla cien por cinco, ciento cinco por cinco y ciento diez por tres",
+    ],
+)
+def test_reads_a_weight_for_each_set(text: str) -> None:
+    [exercise] = RuleBasedReader().read(text, CATALOG)
+
+    assert exercise.exercise_id == 6
+    assert [(item.weight_kg, item.reps) for item in exercise.sets] == [(100, 5), (105, 5), (110, 3)]
+
+
+def test_effort_applies_to_every_set_with_its_own_weight() -> None:
+    [exercise] = RuleBasedReader().read("press banca 60x10, 70x8 rir 2", CATALOG)
+
+    assert [(item.weight_kg, item.reps, item.rpe) for item in exercise.sets] == [(60, 10, 8), (70, 8, 8)]
+
+
+@pytest.mark.parametrize(
+    ("text", "sets"),
+    [
+        # Too many to be a number of sets, or with decimals: a weight.
+        ("sentadilla 100x5", [(100, 5)]),
+        ("sentadilla 82,5x5", [(82.5, 5)]),
+        # Ten or fewer is a number of sets, as it always was.
+        ("sentadilla 5x5 a 100", [(100, 5)] * 5),
+        ("sentadilla 10x10 a 60", [(60, 10)] * 10),
+        ("sentadilla 4 por 10 con 100", [(100, 10)] * 4),
+        # With the weight stated elsewhere, the pair is sets and repetitions, however many sets.
+        ("sentadilla 12x10 con 40", [(40, 10)] * 12),
+    ],
+)
+def test_a_lone_pair_is_sets_or_a_weight_by_its_size(text: str, sets: list[tuple[float, int]]) -> None:
+    [exercise] = RuleBasedReader().read(text, CATALOG)
+
+    assert [(item.weight_kg, item.reps) for item in exercise.sets] == sets
+
+
+def test_reads_several_blocks_of_sets() -> None:
+    [exercise] = RuleBasedReader().read("prensa 4x10 y 2x15 con 120", CATALOG)
+
+    assert exercise.exercise_id == 1
+    assert [item.reps for item in exercise.sets] == [10] * 4 + [15] * 2
+    assert all(item.weight_kg == 120 for item in exercise.sets)
+
+
+@pytest.mark.parametrize(
+    ("text", "reps", "weight"),
+    [
+        ("curl de biceps 12 10 8 con 14", [12, 10, 8], 14.0),
+        ("curl de biceps 12 10 8 14 kg", [12, 10, 8], 14.0),
+        # Over 30 is no repetition count: the weight, once the repetitions are read.
+        ("curl de biceps 12 10 8 60", [12, 10, 8], 60.0),
+        ("curl de biceps 15 12 10 8", [15, 12, 10, 8], None),
+    ],
+)
+def test_reads_repetitions_separated_by_spaces(text: str, reps: list[int], weight: float | None) -> None:
+    [exercise] = RuleBasedReader().read(text, CATALOG)
+
+    assert exercise.exercise_id == 7
+    assert [item.reps for item in exercise.sets] == reps
+    assert all(item.weight_kg == weight for item in exercise.sets)
+
+
+def test_two_numbers_with_spaces_are_not_a_list() -> None:
+    # Too few to be sure they are repetitions: left as they were.
+    [exercise] = RuleBasedReader().read("dominadas 3 al fallo 8", CATALOG)
+
+    assert len(exercise.sets) == 1
+
+
 def test_a_spelled_number_does_not_swallow_the_next_exercise() -> None:
     # "treinta y" is not "treinta y cinco": the "y" still starts the next exercise.
     read = RuleBasedReader().read("curl de biceps 3x12 con treinta y dominadas tres series de ocho", CATALOG)
