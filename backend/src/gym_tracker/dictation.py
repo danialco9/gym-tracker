@@ -136,7 +136,11 @@ _WEIGHT = re.compile(
 _BARE_NUMBER = re.compile(r"(?<![\d,.])(\d{1,4}(?:[.,]\d{1,2})?)(?![\d,.])")
 # "rpe 8", or "rir 2" (reps left in reserve), which is stored as RPE 10 - RIR.
 _EFFORT = re.compile(r"\b(rpe|rir)\s*(\d{1,2}(?:[.,]5)?)\b", re.IGNORECASE)
-_LINE_SEPARATOR = re.compile(r"[\n;]+|\s+y\s+(?=\D)")
+# Runs of spaces, tabs and line breaks, which ``_tidy`` brings down to one.
+_WHITESPACE = re.compile(r"\s+")
+# A new line, a semicolon, or " y " before an exercise ("prensa 4x10 y curl 3x12"). Single spaces
+# only: on tidied text that is all there is, and it keeps the split linear however long the text.
+_LINE_SEPARATOR = re.compile(r"[\n;]+| y (?=\D)")
 
 
 @dataclass(frozen=True)
@@ -178,6 +182,11 @@ def _fold(value: str) -> str:
 
 def _words(value: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", _fold(value))
+
+
+def _tidy(text: str) -> str:
+    """One space between words, and one line break where there was any."""
+    return _WHITESPACE.sub(lambda run: "\n" if "\n" in run.group(0) else " ", text)
 
 
 def _digits(text: str) -> str:
@@ -308,7 +317,7 @@ class RuleBasedReader:
     def read(self, text: str, exercises: Sequence[ExerciseOption]) -> list[ReadExercise]:
         result: list[ReadExercise] = []
         # Before splitting, so the "y" in "treinta y cinco" is not read as the start of a new line.
-        for raw_line in _LINE_SEPARATOR.split(_digits(text)):
+        for raw_line in _LINE_SEPARATOR.split(_digits(_tidy(text))):
             line = raw_line.strip(" .\t,")
             if not line:
                 continue

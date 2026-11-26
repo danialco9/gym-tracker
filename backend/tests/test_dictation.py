@@ -173,6 +173,15 @@ def test_reads_several_exercises_from_one_dictation() -> None:
     assert [len(exercise.sets) for exercise in read] == [4, 3, 3]
 
 
+def test_extra_spaces_tabs_and_blank_lines_change_nothing() -> None:
+    text = "prensa  4x10\t120   y\tcurl de biceps 3x12 20kg\n\n\n  dominadas   3x8"
+
+    read = RuleBasedReader().read(text, CATALOG)
+
+    assert [exercise.exercise_id for exercise in read] == [1, 7, 5]
+    assert [len(exercise.sets) for exercise in read] == [4, 3, 3]
+
+
 def test_an_unknown_exercise_comes_back_for_the_user_to_resolve() -> None:
     [exercise] = RuleBasedReader().read("maquina rara 3x10 40", CATALOG)
 
