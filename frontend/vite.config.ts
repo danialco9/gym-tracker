@@ -1,12 +1,27 @@
 /// <reference types="vitest/config" />
 import path from 'node:path'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// On Vercel the Sentry integration sets these. With its auth token the build uploads source maps,
+// so the errors point at the real code, and deletes them so they are never served. Without it
+// (local builds, CI) nothing changes.
+const sentryUpload = Boolean(process.env.SENTRY_AUTH_TOKEN)
+
 // https://vite.dev/config/
 export default defineConfig({
+  // Only the DSN, which is public by design, and the environment reach the browser; the
+  // integration's other SENTRY_ variables (the auth token among them) stay in the build.
+  define: {
+    'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(process.env.SENTRY_DSN ?? ''),
+    'import.meta.env.VITE_SENTRY_ENVIRONMENT': JSON.stringify(process.env.VERCEL_ENV ?? 'development'),
+  },
+  build: {
+    sourcemap: sentryUpload ? 'hidden' : false,
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -55,6 +70,19 @@ export default defineConfig({
         // A navigation to /api must reach the network, not the cached shell.
         navigateFallbackDenylist: [/^\/api\//],
       },
+    }),
+    sentryVitePlugin({
+      disable: !sentryUpload,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      // The release goes in index.html, not in the chunks, so their file names (and the cached
+      // copies on the phone) only change when their code does.
+      release: { name: process.env.VERCEL_GIT_COMMIT_SHA, inject: 'html' },
+      sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+      // A failed upload costs readable stack traces, never a deployment.
+      errorHandler: (error) => console.warn(error),
+      telemetry: false,
     }),
   ],
   resolve: {

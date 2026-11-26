@@ -1,7 +1,8 @@
 import { HomeIcon, RotateCwIcon, TriangleAlertIcon } from 'lucide-react'
 import { useEffect } from 'react'
-import { Link, useRouteError } from 'react-router'
+import { isRouteErrorResponse, Link, useRouteError } from 'react-router'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { reportError } from '@/lib/error-reporting'
 import { cn } from '@/lib/utils'
 
 /**
@@ -13,6 +14,8 @@ export function ErrorPage() {
 
   useEffect(() => {
     console.error(error)
+    // A response the router made up (a 404) is not a bug; anything else that broke a screen is.
+    if (!isRouteErrorResponse(error)) reportError(error)
   }, [error])
 
   return (

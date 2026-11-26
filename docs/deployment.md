@@ -66,7 +66,11 @@ Live at https://gym-tracker-two-beta.vercel.app.
    root `.vercelignore` keeps CLI uploads to the frontend).
 2. Root directory: `frontend` (framework, install and build commands come from `vercel.json`).
 3. Environment variable `VITE_DEMO_ENABLED=true` to show the demo button.
-4. Deploy, open the site and try **Probar la demo**.
+4. Optional: connect a Sentry project (platform React) to it from the Sentry integration. Its
+   `SENTRY_DSN` makes the web app report the errors that break a screen, without personal data,
+   and its `SENTRY_AUTH_TOKEN` makes the build upload source maps (then delete them) so the
+   reports point at the real code. Without them the build and the app are unchanged.
+5. Deploy, open the site and try **Probar la demo**.
 
 ## Resetting a user's password
 
