@@ -234,9 +234,9 @@ def apply_presets(payload: PresetWeekIn, session: SessionDep, user: CurrentUser)
     week = preset_week(payload.weekdays)
     slugs = {item.slug for _, preset in week for item in preset.exercises}
     catalog_ids = dict(
-        session.execute(select(Exercise.slug, Exercise.id).where(Exercise.slug.in_(slugs), Exercise.user_id.is_(None)))
-        .tuples()
-        .all()
+        session.execute(
+            select(Exercise.slug, Exercise.id).where(Exercise.slug.in_(slugs), Exercise.user_id.is_(None))
+        ).all()
     )
     if missing := sorted(slugs - set(catalog_ids)):
         # Only if the catalog was not seeded; every preset slug is in CATALOG.

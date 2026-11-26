@@ -215,7 +215,6 @@ e2e/        Playwright flows against the full stack
 data/       Interim CSV training log
 docs/       Deployment guide, image credits and README screenshots
 docker-compose.yml   Full local stack (PostgreSQL, API, web)
-render.yaml          Former Render Blueprint for the API (now on Vercel, see the deployment guide)
 ```
 
 ## Getting started

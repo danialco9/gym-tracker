@@ -29,7 +29,7 @@ const time = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digi
  * the day tapped listed below.
  */
 export function CalendarTab() {
-  const today = localDate(new Date())
+  const [today] = useState(() => localDate(new Date()))
   const [month, setMonth] = useState(() => monthOf(today))
   const [selected, setSelected] = useState<string | null>(null)
   const [editing, setEditing] = useState<Workout | null>(null)
