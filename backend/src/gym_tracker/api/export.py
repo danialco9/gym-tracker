@@ -63,9 +63,7 @@ def export_workouts(session: SessionDep, user: CurrentUser, settings: SettingsDe
         .options(selectinload(Workout.sets).selectinload(WorkoutSet.exercise))
         .order_by(Workout.started_at, Workout.id)
     ).all()
-    routine_names = dict(
-        session.execute(select(Routine.id, Routine.name).where(Routine.user_id == user.id)).tuples().all()
-    )
+    routine_names = dict(session.execute(select(Routine.id, Routine.name).where(Routine.user_id == user.id)).all())
 
     rows: list[tuple[str, ...]] = []
     for workout in workouts:

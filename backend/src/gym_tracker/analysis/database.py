@@ -32,7 +32,7 @@ def _frame(table: str, rows: Iterable[Sequence[Any]]) -> pd.DataFrame:
     return frame
 
 
-def _rows(session: Session, statement: Select[Any]) -> list[Sequence[Any]]:
+def _rows(session: Session, statement: Select[*tuple[Any, ...]]) -> list[Sequence[Any]]:
     return [tuple(row) for row in session.execute(statement)]
 
 
