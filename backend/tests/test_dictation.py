@@ -88,6 +88,73 @@ def test_reads_the_weight_however_it_is_written(text: str, weight: float | None)
     assert exercise.sets[0].weight_kg == weight
 
 
+@pytest.mark.parametrize(
+    ("text", "reps", "weight"),
+    [
+        ("press banca 3 series de 8 a 60", [8, 8, 8], 60.0),
+        ("press banca 4 series de 10 repeticiones con 60 kg", [10] * 4, 60.0),
+        ("press banca 1 serie de 5 a 100", [5], 100.0),
+    ],
+)
+def test_reads_sets_said_as_series(text: str, reps: list[int], weight: float) -> None:
+    [exercise] = RuleBasedReader().read(text, CATALOG)
+
+    assert exercise.exercise_id == 2
+    assert [item.reps for item in exercise.sets] == reps
+    assert all(item.weight_kg == weight for item in exercise.sets)
+
+
+def test_reads_a_workout_told_in_words() -> None:
+    [exercise] = RuleBasedReader().read("hoy hice tres series de diez en press banca con sesenta kilos", CATALOG)
+
+    assert exercise.exercise_id == 2
+    assert [item.reps for item in exercise.sets] == [10, 10, 10]
+    assert all(item.weight_kg == 60 for item in exercise.sets)
+
+
+@pytest.mark.parametrize(
+    ("text", "reps", "weight"),
+    [
+        ("sentadilla 5x5 a ciento veinte", [5] * 5, 120.0),
+        ("sentadilla 5x5 con ciento cuarenta y dos kilos", [5] * 5, 142.0),
+        ("sentadilla 3x8 a noventa y uno", [8] * 3, 91.0),
+        ("sentadilla 3x8 a dieciséis kg", [8] * 3, 16.0),
+        ("sentadilla 3x8 a Veintitrés", [8] * 3, 23.0),
+        ("sentadilla 2x5 a doscientos", [5] * 2, 200.0),
+        ("sentadilla 5x5 a cien", [5] * 5, 100.0),
+    ],
+)
+def test_reads_numbers_written_as_words(text: str, reps: list[int], weight: float) -> None:
+    [exercise] = RuleBasedReader().read(text, CATALOG)
+
+    assert exercise.exercise_id == 6
+    assert [item.reps for item in exercise.sets] == reps
+    assert all(item.weight_kg == weight for item in exercise.sets)
+
+
+def test_a_spelled_number_does_not_swallow_the_next_exercise() -> None:
+    # "treinta y" is not "treinta y cinco": the "y" still starts the next exercise.
+    read = RuleBasedReader().read("curl de biceps 3x12 con treinta y dominadas tres series de ocho", CATALOG)
+
+    assert [exercise.exercise_id for exercise in read] == [7, 5]
+    assert read[0].sets[0].weight_kg == 30
+    assert [item.reps for item in read[1].sets] == [8, 8, 8]
+
+
+def test_one_on_its_own_stays_a_word() -> None:
+    # "una" is an article here, not a weight of one kilo.
+    [exercise] = RuleBasedReader().read("curl de biceps con barra a una mano 3x10", CATALOG)
+
+    assert exercise.exercise_id == 7
+    assert all(item.weight_kg is None for item in exercise.sets)
+
+
+def test_rir_said_as_a_word() -> None:
+    [exercise] = RuleBasedReader().read("press banca 3x8 a 60 rir cero", CATALOG)
+
+    assert all(item.rpe == 10 for item in exercise.sets)
+
+
 def test_a_number_that_is_not_a_weight_is_left_alone() -> None:
     # Nothing here says how many repetitions, so "3" must not be mistaken for kilos.
     [exercise] = RuleBasedReader().read("dominadas 3 al fallo", CATALOG)
@@ -103,6 +170,15 @@ def test_reads_several_exercises_from_one_dictation() -> None:
     read = RuleBasedReader().read(text, CATALOG)
 
     assert [exercise.exercise_id for exercise in read] == [1, 2, 7]
+    assert [len(exercise.sets) for exercise in read] == [4, 3, 3]
+
+
+def test_extra_spaces_tabs_and_blank_lines_change_nothing() -> None:
+    text = "prensa  4x10\t120   y\tcurl de biceps 3x12 20kg\n\n\n  dominadas   3x8"
+
+    read = RuleBasedReader().read(text, CATALOG)
+
+    assert [exercise.exercise_id for exercise in read] == [1, 7, 5]
     assert [len(exercise.sets) for exercise in read] == [4, 3, 3]
 
 
