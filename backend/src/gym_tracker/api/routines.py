@@ -16,7 +16,7 @@ router = APIRouter(prefix="/routines", tags=["routines"])
 DUPLICATE_NAME = "A routine with this name already exists"
 
 
-def _routines(user: User) -> Select[tuple[Routine]]:
+def _routines(user: User) -> Select[Routine]:
     return (
         select(Routine)
         .where(Routine.user_id == user.id)
