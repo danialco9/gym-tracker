@@ -2,6 +2,9 @@
 
 [![Backend CI](https://github.com/danialco9/gym-tracker/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://github.com/danialco9/gym-tracker/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/frontend-ci.yml)
+[![End-to-end](https://github.com/danialco9/gym-tracker/actions/workflows/e2e.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/e2e.yml)
+[![CodeQL](https://github.com/danialco9/gym-tracker/actions/workflows/codeql.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/danialco9/gym-tracker)](https://github.com/danialco9/gym-tracker/releases)
 
 Web app to log gym workouts, track body measurements and use data analysis to decide when to
 change routines, exercises or intensity.
