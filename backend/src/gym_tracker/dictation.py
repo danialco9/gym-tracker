@@ -58,11 +58,73 @@ STOPWORDS = frozenset(
         "veces",
         "vez",
         "mas",
+        # How people tell it ("hoy hice...", "luego..."), never part of an exercise name.
+        "hice",
+        "he",
+        "hecho",
+        "hoy",
+        "luego",
+        "despues",
+        "tambien",
     ]
 )
 
-# "4x10", "4 x 10", and the same with a multiplication sign: the number of sets first.
-_SETS_BY_REPS = re.compile(r"(?<!\d)(\d{1,2})\s*[x\u00d7]\s*(\d{1,3})(?!\d)", re.IGNORECASE)
+# Numbers written as words ("tres series de diez con sesenta"), read as digits before anything else.
+# "uno", "un" and "una" are left out on their own: they are far more often an article ("curl a
+# una mano") than a count. "uno" still counts at the end of a number ("cuarenta y uno").
+_UNITS = {"dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6, "siete": 7, "ocho": 8, "nueve": 9}
+_TEENS = {
+    "diez": 10,
+    "once": 11,
+    "doce": 12,
+    "trece": 13,
+    "catorce": 14,
+    "quince": 15,
+    "dieciseis": 16,
+    "diecisiete": 17,
+    "dieciocho": 18,
+    "diecinueve": 19,
+    "veinte": 20,
+    "veintiuno": 21,
+    "veintidos": 22,
+    "veintitres": 23,
+    "veinticuatro": 24,
+    "veinticinco": 25,
+    "veintiseis": 26,
+    "veintisiete": 27,
+    "veintiocho": 28,
+    "veintinueve": 29,
+}
+_TENS = {"treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60, "setenta": 70, "ochenta": 80, "noventa": 90}
+_HUNDREDS = {
+    "ciento": 100,
+    "cien": 100,
+    "doscientos": 200,
+    "trescientos": 300,
+    "cuatrocientos": 400,
+    "quinientos": 500,
+    "seiscientos": 600,
+}
+_NUMBER_WORDS = {"cero": 0, "uno": 1, **_UNITS, **_TEENS, **_TENS, **_HUNDREDS}
+
+
+def _any_of(words: Iterable[str]) -> str:
+    """An alternation of the words, longest first, with each vowel matching its accented form too."""
+    accented = str.maketrans({"a": "[aá]", "e": "[eé]", "i": "[ií]", "o": "[oó]", "u": "[uúü]"})
+    return "(?:" + "|".join(word.translate(accented) for word in sorted(words, key=len, reverse=True)) + ")"
+
+
+_UNIT_WORD = _any_of(_UNITS)
+_LAST_UNIT_WORD = _any_of([*_UNITS, "uno"])
+_TENS_WORD = rf"{_any_of(_TENS)}(?:\s+y\s+{_LAST_UNIT_WORD})?"
+_SPELLED_NUMBER = re.compile(
+    rf"\b(?:{_any_of(_HUNDREDS)}(?:\s+(?:{_TENS_WORD}|{_any_of(_TEENS)}|{_LAST_UNIT_WORD}))?"
+    rf"|{_TENS_WORD}|{_any_of(_TEENS)}|{_UNIT_WORD}|cero)\b",
+    re.IGNORECASE,
+)
+
+# "4x10", "4 x 10", the same with a multiplication sign, or "4 series de 10": the number of sets first.
+_SETS_BY_REPS = re.compile(r"(?<!\d)(\d{1,2})(?:\s*[x\u00d7]\s*|\s+series?\s+de\s+)(\d{1,3})(?!\d)", re.IGNORECASE)
 # "12,10,8" or "12-10-8": one entry per set, for pyramids and drop sets.
 _REP_LIST = re.compile(r"(?<!\d)\d{1,3}(?:\s*[,\-]\s*\d{1,3})+(?!\d)")
 # A weight stated outright: "60 kg", "a 82,5", "con 20 kilos".
@@ -116,6 +178,16 @@ def _fold(value: str) -> str:
 
 def _words(value: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", _fold(value))
+
+
+def _digits(text: str) -> str:
+    """The text with its spelled-out numbers written as digits: "ciento veinte" becomes "120"."""
+
+    def value(match: re.Match[str]) -> str:
+        # The pattern only lets words through in an order that adds up: hundreds, tens, units.
+        return str(sum(_NUMBER_WORDS[word] for word in _words(match.group(0)) if word != "y"))
+
+    return _SPELLED_NUMBER.sub(value, text)
 
 
 def _meaningful(value: str) -> list[str]:
@@ -235,7 +307,8 @@ class RuleBasedReader:
 
     def read(self, text: str, exercises: Sequence[ExerciseOption]) -> list[ReadExercise]:
         result: list[ReadExercise] = []
-        for raw_line in _LINE_SEPARATOR.split(text):
+        # Before splitting, so the "y" in "treinta y cinco" is not read as the start of a new line.
+        for raw_line in _LINE_SEPARATOR.split(_digits(text)):
             line = raw_line.strip(" .\t,")
             if not line:
                 continue
