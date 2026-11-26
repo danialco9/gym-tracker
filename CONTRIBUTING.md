@@ -61,6 +61,12 @@ gh pr create --base main
 After it is merged, tag a patch version (`v1.1.1`) and open a pull request from `main` to `develop`
 so the fix is not lost in the next release.
 
+## Dependency updates
+
+[Dependabot](.github/dependabot.yml) opens pull requests to `develop` every Monday: one per folder
+with the minor and patch updates grouped, and one for each major version, which may need code
+changes. They go through the same checks as any other pull request.
+
 ## Commit messages
 
 [Conventional Commits](https://www.conventionalcommits.org/), written in English and in the present
