@@ -215,9 +215,9 @@ def seed_demo(
 
     slugs = {lift.slug for lifts in ROUTINES.values() for lift in lifts}
     exercise_ids = dict(
-        session.execute(select(Exercise.slug, Exercise.id).where(Exercise.slug.in_(slugs), Exercise.user_id.is_(None)))
-        .tuples()
-        .all()
+        session.execute(
+            select(Exercise.slug, Exercise.id).where(Exercise.slug.in_(slugs), Exercise.user_id.is_(None))
+        ).all()
     )
 
     routines: dict[str, Routine] = {}
