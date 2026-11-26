@@ -273,6 +273,11 @@ GYM_RATE_LIMIT_ENABLED=false docker compose up -d --wait --build
 cd e2e && pnpm install && pnpm exec playwright install chromium && pnpm test
 ```
 
+### Contributing
+
+Work happens on `develop` and reaches production through releases (Git Flow). Branch names, the
+release steps and the commit style are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Engineering notes
 
 A few decisions worth calling out:
