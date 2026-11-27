@@ -114,6 +114,27 @@ function Today({ day }: { day: PlanDay }) {
   )
 }
 
+/**
+ * The week's shape while it loads: the same cells as the real days and a row for today, so the
+ * cards below stay put when it arrives.
+ */
+function WeekSkeleton() {
+  return (
+    <div role="status" aria-label="Cargando tu semana" className="space-y-3">
+      <ol className="grid grid-cols-7 gap-1" aria-hidden>
+        {WEEKDAY_LETTERS.map((letter) => (
+          <li key={letter} className="flex flex-col items-center gap-1 px-0.5 py-2">
+            <span className="text-muted-foreground text-[0.65rem] font-medium">{letter}</span>
+            <span className="bg-muted size-7 animate-pulse rounded-full" />
+            <span className="text-[0.65rem] leading-tight">&nbsp;</span>
+          </li>
+        ))}
+      </ol>
+      <div className="bg-muted h-7 animate-pulse rounded-lg" aria-hidden />
+    </div>
+  )
+}
+
 function Week({ week, onOpen }: { week: WeekPlan; onOpen: (day: PlanDay) => void }) {
   const today = week.days.find((day) => day.on_date === week.today)
   const empty = week.days.every((day) => day.kind === 'rest' && !day.changed)
@@ -162,7 +183,8 @@ export function WeekCard() {
 
   return (
     <section aria-label="Tu semana" className="bg-card ring-foreground/10 space-y-3 rounded-xl p-4 ring-1">
-      <div className="flex items-center justify-between gap-2">
+      {/* As tall as its buttons before they arrive, so the header does not grow. */}
+      <div className="flex min-h-7 items-center justify-between gap-2">
         <h2 className="eyebrow">
           {shown === undefined || isCurrent ? 'Esta semana' : `Semana ${formatWeekRange(shown.start)}`}
         </h2>
@@ -199,7 +221,7 @@ export function WeekCard() {
           </div>
         )}
       </div>
-      <QueryStatus query={week} loading="Cargando tu semana…" error="No se pudo cargar tu semana." />
+      <QueryStatus query={week} loading={<WeekSkeleton />} error="No se pudo cargar tu semana." />
       {shown && <Week week={shown} onOpen={setOpen} />}
       {shown && <DaySheet day={openDay ?? null} week={shown} onClose={() => setOpen(null)} />}
     </section>
