@@ -185,6 +185,24 @@ def test_reads_several_blocks_of_sets() -> None:
 
 
 @pytest.mark.parametrize(
+    "text",
+    [
+        "remo 4x10 y 3x8 con 80",
+        "remo 4x10, 3x8 con 80",
+        "remo 4x10 3x8 80kg",
+        "remo 4x10 con 80 y 3x8",
+        "remo 4x10, y 3x8",
+    ],
+)
+def test_the_words_joining_blocks_of_sets_stay_out_of_the_name(text: str) -> None:
+    # An exercise outside the catalog comes back with the words as said, so they must be clean.
+    [exercise] = RuleBasedReader().read(text, CATALOG)
+
+    assert (exercise.query, exercise.name) == ("remo", "remo")
+    assert [item.reps for item in exercise.sets] == [10] * 4 + [8] * 3
+
+
+@pytest.mark.parametrize(
     ("text", "reps", "weight"),
     [
         ("curl de biceps 12 10 8 con 14", [12, 10, 8], 14.0),

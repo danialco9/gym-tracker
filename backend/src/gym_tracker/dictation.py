@@ -337,6 +337,17 @@ def _read_weight(line: str, *, allow_bare_number: bool) -> tuple[float | None, s
     return None, line
 
 
+def _exercise_words(remainder: str) -> str:
+    """What is left of a line once its numbers are read: the exercise, without the "y" or commas
+    that joined what was taken out ("remo 4x10 y 3x8" leaves "remo y")."""
+    words = remainder.split()
+    while words and words[-1].strip(",.") in {"", "y"}:
+        words.pop()
+    while words and words[0].strip(",.") in {"", "y"}:
+        words.pop(0)
+    return " ".join(words).strip(",.")
+
+
 def _read_line(line: str) -> tuple[str, tuple[ReadSet, ...]]:
     remainder = line
     rpe: float | None = None
@@ -350,7 +361,7 @@ def _read_line(line: str) -> tuple[str, tuple[ReadSet, ...]]:
     if per_set:
         pairs, remainder = per_set
         sets = tuple(ReadSet(reps=reps, weight_kg=weight, rpe=rpe) for weight, reps in pairs)
-        return " ".join(remainder.split()), sets
+        return _exercise_words(remainder), sets
 
     reps_per_set, remainder = _read_repetitions(remainder)
     # Only trust a unitless number as the weight once the repetitions have been accounted for:
@@ -358,7 +369,7 @@ def _read_line(line: str) -> tuple[str, tuple[ReadSet, ...]]:
     weight, remainder = _read_weight(remainder, allow_bare_number=any(reps_per_set))
 
     sets = tuple(ReadSet(reps=reps, weight_kg=weight, rpe=rpe) for reps in reps_per_set)
-    return " ".join(remainder.split()), sets
+    return _exercise_words(remainder), sets
 
 
 class RuleBasedReader:
