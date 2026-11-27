@@ -36,9 +36,9 @@ FastAPI service and analytics engine for the gym tracker.
   in PostgreSQL to serve the progress endpoints. A plateau is judged within the current block
   (since the top weight last went down), so rebuilding after a deload is not flagged again.
 - **Demo account**: `gym-admin seed-demo` creates `demo@gymtracker.dev` (password
-  `demo-gym-tracker`) with three routines, a planned week and 12 weeks of simulated training and weigh-ins. Each
-  lift progresses with the app's own rules against a hidden strength level, and one of them stalls.
-  Running it again recreates the account.
+  `demo-gym-tracker`) with three routines, a planned week and 12 weeks of simulated training and
+  weigh-ins. Each lift progresses with the app's own rules against a hidden strength level, and one
+  of them stalls. Running it again recreates the account.
 
 ## Development
 
