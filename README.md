@@ -2,6 +2,9 @@
 
 [![Backend CI](https://github.com/danialco9/gym-tracker/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://github.com/danialco9/gym-tracker/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/frontend-ci.yml)
+[![End-to-end](https://github.com/danialco9/gym-tracker/actions/workflows/e2e.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/e2e.yml)
+[![CodeQL](https://github.com/danialco9/gym-tracker/actions/workflows/codeql.yml/badge.svg)](https://github.com/danialco9/gym-tracker/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/danialco9/gym-tracker)](https://github.com/danialco9/gym-tracker/releases)
 
 Web app to log gym workouts, track body measurements and use data analysis to decide when to
 change routines, exercises or intensity.
@@ -118,7 +121,9 @@ remove it like any other app (long press on the icon).
   next exercise of the round, and the rest comes only once the round is done.
 - **Logging a workout in plain language.** Type (or dictate with the phone keyboard) `prensa 4x10
   120, press banca 12,10,8 a 60 rir 2` and the server reads it into sets, matched against your
-  exercise catalog. It never saves on its own: the reading prefills the workout screen for you to
+  exercise catalog. Numbers can be spoken as words too, which is what dictation produces: `tres
+  series de diez en press banca con sesenta kilos`; and each set can carry its own weight:
+  `sentadilla 100x5, 105x5, 110x3` or `60 por 10, 70 por 8 y 80 por 6`. It never saves on its own: the reading prefills the workout screen for you to
   review. Where the text genuinely fits more than one exercise - `press banca` is both the barbell
   and the dumbbell entry - it offers the candidates instead of guessing, since the wrong one
   quietly spoils the history.

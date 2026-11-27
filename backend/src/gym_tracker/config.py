@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     # Without them the app offers no notifications.
     vapid_public_key: str | None = None
     vapid_private_key: SecretStr | None = None
+    # Error reports to Sentry. The Vercel integration sets it as SENTRY_DSN, without the prefix.
+    sentry_dsn: str | None = Field(default=None, validation_alias=AliasChoices("GYM_SENTRY_DSN", "SENTRY_DSN"))
 
     @field_validator("database_url")
     @classmethod
