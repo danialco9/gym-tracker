@@ -1,5 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react'
 import authImage from '@/assets/hero-rack.webp'
+import authImage800 from '@/assets/hero-rack-800.webp'
+import authImage1200 from '@/assets/hero-rack-1200.webp'
 import { OfflineNotice } from '@/components/OfflineNotice'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -18,7 +20,15 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
   return (
     <main className="min-h-dvh lg:grid lg:grid-cols-2">
       <section className="relative isolate h-40 overflow-hidden lg:h-auto">
-        <img src={authImage} alt="" className="absolute inset-0 size-full object-cover" aria-hidden />
+        {/* A phone gets a smaller file; the browser picks one for the band's width and the screen. */}
+        <img
+          src={authImage}
+          srcSet={`${authImage800} 800w, ${authImage1200} 1200w, ${authImage} 1600w`}
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          alt=""
+          className="absolute inset-0 size-full object-cover"
+          aria-hidden
+        />
         <div className="photo-scrim" />
         <div className="relative flex h-full flex-col justify-end p-6 lg:p-10">
           <p className="eyebrow text-white/70">Gym Tracker</p>
