@@ -7,7 +7,10 @@ export const TRAINING_GOAL_LABELS: Record<TrainingGoal, { title: string; hint: s
   recomposition: { title: 'Recomposición', hint: 'Menos grasa y más músculo a la vez' },
 }
 
-/** Strength tiers, lowest first, with the colour of their medal. */
+/**
+ * Strength tiers, lowest first, with the colour of their medal. The colour is also used for text,
+ * so each one keeps at least 4.5:1 contrast on a card.
+ */
 export const STRENGTH_TIERS: Record<StrengthTier, { label: string; color: string }> = {
   bronze: { label: 'Bronce', color: '#e07b28' },
   silver: { label: 'Plata', color: '#a7b1bf' },
@@ -15,8 +18,8 @@ export const STRENGTH_TIERS: Record<StrengthTier, { label: string; color: string
   platinum: { label: 'Platino', color: '#2dd4bf' },
   diamond: { label: 'Diamante', color: '#3b82f6' },
   emerald: { label: 'Esmeralda', color: '#22c55e' },
-  ruby: { label: 'Rubí', color: '#ef233c' },
-  master: { label: 'Máster', color: '#a855f7' },
+  ruby: { label: 'Rubí', color: '#f43f5e' },
+  master: { label: 'Máster', color: '#b066f8' },
 }
 
 const TIER_ORDER = Object.keys(STRENGTH_TIERS) as StrengthTier[]
