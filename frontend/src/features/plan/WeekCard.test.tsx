@@ -1,5 +1,5 @@
 import { screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { PlanDay, Routine, User, WeekPlan } from '@/lib/types'
 import { mockApi } from '@/test/mock-api'
 import { renderRoute } from '@/test/render'
@@ -70,6 +70,31 @@ function showHome(week: WeekPlan = WEEK, handlers: Parameters<typeof mockApi>[0]
 }
 
 describe('Week plan on the home screen', () => {
+  it('keeps the shape of the week while it loads', async () => {
+    let release = () => {}
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    mockApi({ 'GET /auth/me': { body: USER }, 'GET /plan/week': { body: WEEK } })
+    const answer = vi.mocked(fetch).getMockImplementation()
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (String(input).includes('/plan/week')) {
+        await held
+      }
+      return answer!(input, init)
+    })
+    renderRoute('/')
+
+    const week = await screen.findByRole('region', { name: 'Tu semana' })
+    expect(within(week).getByRole('status', { name: 'Cargando tu semana' })).toBeInTheDocument()
+
+    release()
+    expect(
+      await within(week).findByRole('button', { name: 'Jueves, 12 de noviembre, Torso, hoy' }),
+    ).toBeInTheDocument()
+    expect(within(week).queryByRole('status', { name: 'Cargando tu semana' })).not.toBeInTheDocument()
+  })
+
   it('shows each day, the ones trained, and what today holds', async () => {
     showHome()
 
