@@ -254,7 +254,15 @@ export function BodyWeightChart({ entries }: { entries: ProgressOverview['body_w
               labelFormatter={(label) => formatDay(String(label))}
               formatter={(value, name) => [formatKg(Number(value)), name]}
             />
-            <Scatter name="Pesaje" dataKey="weight_kg" fill={seriesColor(0)} fillOpacity={0.45} />
+            {/* Drawn at once: animating a dot per weigh-in redraws the chart every frame, which kept a
+                phone busy for seconds when Medidas opened. */}
+            <Scatter
+              name="Pesaje"
+              dataKey="weight_kg"
+              fill={seriesColor(0)}
+              fillOpacity={0.45}
+              isAnimationActive={false}
+            />
             <Line
               name="Media 7 días"
               dataKey="trend_kg"
@@ -262,6 +270,7 @@ export function BodyWeightChart({ entries }: { entries: ProgressOverview['body_w
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 5 }}
+              isAnimationActive={false}
             />
           </ComposedChart>
         </ResponsiveContainer>
