@@ -2,6 +2,8 @@ import { ChartLineIcon, ChevronRightIcon, DumbbellIcon, TargetIcon } from 'lucid
 import { useState } from 'react'
 import { Link } from 'react-router'
 import heroImage from '@/assets/hero-squat.webp'
+import heroImage800 from '@/assets/hero-squat-800.webp'
+import heroImage1200 from '@/assets/hero-squat-1200.webp'
 import { QueryStatus } from '@/components/QueryStatus'
 import { buttonVariants } from '@/components/ui/button'
 import { useCurrentUser } from '@/features/auth/queries'
@@ -92,6 +94,9 @@ export function HomePage() {
       <section className="relative overflow-hidden rounded-2xl">
         <img
           src={heroImage}
+          srcSet={`${heroImage800} 800w, ${heroImage1200} 1200w, ${heroImage} 1600w`}
+          // The page's width less its padding: max-w-2xl on a phone or tablet, max-w-6xl from lg.
+          sizes="(min-width: 1024px) 1088px, (min-width: 672px) 640px, calc(100vw - 2rem)"
           alt=""
           className="absolute inset-0 size-full object-cover"
           fetchPriority="high"

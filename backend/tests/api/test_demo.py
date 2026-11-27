@@ -31,6 +31,18 @@ def test_seed_demo_creates_a_realistic_account(client: TestClient, session: Sess
     assert len({item["action"] for item in overview["recommendations"]}) > 1
     assert overview["body_weight"]["weekly_change_kg"] < 0
 
+    # The usual week is planned, Monday to Sunday.
+    week = client.get("/api/plan/week").json()
+    assert [day["routine"]["name"] if day["routine"] else None for day in week["days"]] == [
+        "Torso A",
+        "Torso B",
+        "Pierna",
+        None,
+        "Torso A",
+        None,
+        None,
+    ]
+
 
 def test_seed_demo_is_repeatable(session: Session) -> None:
     first = seed_demo(session, weeks=2, today=TODAY)

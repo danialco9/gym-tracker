@@ -30,6 +30,7 @@ from gym_tracker.catalog import CATALOG, seed_catalog
 from gym_tracker.models import (
     BodyMeasurement,
     Exercise,
+    PlannedDay,
     Routine,
     RoutineExercise,
     RoutineSet,
@@ -105,6 +106,10 @@ ROUTINE_DESCRIPTIONS = {
     "Torso B": "Alterna con Torso A",
     "Pierna": "Miércoles",
 }
+
+# The usual week, so the week card shows what each day holds. A plan cannot alternate, so Friday is
+# always Torso A; the history keeps alternating.
+WEEK_PLAN = {MONDAY: "Torso A", TUESDAY: "Torso B", WEDNESDAY: "Pierna", FRIDAY: "Torso A"}
 
 
 @dataclass
@@ -244,6 +249,10 @@ def seed_demo(
         routines[name] = routine
         session.add(routine)
     session.flush()
+    session.add_all(
+        PlannedDay(user_id=user.id, weekday=weekday, routine_id=routines[name].id)
+        for weekday, name in WEEK_PLAN.items()
+    )
 
     workouts = 0
     for day, routine_name in _training_days(start, end):

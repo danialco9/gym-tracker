@@ -29,9 +29,9 @@ jobs:
       # Required by the settings but unused: migrating issues no tokens.
       GYM_JWT_SECRET: migrating-does-not-sign-tokens
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: astral-sh/setup-uv@v10.4.0
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
