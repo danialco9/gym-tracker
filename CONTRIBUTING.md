@@ -67,6 +67,10 @@ so the fix is not lost in the next release.
 with the minor and patch updates grouped, and one for each major version, which may need code
 changes. They go through the same checks as any other pull request.
 
+GitHub Actions in the workflows are pinned to a full commit, with the version in a comment
+(`actions/checkout@<sha> # v7.0.1`), so a moved tag cannot change what runs. Dependabot updates the
+commit and the comment together; pin a new action the same way.
+
 ## Commit messages
 
 [Conventional Commits](https://www.conventionalcommits.org/), written in English and in the present
